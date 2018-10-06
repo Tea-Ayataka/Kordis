@@ -3,15 +3,14 @@ package net.ayataka.kordis.entity.user
 import kotlinx.serialization.json.JsonObject
 import net.ayataka.kordis.DiscordClient
 
-@Suppress("JoinDeclarationAndAssignment")
-class UserImpl(json: JsonObject, override val client: DiscordClient) : User {
-    override val id get() = _id
-    override val name get() = _name
-    override val discriminator get() = _discriminator
+class UserImpl(override val client: DiscordClient, json: JsonObject) : User {
+    private var _id: Long? = null
+    private var _name: String? = null
+    private var _discriminator: Int? = null
 
-    private var _id = -1L
-    private var _name = ""
-    private var _discriminator = -1
+    override val id get() = _id!!
+    override val name get() = _name!!
+    override val discriminator get() = _discriminator!!
 
     init {
         update(json)
