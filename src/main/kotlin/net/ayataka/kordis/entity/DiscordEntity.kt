@@ -13,9 +13,6 @@ abstract class DiscordEntity(
         return id == other.id
     }
 
-    override fun hashCode(): Int {
-        return id.hashCode()
-    }
-
+    override fun hashCode() = id.hashCode()
     override fun toString() = "DiscordEntity (id: $id)"
 }

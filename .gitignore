@@ -1,4 +1,11 @@
-gradlew
-gradlew.bat
-/.*
-/gradle/
+gradlew*
+.gradle
+.idea
+build
+gradle
+out
+*.json
+*.log
+*.iml
+*.log.gz
+*.bat
