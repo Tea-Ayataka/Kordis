@@ -3,8 +3,12 @@ package net.ayataka.kordis
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import net.ayataka.kordis.event.EventManager
+import net.ayataka.kordis.rest.Endpoint
 import net.ayataka.kordis.rest.RestClient
 import net.ayataka.kordis.websocket.GatewayClient
+import org.apache.logging.log4j.LogManager
+
+val LOGGER = LogManager.getLogger()
 
 class DiscordClient {
     var status = ConnectionStatus.DISCONNECTED
@@ -22,7 +26,9 @@ class DiscordClient {
         }
 
         this.token = token
-        gateway.connect("wss://gateway.discord.gg/")
+
+        // Connect to the gateway
+        gateway.connect(rest.request(Endpoint.GET_GATEWAY_BOT.format())["url"].asString)
     }
 }
 

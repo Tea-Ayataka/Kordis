@@ -4,7 +4,7 @@ import io.ktor.http.HttpMethod
 
 const val BASE = "https://discordapp.com/api/v6"
 
-enum class EndPoint(val method: HttpMethod, val path: String) {
+enum class Endpoint(val method: HttpMethod, val path: String) {
     // Audit Log
     GET_GUILD_AUDIT_LOG(HttpMethod.Get, "/guilds/{guild.id}/audit-logs"),
 
@@ -105,8 +105,18 @@ enum class EndPoint(val method: HttpMethod, val path: String) {
     DELETE_WEBHOOK_WITH_TOKEN(HttpMethod.Delete, "/webhooks/{webhook.id}/{webhook.token}"),
     EXECUTE_WEBHOOK(HttpMethod.Post, "/webhooks/{webhook.id}/{webhook.token}"),
     EXECUTE_SLACK_WEBHOOK(HttpMethod.Post, "/webhooks/{webhook.id}/{webhook.token}/slack"),
-    EXECUTE_GITHUB_WEBHOOK(HttpMethod.Post, "/webhooks/{webhook.id}/{webhook.token}/github")
+    EXECUTE_GITHUB_WEBHOOK(HttpMethod.Post, "/webhooks/{webhook.id}/{webhook.token}/github"),
+
+    // Gateway
+    GET_GATEWAY(HttpMethod.Get, "/gateway"),
+    GET_GATEWAY_BOT(HttpMethod.Get, "/gateway/bot")
     ;
 
-    fun format(vararg args: Any) = BASE + String.format(path, args)
+    fun format(args: Map<String, Any>? = null): FormattedEndPoint {
+        var path = this.path
+        args?.forEach { path = path.replace("{${it.key}}", it.value.toString()) }
+        return FormattedEndPoint(method, BASE + path)
+    }
 }
+
+data class FormattedEndPoint(val method: HttpMethod, val url: String)
