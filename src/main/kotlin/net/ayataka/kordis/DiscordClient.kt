@@ -1,7 +1,5 @@
 package net.ayataka.kordis
 
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
 import net.ayataka.kordis.event.EventManager
 import net.ayataka.kordis.rest.Endpoint
 import net.ayataka.kordis.rest.RestClient
@@ -15,7 +13,11 @@ class DiscordClient {
         private set
 
     lateinit var token: String
-    private val gateway = GatewayClient(this)
+        private set
+
+    lateinit var gateway: GatewayClient
+        private set
+
     private val rest = RestClient(this)
 
     val eventManager = EventManager()
@@ -28,17 +30,10 @@ class DiscordClient {
         this.token = token
 
         // Connect to the gateway
-        gateway.connect(rest.request(Endpoint.GET_GATEWAY_BOT.format())["url"].asString)
+        gateway = GatewayClient(this, rest.request(Endpoint.GET_GATEWAY_BOT.format())["url"].asString)
     }
 }
 
 enum class ConnectionStatus {
     DISCONNECTED, CONNECTING, CONNECTED, RECONNECTING
-}
-
-fun main(args: Array<String>) {
-    runBlocking {
-        DiscordClient().connect("Unknown")
-        delay(99999999999999)
-    }
 }
