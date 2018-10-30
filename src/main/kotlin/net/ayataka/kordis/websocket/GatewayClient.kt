@@ -1,8 +1,8 @@
 package net.ayataka.kordis.websocket
 
-import com.google.gson.Gson
-import com.google.gson.JsonParser
 import kotlinx.coroutines.*
+import kotlinx.serialization.json.*
+import net.ayataka.kordis.ConnectionStatus
 import net.ayataka.kordis.DiscordClient
 import net.ayataka.kordis.LOGGER
 import net.ayataka.kordis.utils.start
@@ -15,9 +15,10 @@ import java.net.URI
 const val GATEWAY_VERSION = 6
 
 class GatewayClient(
-        private val discordClient: DiscordClient,
+        private val client: DiscordClient,
         endpoint: String
 ) : CoroutineScope, WebSocketClient(URI("$endpoint/?v=$GATEWAY_VERSION&encoding=json")) {
+
 
     private val job = SupervisorJob()
     override val coroutineContext = Dispatchers.Default + job + CoroutineName("WebSocket Handler")
@@ -61,12 +62,9 @@ class GatewayClient(
             "VOICE_STATE_UPDATE" to VoiceStateUpdateHandler()
     )
 
-    init {
-        connect()
-    }
-
     override fun onOpen(handshakedata: ServerHandshake) {
-        LOGGER.info("Connected to the gateway with code ${handshakedata.httpStatus}")
+        LOGGER.info("Connected to the gateway with code ${handshakedata.httpStatus} (${handshakedata.httpStatusMessage})")
+        client.status = ConnectionStatus.CONNECTED
     }
 
     override fun onClose(code: Int, reason: String, remote: Boolean) {
@@ -81,23 +79,23 @@ class GatewayClient(
     }
 
     override fun onMessage(message: String) = start {
-        val payloads = JsonParser().parse(message).asJsonObject
-        val opcode = Opcode.values().find { it.code == payloads["op"].asInt }
-        val data = if (payloads.has("d") && !payloads["d"].isJsonNull) payloads["d"].asJsonObject else null
+        val payloads = JsonTreeParser(message).readFully().jsonObject
+        val opcode = Opcode.values().find { it.code == payloads["op"].int }
+        val data = if (!payloads["d"].isNull) payloads["d"].jsonObject else null
 
-        LOGGER.info("Gateway Payload Received [$opcode]: $payloads")
+        LOGGER.debug("Gateway payload received ($opcode) - $payloads")
 
         when (opcode) {
             Opcode.HELLO -> {
                 LOGGER.info("Starting heartbeat task")
 
-                val period = data!!["heartbeat_interval"].asLong
+                val period = data!!["heartbeat_interval"].long
 
                 isHeartbeatAckReceived = true
                 heartbeatTask = timer(period) {
                     if (isHeartbeatAckReceived) {
                         isHeartbeatAckReceived = false
-                        sendJson(Opcode.HEARTBEAT)
+                        send(Opcode.HEARTBEAT)
                         LOGGER.info("Sent heartbeat (${period}ms)")
                     } else {
                         LOGGER.info("Heartbeat ACK wasn't received. Reconnecting...")
@@ -113,8 +111,11 @@ class GatewayClient(
                 isHeartbeatAckReceived = true
             }
             Opcode.DISPATCH -> {
-                val eventType =
-                        LOGGER.info("Received an event - $data")
+                val eventName = payloads["t"].content
+                LOGGER.info("Received an event ($eventName) $data")
+
+                // Handle the event
+                handlers[eventName]!!.handle(client, data!!)
             }
             else -> {
                 LOGGER.warn("Received an unknown packet (opcode: $opcode, data: $data)")
@@ -128,18 +129,25 @@ class GatewayClient(
 
     private suspend fun authenticate() {
         // https://discordapp.com/developers/docs/topics/gateway#identify-example-identify
-        sendJson(Opcode.IDENTIFY, mapOf(
-                "token" to discordClient.token,
-                "properties" to mapOf(
-                        "\$os" to "who knows",
-                        "\$browser" to "who knows",
-                        "\$device" to "who knows"
-                )
-        ))
+
+        send(Opcode.IDENTIFY, json {
+            "token" to client.token
+
+            "properties" to json {
+                "\$os" to "who knows"
+                "\$browser" to "who knows"
+                "\$device" to "who knows"
+            }
+        })
     }
 
-    private suspend fun sendJson(opcode: Opcode, data: Map<Any, Any> = mapOf()) {
-        launch { send(Gson().toJson(mapOf("op" to opcode.code, "d" to data))) }.join()
-        LOGGER.debug("Sent: ${Gson().toJson(mapOf("op" to opcode.code, "d" to data))}")
+    private suspend fun send(opcode: Opcode, data: JsonObject = JsonObject(mapOf())) {
+        val json = json {
+            "op" to opcode.code
+            "d" to data
+        }.toString()
+
+        launch { send(json) }.join()
+        LOGGER.debug("Sent: $json")
     }
 }

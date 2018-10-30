@@ -1,7 +1,5 @@
 package net.ayataka.kordis.rest
 
-import com.google.gson.JsonObject
-import com.google.gson.JsonParser
 import io.ktor.client.HttpClient
 import io.ktor.client.call.call
 import io.ktor.client.call.receive
@@ -15,6 +13,7 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import kotlinx.coroutines.delay
+import kotlinx.serialization.json.*
 import net.ayataka.kordis.DiscordClient
 import net.ayataka.kordis.LOGGER
 
@@ -37,7 +36,7 @@ class RestClient(private val discordClient: DiscordClient) {
             }
 
             try {
-                LOGGER.info("Request: ${endPoint.url}, method: ${endPoint.method.value}, data: $data")
+                LOGGER.debug("Request: ${endPoint.url}, method: ${endPoint.method.value}, data: $data, retry: $it / $rateLimitRetries")
                 val call = httpClient.call {
                     method = endPoint.method
                     url(endPoint.url)
@@ -46,47 +45,48 @@ class RestClient(private val discordClient: DiscordClient) {
                     }
                 }
 
+                // Receive the body
                 val json = if (call.response.contentType() == ContentType.Application.Json) {
-                    JsonParser().parse(call.response.readText(Charsets.UTF_8)).asJsonObject
+                    JsonTreeParser(call.response.readText(Charsets.UTF_8)).readFully().jsonObject
                 } else {
                     null
                 }
 
+                // Handle rate limits
                 if (call.response.status == HttpStatusCode.TooManyRequests) {
-                    if (json != null) {
-                        val retryDelay = json["retry_after"].asLong
-                        val isGlobal = json["global"].asBoolean
-
-                        if (isGlobal) {
-                            globalRateLimitEnds = System.currentTimeMillis() + retryDelay
-                            LOGGER.info("Hit global rate limit ($retryDelay ms)")
-                        } else {
-                            LOGGER.info("Hit rate limit ($retryDelay ms)")
-                        }
-
-                        delay(retryDelay)
-                    } else {
+                    if (json == null) {
+                        // When get rate limited without body
                         throw RateLimitedException()
                     }
+
+                    val delay = json["retry_after"].long
+
+                    if (json["global"].boolean) {
+                        globalRateLimitEnds = System.currentTimeMillis() + delay
+                        LOGGER.info("Hit global rate limit ($delay ms)")
+                    } else {
+                        LOGGER.info("Hit rate limit ($delay ms)")
+                    }
+
+                    delay(delay)
                 }
 
                 if (call.response.status != HttpStatusCode.OK) {
-                    throw DiscordException("Discord API returned an error with status code ${call.response.status.value} and body ${json?.toString()}")
+                    throw DiscordException("Discord API returned status code ${call.response.status.value} (${call.response.status.description}) with body ${json?.toString()}")
                 }
 
                 if (json == null) {
                     throw DiscordException("Discord API returned an invalid result: ${call.response.receive<String>()}")
                 }
 
-                LOGGER.info("Response: $json")
+                LOGGER.debug("Response: $json")
                 return json
             } catch (ex: DiscordException) {
                 throw ex
             } catch (ex: RateLimitedException) {
                 throw ex
             } catch (ex: Exception) {
-                ex.printStackTrace()
-                LOGGER.warn("An unknown exception thrown! retrying in 3 sec")
+                LOGGER.warn("An unexpected exception thrown! retrying in 3 sec", ex)
                 delay(3000)
             }
         }

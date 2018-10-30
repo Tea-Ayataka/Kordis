@@ -1,6 +1,7 @@
 package net.ayataka.kordis.websocket.handlers
 
-import com.google.gson.JsonObject
+
+import kotlinx.serialization.json.JsonObject
 import net.ayataka.kordis.DiscordClient
 
 interface GatewayHandler {
