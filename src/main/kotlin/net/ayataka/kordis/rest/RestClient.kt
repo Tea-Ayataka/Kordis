@@ -16,6 +16,7 @@ import kotlinx.coroutines.delay
 import kotlinx.serialization.json.*
 import net.ayataka.kordis.DiscordClient
 import net.ayataka.kordis.LOGGER
+import java.util.concurrent.TimeoutException
 
 class RestClient(private val discordClient: DiscordClient) {
     private val httpClient = HttpClient {
@@ -69,6 +70,10 @@ class RestClient(private val discordClient: DiscordClient) {
                     }
 
                     delay(delay)
+                }
+
+                if (call.response.status == HttpStatusCode.GatewayTimeout) {
+                    throw TimeoutException() // Retry
                 }
 
                 if (call.response.status != HttpStatusCode.OK) {

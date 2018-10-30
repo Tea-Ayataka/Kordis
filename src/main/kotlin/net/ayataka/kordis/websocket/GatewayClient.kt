@@ -5,12 +5,22 @@ import kotlinx.serialization.json.*
 import net.ayataka.kordis.ConnectionStatus
 import net.ayataka.kordis.DiscordClient
 import net.ayataka.kordis.LOGGER
-import net.ayataka.kordis.utils.start
-import net.ayataka.kordis.utils.timer
-import net.ayataka.kordis.websocket.handlers.*
+import net.ayataka.kordis.utils.*
+import net.ayataka.kordis.websocket.handlers.channel.ChannelCreateHandler
+import net.ayataka.kordis.websocket.handlers.channel.ChannelDeleteHandler
+import net.ayataka.kordis.websocket.handlers.channel.ChannelUpdateHandler
+import net.ayataka.kordis.websocket.handlers.guild.*
+import net.ayataka.kordis.websocket.handlers.message.*
+import net.ayataka.kordis.websocket.handlers.other.PresenseUpdateHandler
+import net.ayataka.kordis.websocket.handlers.other.ReadyHandler
+import net.ayataka.kordis.websocket.handlers.other.TypingStartHandler
+import net.ayataka.kordis.websocket.handlers.other.UserUpdateHandler
+import net.ayataka.kordis.websocket.handlers.voice.VoiceServerUpdateHandler
+import net.ayataka.kordis.websocket.handlers.voice.VoiceStateUpdateHandler
 import org.java_websocket.client.WebSocketClient
 import org.java_websocket.handshake.ServerHandshake
 import java.net.URI
+import java.util.concurrent.ConcurrentLinkedQueue
 
 const val GATEWAY_VERSION = 6
 
@@ -18,7 +28,6 @@ class GatewayClient(
         private val client: DiscordClient,
         endpoint: String
 ) : CoroutineScope, WebSocketClient(URI("$endpoint/?v=$GATEWAY_VERSION&encoding=json")) {
-
 
     private val job = SupervisorJob()
     override val coroutineContext = Dispatchers.Default + job + CoroutineName("WebSocket Handler")
@@ -28,39 +37,68 @@ class GatewayClient(
     @Volatile
     private var isHeartbeatAckReceived = false
     private var heartbeatTask: Job? = null
+    private var memberChunkQueueTask: Job? = null
 
-    private val handlers = mapOf(
-            "CHANNEL_CREATE" to ChannelCreateHandler(),
-            "CHANNEL_DELETE" to ChannelDeleteHandler(),
-            "CHANNEL_UPDATE" to ChannelUpdateHandler(),
-            "GUILD_BAN_ADD" to GuildBanAddHandler(),
-            "GUILD_BAN_REMOVE" to GuildBanRemoveHandler(),
-            "GUILD_CREATE" to GuildCreateHandler(),
-            "GUILD_DELETE" to GuildDeleteHandler(),
-            "GUILD_EMOJIS_UPDATE" to GuildEmojisUpdateHandler(),
-            "GUILD_MEMBER_ADD" to GuildMemberAddHandler(),
-            "GUILD_MEMBER_REMOVE" to GuildMemberRemoveHandler(),
-            "GUILD_MEMBER_UPDATE" to GuildMemberUpdateHandler(),
-            "GUILD_MEMBERS_CHUNK" to GuildMembersChunkHandler(),
-            "GUILD_ROLE_CREATE" to GuildRoleCreateHandler(),
-            "GUILD_ROLE_DELETE" to GuildRoleDeleteHandler(),
-            "GUILD_ROLE_UPDATE" to GuildRoleUpdateHandler(),
-            "GUILD_SYNC" to GuildSyncHandler(),
-            "GUILD_UPDATE" to GuildUpdateHandler(),
-            "MESSAGE_CREATE" to MessageCreateHandler(),
-            "MESSAGE_DELETE" to MessageDeleteHandler(),
-            "MESSAGE_DELETE_BULK" to MessageDeleteBulkHandler(),
-            "MESSAGE_REACTION_ADD" to MessageReactionAddHandler(),
-            "MESSAGE_REACTION_REMOVE" to MessageReactionRemoveHandler(),
-            "MESSAGE_REACTION_REMOVE_ALL" to MessageReactionRemoveAllHandler(),
-            "MESSAGE_UPDATE" to MessageUpdateHandler(),
-            "PRESENCE_UPDATE" to PresenseUpdateHandler(),
-            "READY" to ReadyHandler(),
-            "TYPING_START" to TypingStartHandler(),
-            "USER_UPDATE" to UserUpdateHandler(),
-            "VOICE_SERVER_UPDATE" to VoiceServerUpdateHandler(),
-            "VOICE_STATE_UPDATE" to VoiceStateUpdateHandler()
+    private val sendQueue = ConcurrentLinkedQueue<String>()
+    private val rateLimiter = RateLimiter(60.seconds(), 100) // The actual limit is 120
+
+    val memberChunkRequestQueue = AdvancedQueue<Long>(50) {
+        queue(Opcode.REQUEST_GUILD_MEMBERS, json {
+            "guild_id" to JsonArray(it.map { JsonPrimitive(it) })
+            "query" to ""
+            "limit" to 0
+        })
+
+        delay(1.seconds())
+    }
+
+    private val handlers = listOf(
+            ChannelCreateHandler(),
+            ChannelDeleteHandler(),
+            ChannelUpdateHandler(),
+            GuildBanAddHandler(),
+            GuildBanRemoveHandler(),
+            GuildCreateHandler(),
+            GuildDeleteHandler(),
+            GuildEmojisUpdateHandler(),
+            GuildMemberAddHandler(),
+            GuildMemberRemoveHandler(),
+            GuildMemberUpdateHandler(),
+            GuildMembersChunkHandler(),
+            GuildRoleCreateHandler(),
+            GuildRoleDeleteHandler(),
+            GuildRoleUpdateHandler(),
+            GuildSyncHandler(),
+            GuildUpdateHandler(),
+            MessageCreateHandler(),
+            MessageDeleteHandler(),
+            MessageDeleteBulkHandler(),
+            MessageReactionAddHandler(),
+            MessageReactionRemoveHandler(),
+            MessageReactionRemoveAllHandler(),
+            MessageUpdateHandler(),
+            PresenseUpdateHandler(),
+            ReadyHandler(),
+            TypingStartHandler(),
+            UserUpdateHandler(),
+            VoiceServerUpdateHandler(),
+            VoiceStateUpdateHandler()
     )
+
+    init {
+        launch(newSingleThreadContext("WebSocket Packet Dispatcher")) {
+            while (true) {
+                if (isClosing || isClosed || rateLimiter.isLimited()) {
+                    continue
+                }
+
+                val json = sendQueue.poll() ?: continue
+                send(json)
+                rateLimiter.increment()
+                LOGGER.debug("Sent: $json")
+            }
+        }
+    }
 
     override fun onOpen(handshakedata: ServerHandshake) {
         LOGGER.info("Connected to the gateway with code ${handshakedata.httpStatus} (${handshakedata.httpStatusMessage})")
@@ -95,11 +133,11 @@ class GatewayClient(
                 heartbeatTask = timer(period) {
                     if (isHeartbeatAckReceived) {
                         isHeartbeatAckReceived = false
-                        send(Opcode.HEARTBEAT)
+                        queue(Opcode.HEARTBEAT)
                         LOGGER.info("Sent heartbeat (${period}ms)")
                     } else {
                         LOGGER.info("Heartbeat ACK wasn't received. Reconnecting...")
-                        reconnect()
+                        close()
                     }
                 }
 
@@ -115,7 +153,7 @@ class GatewayClient(
                 LOGGER.info("Received an event ($eventName) $data")
 
                 // Handle the event
-                handlers[eventName]!!.handle(client, data!!)
+                handlers.find { it.eventName == eventName }!!.handle(client, data!!)
             }
             else -> {
                 LOGGER.warn("Received an unknown packet (opcode: $opcode, data: $data)")
@@ -127,10 +165,10 @@ class GatewayClient(
         LOGGER.error("WebSocket exception", ex)
     }
 
-    private suspend fun authenticate() {
+    private fun authenticate() {
         // https://discordapp.com/developers/docs/topics/gateway#identify-example-identify
 
-        send(Opcode.IDENTIFY, json {
+        queue(Opcode.IDENTIFY, json {
             "token" to client.token
 
             "properties" to json {
@@ -141,13 +179,12 @@ class GatewayClient(
         })
     }
 
-    private suspend fun send(opcode: Opcode, data: JsonObject = JsonObject(mapOf())) {
+    private fun queue(opcode: Opcode, data: JsonObject = JsonObject(mapOf())) {
         val json = json {
             "op" to opcode.code
             "d" to data
         }.toString()
 
-        launch { send(json) }.join()
-        LOGGER.debug("Sent: $json")
+        sendQueue.offer(json)
     }
 }

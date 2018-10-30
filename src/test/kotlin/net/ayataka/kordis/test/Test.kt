@@ -6,7 +6,7 @@ import net.ayataka.kordis.DiscordClient
 
 fun main(args: Array<String>) {
     runBlocking {
-        DiscordClient().connect(args[0])
+        DiscordClient(token = args[0]).connect()
         delay(99999999999999)
     }
 }

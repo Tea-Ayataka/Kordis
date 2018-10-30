@@ -3,6 +3,7 @@ package net.ayataka.kordis
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.content
+import net.ayataka.kordis.entity.server.ServerImpl
 import net.ayataka.kordis.event.EventManager
 import net.ayataka.kordis.rest.Endpoint
 import net.ayataka.kordis.rest.RestClient
@@ -19,6 +20,7 @@ class DiscordClient(val token: String, val shard: Int = 0, val maxShards: Int = 
         private set
 
     val eventManager = EventManager()
+    val servers = mutableListOf<ServerImpl>()
 
     suspend fun connect() {
         if (status != ConnectionStatus.DISCONNECTED) {
