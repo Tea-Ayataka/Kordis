@@ -37,8 +37,6 @@ class GatewayClient(
     @Volatile
     private var isHeartbeatAckReceived = false
     private var heartbeatTask: Job? = null
-    private var memberChunkQueueTask: Job? = null
-
     private val sendQueue = ConcurrentLinkedQueue<String>()
     private val rateLimiter = RateLimiter(60.seconds(), 100) // The actual limit is 120
 
@@ -49,7 +47,7 @@ class GatewayClient(
             "limit" to 0
         })
 
-        delay(1.seconds())
+        delay(500)
     }
 
     private val handlers = listOf(
@@ -86,13 +84,13 @@ class GatewayClient(
     )
 
     init {
-        launch(newSingleThreadContext("WebSocket Packet Dispatcher")) {
-            while (true) {
-                if (isClosing || isClosed || rateLimiter.isLimited()) {
-                    continue
-                }
+        timer(30, false, CoroutineName("WebSocket Packet Dispatcher")) {
+            if (isClosing || isClosed || rateLimiter.isLimited()) {
+                return@timer
+            }
 
-                val json = sendQueue.poll() ?: continue
+            while (true) {
+                val json = sendQueue.poll() ?: return@timer
                 send(json)
                 rateLimiter.increment()
                 LOGGER.debug("Sent: $json")

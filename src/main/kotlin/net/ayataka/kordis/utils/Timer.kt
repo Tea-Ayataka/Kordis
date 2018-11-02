@@ -2,9 +2,11 @@ package net.ayataka.kordis.utils
 
 import kotlinx.coroutines.*
 import net.ayataka.kordis.LOGGER
+import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.system.measureTimeMillis
 
-fun CoroutineScope.timer(interval: Long, fixedRate: Boolean = true, action: suspend TimerScope.() -> Unit): Job {
+fun CoroutineScope.timer(interval: Long, fixedRate: Boolean = true, context: CoroutineContext = EmptyCoroutineContext, action: suspend TimerScope.() -> Unit): Job {
     return launch {
         val scope = TimerScope()
 
