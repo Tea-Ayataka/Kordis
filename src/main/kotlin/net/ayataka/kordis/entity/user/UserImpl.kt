@@ -1,24 +1,22 @@
 package net.ayataka.kordis.entity.user
 
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.content
+import kotlinx.serialization.json.int
+import kotlinx.serialization.json.long
 import net.ayataka.kordis.DiscordClient
+import net.ayataka.kordis.entity.DiscordEntity
 
-class UserImpl(override val client: DiscordClient, json: JsonObject) : User {
-    private var _id: Long? = null
-    private var _name: String? = null
-    private var _discriminator: Int? = null
-
-    override val id get() = _id!!
-    override val name get() = _name!!
-    override val discriminator get() = _discriminator!!
+class UserImpl(client: DiscordClient, json: JsonObject) : User, DiscordEntity(client, json["id"].long) {
+    override var name = ""
+    override var discriminator = -1
 
     init {
-        update(json)
+        name = json["username"].content
+        discriminator = json["discriminator"].int
     }
 
     fun update(json: JsonObject) {
-        _id = json["id"].primitive.long
-        _name = "test"
-        _discriminator = 111
+
     }
 }
