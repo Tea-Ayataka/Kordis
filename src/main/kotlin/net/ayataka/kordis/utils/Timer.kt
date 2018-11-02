@@ -7,7 +7,7 @@ import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.system.measureTimeMillis
 
 fun CoroutineScope.timer(interval: Long, fixedRate: Boolean = true, context: CoroutineContext = EmptyCoroutineContext, action: suspend TimerScope.() -> Unit): Job {
-    return launch {
+    return launch(context) {
         val scope = TimerScope()
 
         while (true) {
