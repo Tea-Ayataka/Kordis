@@ -85,11 +85,11 @@ class GatewayClient(
 
     init {
         timer(30, false, CoroutineName("WebSocket Packet Dispatcher")) {
-            if (isClosing || isClosed || rateLimiter.isLimited()) {
+            if (isClosing || isClosed) {
                 return@timer
             }
 
-            while (true) {
+            while (!rateLimiter.isLimited()) {
                 val json = sendQueue.poll() ?: return@timer
                 send(json)
                 rateLimiter.increment()

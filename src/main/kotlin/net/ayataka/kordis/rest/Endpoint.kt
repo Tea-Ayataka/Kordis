@@ -3,6 +3,7 @@ package net.ayataka.kordis.rest
 import io.ktor.http.HttpMethod
 
 const val BASE = "https://discordapp.com/api/v6"
+private val MAJOR_RATELIMIT_PARAMETERS = arrayOf("channel_id", "guild_id", "webhook_id")
 
 enum class Endpoint(val method: HttpMethod, val path: String) {
     // Audit Log
@@ -114,9 +115,18 @@ enum class Endpoint(val method: HttpMethod, val path: String) {
 
     fun format(args: Map<String, Any>? = null): FormattedEndPoint {
         var path = this.path
-        args?.forEach { path = path.replace("{${it.key}}", it.value.toString()) }
-        return FormattedEndPoint(method, BASE + path)
+        val majorParams = mutableListOf<String>()
+
+        args?.forEach {
+            path = path.replace("{${it.key}}", it.value.toString())
+
+            if (it.key in MAJOR_RATELIMIT_PARAMETERS) {
+                majorParams.add(it.value.toString())
+            }
+        }
+
+        return FormattedEndPoint(method, BASE + path, this, majorParams)
     }
 }
 
-data class FormattedEndPoint(val method: HttpMethod, val url: String)
+data class FormattedEndPoint(val method: HttpMethod, val url: String, val endpoint: Endpoint, val majorParams: List<String>)

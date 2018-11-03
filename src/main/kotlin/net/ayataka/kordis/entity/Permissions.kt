@@ -51,7 +51,7 @@ enum class Permission(val bitmask: Int, val desciption: String) {
     USE_EXTERNAL_EMOJIS(0x00040000, "Use External Emojis"),
     ADD_REACTIONS(0x00000040, "Add Reactions"),
 
-    // Voice Permissions
+   // Voice Permissions
     CONNECT(0x00100000, "Connect"),
     SPEAK(0x00200000, "Speak"),
     MUTE_MEMBERS(0x00400000, "Mute Members"),
