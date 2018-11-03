@@ -4,6 +4,7 @@ import io.ktor.client.HttpClient
 import io.ktor.client.call.call
 import io.ktor.client.call.receive
 import io.ktor.client.features.defaultRequest
+import io.ktor.client.features.feature
 import io.ktor.client.features.json.JsonFeature
 import io.ktor.client.request.header
 import io.ktor.client.request.url
@@ -13,6 +14,7 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.future.future
 import kotlinx.serialization.json.*
 import net.ayataka.kordis.DiscordClient
 import net.ayataka.kordis.LOGGER
