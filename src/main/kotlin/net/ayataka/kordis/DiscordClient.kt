@@ -1,7 +1,6 @@
 package net.ayataka.kordis
 
 import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.content
 import net.ayataka.kordis.entity.server.ServerImpl
@@ -23,9 +22,9 @@ class DiscordClient(val token: String, val shard: Int = 0, val maxShards: Int = 
         private set
 
     val eventManager = EventManager()
-    val servers = mutableListOf<ServerImpl>()
 
-    val userCache = ConcurrentHashMap<Long, User>()
+    val servers = ConcurrentHashMap<Long, ServerImpl>()
+    val users = ConcurrentHashMap<Long, User>()
 
     suspend fun connect() {
         if (status != ConnectionStatus.DISCONNECTED) {

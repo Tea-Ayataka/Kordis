@@ -4,7 +4,6 @@ import io.ktor.client.HttpClient
 import io.ktor.client.call.call
 import io.ktor.client.call.receive
 import io.ktor.client.features.defaultRequest
-import io.ktor.client.features.json.JsonFeature
 import io.ktor.client.request.header
 import io.ktor.client.request.url
 import io.ktor.client.response.readText
@@ -24,7 +23,6 @@ import java.util.concurrent.TimeoutException
 class RestClient(private val discordClient: DiscordClient) {
     private val rateLimiter = InternalRateLimiter()
     private val httpClient = HttpClient {
-        install(JsonFeature)
         defaultRequest {
             header(HttpHeaders.Authorization, "Bot ${discordClient.token}")
             header(HttpHeaders.UserAgent, "DiscordBot (https://github.com/Tea-Ayataka/Kordis, development)")
@@ -57,7 +55,7 @@ class RestClient(private val discordClient: DiscordClient) {
                 }
 
                 // Handle rate limits
-                if (call.response.status.value == 429) {
+                if (call.response.status.value == HttpStatusCode.TooManyRequests.value) {
                     if (json == null) {
                         // When get rate limited without body
                         throw RateLimitedException()
@@ -76,7 +74,7 @@ class RestClient(private val discordClient: DiscordClient) {
                     return@repeat
                 }
 
-                if (call.response.status == HttpStatusCode.GatewayTimeout) {
+                if (call.response.status.value == HttpStatusCode.GatewayTimeout.value) {
                     throw TimeoutException() // Retry
                 }
 
@@ -89,7 +87,7 @@ class RestClient(private val discordClient: DiscordClient) {
                     val rateLimitEnds = call.response.headers["X-RateLimit-Reset"]!!.toLong() * 1000
                     rateLimiter.setRateLimit(endPoint, rateLimit)
                     rateLimiter.setRateLimitEnds(endPoint, rateLimitEnds)
-                    LOGGER.info("RateLimit: $rateLimit, Remaining: ${call.response.headers["X-RateLimit-Remaining"]}, Ends: $rateLimitEnds")
+                    LOGGER.trace("RateLimit: $rateLimit, Remaining: ${call.response.headers["X-RateLimit-Remaining"]}, Ends: $rateLimitEnds")
                 }
 
                 if (json == null) {

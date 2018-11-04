@@ -5,7 +5,7 @@ import net.ayataka.kordis.entity.Entity
 interface User : Entity {
     val avatarId: String
     val name: String
-    val discriminator: Int
+    val discriminator: String
 
     val tag: String
         get() = "$name#$discriminator"

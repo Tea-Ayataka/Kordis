@@ -44,4 +44,8 @@ class RoleImpl(client: DiscordClient, json: JsonObject) : Role, DiscordEntity(cl
 
         // update
     }
+
+    override fun toString(): String {
+        return "RoleImpl(name='$name', permissions=$permissions, color=$color, position=$position, isHoisted=$isHoisted, isManaged=$isManaged, isMentionable=$isMentionable)"
+    }
 }

@@ -5,15 +5,16 @@ buildscript {
     repositories {
         jcenter()
         mavenCentral()
-        maven { url 'https://dl.bintray.com/kotlin/kotlin-eap' }
     }
 
     dependencies {
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        classpath "org.jetbrains.kotlin:kotlin-serialization:$kotlin_version"
     }
 }
 
 apply plugin: 'kotlin'
+apply plugin: 'kotlinx-serialization'
 apply plugin: 'application'
 
 group 'net.ayataka'
@@ -22,7 +23,6 @@ version '0.0.1'
 repositories {
     mavenLocal()
     jcenter()
-    maven { url 'https://dl.bintray.com/kotlin/kotlin-eap' }
     maven { url 'https://kotlin.bintray.com/ktor' }
     maven { url 'https://kotlin.bintray.com/kotlinx' }
     maven { url 'https://oss.sonatype.org/content/repositories/snapshots/' }
@@ -33,10 +33,8 @@ dependencies {
     
     compile "io.ktor:ktor-client-core:$ktor_version"
     compile "io.ktor:ktor-client-core-jvm:$ktor_version"
-    compile "io.ktor:ktor-client-websocket:$ktor_version"
     compile "io.ktor:ktor-client-cio:$ktor_version"
-    compile "io.ktor:ktor-client-json-jvm:$ktor_version"
-    compile "io.ktor:ktor-client-gson:$ktor_version"
+    compile "org.jetbrains.kotlinx:kotlinx-serialization-runtime:0.9.0"
     compile "org.java-websocket:Java-WebSocket:1.3.9"
 
     compile 'org.apache.logging.log4j:log4j-core:2.11.0'

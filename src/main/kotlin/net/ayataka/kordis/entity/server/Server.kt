@@ -70,4 +70,6 @@ interface Server : Entity {
     val voiceChannels: Collection<VoiceChannel>
 
     val categories: Collection<Category>
+
+    fun getRoleById(id: Long): Role?
 }
