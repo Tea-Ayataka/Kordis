@@ -1,6 +1,7 @@
 package net.ayataka.kordis
 
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.content
 import net.ayataka.kordis.entity.server.ServerImpl

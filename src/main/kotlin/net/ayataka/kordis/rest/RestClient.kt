@@ -19,10 +19,10 @@ import kotlinx.serialization.json.boolean
 import kotlinx.serialization.json.long
 import net.ayataka.kordis.DiscordClient
 import net.ayataka.kordis.LOGGER
-import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeoutException
 
 class RestClient(private val discordClient: DiscordClient) {
+    private val rateLimiter = InternalRateLimiter()
     private val httpClient = HttpClient {
         install(JsonFeature)
         defaultRequest {
@@ -31,37 +31,12 @@ class RestClient(private val discordClient: DiscordClient) {
         }
     }
 
-    // Internal rate limit handler
-    @Volatile
-    private var globalRateLimitEnds: Long = 0L
-
-    private val rateLimits = ConcurrentHashMap<String, Long>()
-
-    private fun getRateLimit(endPoint: FormattedEndPoint): Long? {
-        return rateLimits[endPoint.endpoint.path + endPoint.majorParams.joinToString()]
-    }
-
-    private fun setRateLimit(endPoint: FormattedEndPoint, delay: Long) {
-        val key = endPoint.endpoint.path + endPoint.majorParams.joinToString()
-        rateLimits[key] = Math.max(rateLimits[key] ?: 0, System.currentTimeMillis() + delay)
-    }
-
     suspend fun request(endPoint: FormattedEndPoint, data: JsonObject? = null, rateLimitRetries: Int = 50): JsonObject {
         repeat(rateLimitRetries) {
-            // Handle global rate-limit
-            if (globalRateLimitEnds > System.currentTimeMillis()) {
-                delay(globalRateLimitEnds - System.currentTimeMillis())
-            }
-
-            // Handle per-route rate limit
-            getRateLimit(endPoint)?.let {
-                if (it > System.currentTimeMillis()) {
-                    delay(it - System.currentTimeMillis())
-                }
-            }
+            rateLimiter.wait(endPoint)
 
             try {
-                LOGGER.debug("Request: ${endPoint.url}, method: ${endPoint.method.value}, data: $data, retry: $it / $rateLimitRetries")
+                LOGGER.debug("Request: ${endPoint.url}, method: ${endPoint.method.value}, data: $data, retry: $it / $rateLimitRetries : ${System.currentTimeMillis() / 1000}")
                 val call = httpClient.call {
                     method = endPoint.method
                     url(endPoint.url)
@@ -77,8 +52,12 @@ class RestClient(private val discordClient: DiscordClient) {
                     null
                 }
 
+                if (call.response.status != HttpStatusCode.OK) {
+                    rateLimiter.incrementRateLimitRemaining(endPoint)
+                }
+
                 // Handle rate limits
-                if (call.response.status == HttpStatusCode.TooManyRequests) {
+                if (call.response.status.value == 429) {
                     if (json == null) {
                         // When get rate limited without body
                         throw RateLimitedException()
@@ -87,14 +66,14 @@ class RestClient(private val discordClient: DiscordClient) {
                     val delay = json["retry_after"].long
 
                     if (json["global"].boolean) {
-                        globalRateLimitEnds = System.currentTimeMillis() + delay
-                        LOGGER.info("Hit global rate limit ($delay ms)")
+                        rateLimiter.setGlobalRateLimitEnds(delay)
                     } else {
-                        setRateLimit(endPoint, delay)
-                        LOGGER.info("Hit rate limit ($delay ms)")
+                        rateLimiter.setRateLimitEnds(endPoint, System.currentTimeMillis() + delay)
+                        LOGGER.warn("HIT ACTUAL RATE LIMIT! MAKE SURE YOUR COMPUTER'S CLOCK IS CORRECT! ($delay ms)")
                     }
 
                     delay(delay)
+                    return@repeat
                 }
 
                 if (call.response.status == HttpStatusCode.GatewayTimeout) {
@@ -105,10 +84,12 @@ class RestClient(private val discordClient: DiscordClient) {
                     throw DiscordException("Discord API returned status code ${call.response.status.value} (${call.response.status.description}) with body ${json?.toString()}")
                 }
 
-                if (call.response.headers["X-RateLimit-Remaining"] == "0") {
-                    val rateLimitReset = call.response.headers["X-RateLimit-Reset"]!!.toLong() * 1000
-                    setRateLimit(endPoint, rateLimitReset)
-                    LOGGER.info("It will hit rate limit in future (${rateLimitReset - System.currentTimeMillis()}ms)")
+                if (call.response.headers["X-RateLimit-Limit"] != null && call.response.headers["X-RateLimit-Reset"] != null) {
+                    val rateLimit = call.response.headers["X-RateLimit-Limit"]!!.toInt()
+                    val rateLimitEnds = call.response.headers["X-RateLimit-Reset"]!!.toLong() * 1000
+                    rateLimiter.setRateLimit(endPoint, rateLimit)
+                    rateLimiter.setRateLimitEnds(endPoint, rateLimitEnds)
+                    LOGGER.info("RateLimit: $rateLimit, Remaining: ${call.response.headers["X-RateLimit-Remaining"]}, Ends: $rateLimitEnds")
                 }
 
                 if (json == null) {

@@ -129,4 +129,12 @@ enum class Endpoint(val method: HttpMethod, val path: String) {
     }
 }
 
-data class FormattedEndPoint(val method: HttpMethod, val url: String, val endpoint: Endpoint, val majorParams: List<String>)
+data class FormattedEndPoint(val method: HttpMethod, val url: String, val endpoint: Endpoint, val majorParams: List<String>) {
+    fun majorHash(): Int {
+        var result = method.hashCode()
+        //result = 31 * result + url.hashCode()
+        result = 31 * result + endpoint.hashCode()
+        result = 31 * result + majorParams.hashCode()
+        return result
+    }
+}
