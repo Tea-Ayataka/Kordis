@@ -2,28 +2,17 @@ package net.ayataka.kordis.entity.server.channel
 
 import kotlinx.serialization.json.*
 import net.ayataka.kordis.DiscordClientImpl
-import net.ayataka.kordis.entity.DiscordEntity
-import net.ayataka.kordis.entity.message.EmbedBuilder
-import net.ayataka.kordis.entity.message.Message
-import net.ayataka.kordis.entity.message.MessageImpl
 import net.ayataka.kordis.entity.server.Server
-import net.ayataka.kordis.entity.server.permission.RolePermissionOverwrite
-import net.ayataka.kordis.entity.server.permission.UserPermissionOverwrite
 
 class ServerTextChannelImpl(
-        override val server: Server,
-        clientImpl: DiscordClientImpl,
+        server: Server,
+        client: DiscordClientImpl,
         json: JsonObject
-) : ServerTextChannel, DiscordEntity(clientImpl, json["id"].long) {
-
-    override var name = ""
+) : ServerTextChannel, ServerChannelImpl(server, client, json["id"].long) {
     override var topic: String? = null
     override var isNsfw = false
     override var rateLimitPerUser = -1
-    override var position = -1
     override var category: Category? = null
-    override val userPermissionOverwrites = mutableSetOf<UserPermissionOverwrite>()
-    override val rolePermissionsOverwrites = mutableSetOf<RolePermissionOverwrite>()
 
     init {
         update(json)
@@ -38,13 +27,11 @@ class ServerTextChannelImpl(
         json["parent_id"].longOrNull?.let {
             category = server.categories.find(it)
         }
+
+        loadPermissionOverwrites(json)
     }
 
-    override suspend fun send(text: String): Message {
-        return MessageImpl()
-    }
-
-    override suspend fun send(block: EmbedBuilder.() -> Unit): Message {
-        return MessageImpl()
+    override fun toString(): String {
+        return "ServerTextChannelImpl(id=$id, server=$server, name='$name', topic=$topic, isNsfw=$isNsfw, rateLimitPerUser=$rateLimitPerUser, position=$position, category=$category, userPermissionOverwrites=$userPermissionOverwrites, rolePermissionOverwrites=$rolePermissionOverwrites)"
     }
 }

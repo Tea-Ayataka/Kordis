@@ -3,10 +3,12 @@ package net.ayataka.kordis.rest
 import io.ktor.client.HttpClient
 import io.ktor.client.call.call
 import io.ktor.client.call.receive
+import io.ktor.client.engine.apache.Apache
 import io.ktor.client.features.defaultRequest
 import io.ktor.client.request.header
 import io.ktor.client.request.url
 import io.ktor.client.response.readText
+import io.ktor.content.TextContent
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
@@ -22,7 +24,7 @@ import java.util.concurrent.TimeoutException
 
 class RestClient(private val discordClient: DiscordClientImpl) {
     private val rateLimiter = InternalRateLimiter()
-    private val httpClient = HttpClient {
+    private val httpClient = HttpClient(Apache) {
         defaultRequest {
             header(HttpHeaders.Authorization, "Bot ${discordClient.token}")
             header(HttpHeaders.UserAgent, "DiscordBot (https://github.com/Tea-Ayataka/Kordis, development)")
@@ -39,7 +41,7 @@ class RestClient(private val discordClient: DiscordClientImpl) {
                     method = endPoint.method
                     url(endPoint.url)
                     if (data != null) {
-                        body = data
+                        body = TextContent(data.toString(), ContentType.Application.Json)
                     }
                 }
 
@@ -50,7 +52,7 @@ class RestClient(private val discordClient: DiscordClientImpl) {
                     null
                 }
 
-                if (call.response.status != HttpStatusCode.OK) {
+                if (call.response.status.value != HttpStatusCode.OK.value) {
                     rateLimiter.incrementRateLimitRemaining(endPoint)
                 }
 
@@ -78,7 +80,7 @@ class RestClient(private val discordClient: DiscordClientImpl) {
                     throw TimeoutException() // Retry
                 }
 
-                if (call.response.status != HttpStatusCode.OK) {
+                if (call.response.status.value != HttpStatusCode.OK.value) {
                     throw DiscordException("Discord API returned status code ${call.response.status.value} (${call.response.status.description}) with body ${json?.toString()}")
                 }
 
@@ -87,7 +89,7 @@ class RestClient(private val discordClient: DiscordClientImpl) {
                     val rateLimitEnds = call.response.headers["X-RateLimit-Reset"]!!.toLong() * 1000
                     rateLimiter.setRateLimit(endPoint, rateLimit)
                     rateLimiter.setRateLimitEnds(endPoint, rateLimitEnds)
-                    LOGGER.trace("RateLimit: $rateLimit, Remaining: ${call.response.headers["X-RateLimit-Remaining"]}, Ends: $rateLimitEnds")
+                    LOGGER.debug("RateLimit: $rateLimit, Remaining: ${call.response.headers["X-RateLimit-Remaining"]}, Ends: $rateLimitEnds")
                 }
 
                 if (json == null) {

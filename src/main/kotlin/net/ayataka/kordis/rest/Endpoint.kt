@@ -3,7 +3,7 @@ package net.ayataka.kordis.rest
 import io.ktor.http.HttpMethod
 
 const val BASE = "https://discordapp.com/api/v6"
-private val MAJOR_RATELIMIT_PARAMETERS = arrayOf("channel_id", "guild_id", "webhook_id")
+private val MAJOR_RATELIMIT_PARAMETERS = arrayOf("channel.id", "guild.id", "webhook.id")
 
 enum class Endpoint(val method: HttpMethod, val path: String) {
     // Audit Log

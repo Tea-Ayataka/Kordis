@@ -1,5 +1,6 @@
 package net.ayataka.kordis.entity.message
 
+import kotlinx.serialization.json.json
 import java.awt.Color
 import java.time.Instant
 
@@ -27,6 +28,10 @@ class EmbedBuilder {
 
     fun field(name: String? = null, value: String? = null, inline: Boolean = false) {
         fields.add(Field(name, value, inline))
+    }
+
+    fun build() = json {
+
     }
 }
 

@@ -1,6 +1,8 @@
 package net.ayataka.kordis.test
 
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import net.ayataka.kordis.Kordis
 import net.ayataka.kordis.event.EventListener
@@ -15,7 +17,7 @@ class TestBot {
         val client = Kordis.create {
             this.token = token
         }
-        
+
         client.addListener(this)
         client.connect()
 
@@ -31,12 +33,19 @@ class TestBot {
     }
 
     @EventListener
-    fun onServerReady(event: ServerReadyEvent) {
+    suspend fun onServerReady(event: ServerReadyEvent) {
         println("Server Ready! ${event.server.name}")
         println("Members:")
         event.server.members.find(9999999)
         event.server.members.forEach {
             println("Name: ${it.tag}, Roles: ${it.roles.joinToString()}}")
         }
+        println("Text Channels:")
+        event.server.textChannels.forEach {
+            println(it)
+        }
+
+        val channel = event.server.textChannels.findByName("test")!!
+        val secondChannel = event.server.textChannels.findByName("t")!!
     }
 }

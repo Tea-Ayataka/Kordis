@@ -22,4 +22,8 @@ class PermissionSet(compiled: Int = 0) : MutableCollection<Permission> {
         }
         return result
     }
+
+    override fun toString(): String {
+        return "PermissionSet(perms=${perms.joinToString()})"
+    }
 }

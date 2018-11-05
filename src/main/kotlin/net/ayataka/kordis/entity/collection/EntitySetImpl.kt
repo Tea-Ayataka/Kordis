@@ -3,7 +3,7 @@ package net.ayataka.kordis.entity.collection
 import net.ayataka.kordis.entity.Entity
 import java.util.concurrent.ConcurrentHashMap
 
-open class EntityListImpl<T : Entity> : IterableEntityList<T>, MutableCollection<T> {
+open class EntitySetImpl<T : Entity> : IterableEntitySet<T>, MutableCollection<T> {
     protected val entities = ConcurrentHashMap<Long, T>()
 
     override val size: Int

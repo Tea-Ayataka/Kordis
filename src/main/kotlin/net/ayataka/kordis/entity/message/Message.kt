@@ -1,4 +1,6 @@
 package net.ayataka.kordis.entity.message
 
-interface Message {
+import net.ayataka.kordis.entity.Entity
+
+interface Message : Entity {
 }

@@ -1,8 +1,9 @@
 package net.ayataka.kordis
 
 import kotlinx.serialization.json.content
-import net.ayataka.kordis.entity.collection.ServerListImpl
-import net.ayataka.kordis.entity.collection.UserListImpl
+import net.ayataka.kordis.entity.collection.NameableEntitySetImpl
+import net.ayataka.kordis.entity.collection.UserSetImpl
+import net.ayataka.kordis.entity.server.Server
 import net.ayataka.kordis.event.EventManager
 import net.ayataka.kordis.rest.Endpoint
 import net.ayataka.kordis.rest.RestClient
@@ -20,8 +21,8 @@ class DiscordClientImpl(val token: String, val shard: Int = 0, val maxShards: In
 
     val eventManager = EventManager()
 
-    override val servers = ServerListImpl()
-    override val users = UserListImpl()
+    override val servers = NameableEntitySetImpl<Server>()
+    override val users = UserSetImpl()
 
     override suspend fun connect() {
         if (status != ConnectionStatus.DISCONNECTED) {

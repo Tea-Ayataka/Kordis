@@ -1,24 +1,26 @@
 package net.ayataka.kordis.entity.server
 
-import net.ayataka.kordis.entity.collection.*
 import net.ayataka.kordis.entity.Entity
+import net.ayataka.kordis.entity.Nameable
 import net.ayataka.kordis.entity.channel.TextChannel
+import net.ayataka.kordis.entity.collection.MemberSet
+import net.ayataka.kordis.entity.collection.NameableIterableEntitySet
 import net.ayataka.kordis.entity.server.channel.Category
 import net.ayataka.kordis.entity.server.channel.ServerTextChannel
 import net.ayataka.kordis.entity.server.channel.ServerVoiceChannel
 import net.ayataka.kordis.entity.server.enums.*
 import net.ayataka.kordis.entity.user.User
 
-interface Server : Entity {
+interface Server : Nameable, Entity {
     /**
      * The name of this server
      */
-    val name: String
+    override val name: String
 
     /**
      * The members in this server
      */
-    val members: MemberList
+    val members: MemberSet
 
     /**
      * The hash id of the server icon
@@ -60,17 +62,17 @@ interface Server : Entity {
 
     val explicitContentFilterLevel: ExplicitContentFilterLevel
 
-    val roles: NameableEntityList<Role>
+    val roles: NameableIterableEntitySet<Role>
 
-    val emojis: NameableEntityList<Emoji>
+    val emojis: NameableIterableEntitySet<Emoji>
 
     val mfaLevel: MfaLevel
 
-    val textChannels: NameableEntityList<ServerTextChannel>
+    val textChannels: NameableIterableEntitySet<ServerTextChannel>
 
-    val voiceChannels: NameableEntityList<ServerVoiceChannel>
+    val voiceChannels: NameableIterableEntitySet<ServerVoiceChannel>
 
-    val categories: NameableEntityList<Category>
+    val categories: NameableIterableEntitySet<Category>
 
     suspend fun edit(
             //name: String = client.serverMap[id]!!.name,

@@ -1,9 +1,9 @@
 package net.ayataka.kordis.entity.server.permission
 
-import net.ayataka.kordis.entity.server.Role
+import net.ayataka.kordis.entity.user.User
 
 data class UserPermissionOverwrite(
-        val role: Role,
+        val user: User,
         val allow: PermissionSet,
         val deny: PermissionSet
 )

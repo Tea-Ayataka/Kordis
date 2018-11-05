@@ -55,7 +55,8 @@ class InternalRateLimiter {
                     val rateLimitEnds = rateLimitEnds[endPoint.majorHash()]!!
 
                     // Wait until it's reset
-                    delay((rateLimitEnds - System.currentTimeMillis()))
+                    LOGGER.debug("Wait ${rateLimitEnds - System.currentTimeMillis()}")
+                    delay(rateLimitEnds - System.currentTimeMillis())
 
                     // Reset
                     rateLimitRemaining[endPoint.majorHash()] = rateLimits[endPoint.majorHash()]!!

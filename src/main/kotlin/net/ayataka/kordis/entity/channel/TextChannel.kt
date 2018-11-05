@@ -5,6 +5,11 @@ import net.ayataka.kordis.entity.message.EmbedBuilder
 import net.ayataka.kordis.entity.message.Message
 
 interface TextChannel : Entity {
-    suspend fun send(text: String): Message
-    suspend fun send(block: EmbedBuilder.() -> Unit): Message
+    suspend fun send(text: String): Message {
+        throw UnsupportedOperationException()
+    }
+
+    suspend fun send(block: EmbedBuilder.() -> Unit): Message {
+        throw UnsupportedOperationException()
+    }
 }

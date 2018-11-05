@@ -5,11 +5,11 @@ import kotlinx.serialization.json.content
 import kotlinx.serialization.json.int
 import kotlinx.serialization.json.long
 import net.ayataka.kordis.DiscordClientImpl
-import net.ayataka.kordis.entity.collection.MemberListImpl
 import net.ayataka.kordis.entity.DiscordEntity
-import net.ayataka.kordis.entity.server.channel.Category
 import net.ayataka.kordis.entity.channel.TextChannel
-import net.ayataka.kordis.entity.server.channel.ServerVoiceChannel
+import net.ayataka.kordis.entity.collection.MemberSetImpl
+import net.ayataka.kordis.entity.collection.NameableEntitySetImpl
+import net.ayataka.kordis.entity.server.channel.*
 import net.ayataka.kordis.entity.server.enums.*
 import net.ayataka.kordis.entity.user.MemberImpl
 import net.ayataka.kordis.entity.user.UserImpl
@@ -17,24 +17,27 @@ import net.ayataka.kordis.entity.user.UserImpl
 class ServerImpl(client: DiscordClientImpl, json: JsonObject) : Server, DiscordEntity(client, json["id"].long) {
     private var ownerId: Long = -1
 
+    override var name = ""
     override var iconHash: String? = null
     override var splashHash: String? = null
-    override val owner
-        get() = client.users.find(ownerId)
+
     override var region = Region.UNKNOWN
     override var afkChannel: TextChannel? = null
     override var afkTimeout = -1
     override var verificationLevel = VerificationLevel.NONE
     override var defaultMessageNotificationLevel = MessageNotificationLevel.ALL_MESSAGES
     override var explicitContentFilterLevel = ExplicitContentFilterLevel.DISABLED
-    override var roles = mutableSetOf<Role>()
-    override var emojis = mutableSetOf<Emoji>()
     override var mfaLevel = MfaLevel.NONE
-    override var textChannels = mutableSetOf<TextChannel>()
-    override var voiceChannels = mutableSetOf<ServerVoiceChannel>()
-    override var categories = mutableSetOf<Category>()
-    override var name = ""
-    override val members = MemberListImpl()
+
+    override val roles = NameableEntitySetImpl<Role>()
+    override val emojis = NameableEntitySetImpl<Emoji>()
+    override val textChannels = NameableEntitySetImpl<ServerTextChannel>()
+    override val voiceChannels = NameableEntitySetImpl<ServerVoiceChannel>()
+    override val categories = NameableEntitySetImpl<Category>()
+    override val members = MemberSetImpl()
+
+    override val owner
+        get() = client.users.find(ownerId)
 
     init {
         update(json)
@@ -53,13 +56,21 @@ class ServerImpl(client: DiscordClientImpl, json: JsonObject) : Server, DiscordE
         iconHash = json["icon"].content
         afkTimeout = json["afk_timeout"].int
 
-        roles = json["roles"].jsonArray.map { RoleImpl(client, it.jsonObject) }.toMutableSet()
+        roles.clear()
+        roles.addAll(json["roles"].jsonArray.map { RoleImpl(client, it.jsonObject) })
 
         members.clear()
         members.addAll(json["members"].jsonArray.map { MemberImpl(client, it.jsonObject, this, UserImpl(client, it.jsonObject["user"].jsonObject)) })
-    }
 
-    override fun getRoleById(id: Long): Role? {
-        return roles.find { it.id == id }
+        val channels = json["channels"].jsonArray
+        categories.clear()
+        channels.filter { it.jsonObject["type"].int == ChannelType.GUILD_CATEGORY.id }.forEach {
+            categories.add(CategoryImpl(this, client, it.jsonObject))
+        }
+
+        textChannels.clear()
+        channels.filter { it.jsonObject["type"].int == ChannelType.GUILD_TEXT.id }.filter {
+            textChannels.add(ServerTextChannelImpl(this, client, it.jsonObject))
+        }
     }
 }
