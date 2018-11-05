@@ -4,21 +4,9 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.json
 
 class MessageBuilder {
-    private var content = ""
-    private var tts = false
-    private var embed: JsonObject? = null
-
-    fun content(value: String) {
-        content = value
-    }
-
-    fun embed(value: JsonObject) {
-        embed = value
-    }
-
-    fun tts(value: Boolean) {
-        tts = value
-    }
+    var content = ""
+    var tts = false
+    var embed: JsonObject? = null
 
     fun build() = json {
         "content" to content

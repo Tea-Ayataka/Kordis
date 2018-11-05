@@ -1,6 +1,5 @@
 package net.ayataka.kordis.entity.server.channel
 
-import kotlinx.serialization.json.JsonObject
 import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.entity.channel.TextChannel
 import net.ayataka.kordis.entity.message.EmbedBuilder
@@ -24,29 +23,22 @@ interface ServerTextChannel : ServerChannel, TextChannel {
     val category: Category?
 
     override suspend fun send(text: String): Message {
-        return send(
-                MessageBuilder().apply {
-                    content(text)
-                }.build()
-        )
+        return sendMessage {
+            content = text
+        }
     }
 
     override suspend fun send(block: EmbedBuilder.() -> Unit): Message {
-        val builder = EmbedBuilder()
-        block(builder)
-
-        return send(
-                MessageBuilder().apply {
-                    embed(builder.build())
-                }.build()
-        )
+        return sendMessage {
+            embed = EmbedBuilder().apply(block).build()
+        }
     }
 
-    private suspend fun send(json: JsonObject): Message {
+    private suspend fun sendMessage(block: MessageBuilder.() -> Unit): Message {
         val client = client as DiscordClientImpl
         val response = client.rest.request(
                 Endpoint.CREATE_MESSAGE.format(mapOf("channel.id" to id)),
-                json
+                MessageBuilder().apply(block).build()
         )
 
         return MessageImpl(client, response)

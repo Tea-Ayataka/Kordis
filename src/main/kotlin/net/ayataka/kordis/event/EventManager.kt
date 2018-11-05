@@ -60,6 +60,7 @@ class EventManager {
                         item.second.callSuspend(item.first, event)
                     } catch (ex: Exception) {
                         println("A exception occurred during invoking ${item.first::class.qualifiedName}::${item.second.name}")
+                        ex.printStackTrace()
                         ex.cause?.printStackTrace()
                     }
                 }

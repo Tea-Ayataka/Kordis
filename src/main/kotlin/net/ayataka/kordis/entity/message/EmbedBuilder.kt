@@ -1,11 +1,13 @@
 package net.ayataka.kordis.entity.message
 
 import kotlinx.serialization.json.json
+import kotlinx.serialization.json.jsonArray
 import java.awt.Color
 import java.time.Instant
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
 
 class EmbedBuilder {
-    val content: String? = null
     var title: String? = null
     var description: String? = null
     var url: String? = null
@@ -18,12 +20,12 @@ class EmbedBuilder {
 
     val fields: MutableList<Field> = mutableListOf()
 
-    fun footer(iconUrl: String? = null, text: String? = null) {
-        footer = Footer(iconUrl, text)
+    fun footer(block: Footer.() -> Unit) {
+        footer = Footer(null, null).apply { block(this) }
     }
 
-    fun author(name: String? = null, url: String? = null, iconUrl: String? = null) {
-        author = Author(name, url, iconUrl)
+    fun author(block: Author.() -> Unit) {
+        author = Author(null, null, null).apply { block(this) }
     }
 
     fun field(name: String? = null, value: String? = null, inline: Boolean = false) {
@@ -31,10 +33,38 @@ class EmbedBuilder {
     }
 
     fun build() = json {
-
+        "title" to title
+        "description" to description
+        "url" to url
+        "color" to color?.run { ((red and 0xFF) shl 16) or ((green and 0xFF) shl 8) or ((blue and 0xFF) shl 0) }
+        "timestamp" to timestamp?.run { DateTimeFormatter.ISO_DATE_TIME.format(this.atOffset(ZoneOffset.UTC)) }
+        "footer" to json {
+            "icon_url" to footer?.iconUrl
+            "text" to footer?.text
+        }
+        "thumbnail" to json {
+            "url" to thumbnailUrl
+        }
+        "image" to json {
+            "url" to imageUrl
+        }
+        "author" to json {
+            "name" to author?.name
+            "url" to author?.url
+            "icon_url" to author?.iconUrl
+        }
+        "fields" to jsonArray {
+            fields.forEach {
+                +json {
+                    "name" to it.name
+                    "value" to it.value
+                    "inline" to it.inline
+                }
+            }
+        }
     }
 }
 
-data class Field(val name: String?, val value: String?, val inline: Boolean)
-data class Footer(val iconUrl: String?, val text: String?)
-data class Author(val name: String?, val url: String?, val iconUrl: String?)
+data class Field(var name: String?, var value: String?, var inline: Boolean)
+data class Footer(var iconUrl: String?, var text: String?)
+data class Author(var name: String?, var url: String?, var iconUrl: String?)
