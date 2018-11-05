@@ -1,11 +1,12 @@
 package net.ayataka.kordis.entity.server
 
+import net.ayataka.kordis.entity.collection.*
 import net.ayataka.kordis.entity.Entity
+import net.ayataka.kordis.entity.channel.TextChannel
 import net.ayataka.kordis.entity.server.channel.Category
-import net.ayataka.kordis.entity.server.channel.TextChannel
-import net.ayataka.kordis.entity.server.channel.VoiceChannel
+import net.ayataka.kordis.entity.server.channel.ServerTextChannel
+import net.ayataka.kordis.entity.server.channel.ServerVoiceChannel
 import net.ayataka.kordis.entity.server.enums.*
-import net.ayataka.kordis.entity.user.Member
 import net.ayataka.kordis.entity.user.User
 
 interface Server : Entity {
@@ -17,7 +18,7 @@ interface Server : Entity {
     /**
      * The members in this server
      */
-    val members: Collection<Member>
+    val members: MemberList
 
     /**
      * The hash id of the server icon
@@ -59,17 +60,24 @@ interface Server : Entity {
 
     val explicitContentFilterLevel: ExplicitContentFilterLevel
 
-    val roles: Collection<Role>
+    val roles: NameableEntityList<Role>
 
-    val emojis: Collection<Emoji>
+    val emojis: NameableEntityList<Emoji>
 
     val mfaLevel: MfaLevel
 
-    val textChannels: Collection<TextChannel>
+    val textChannels: NameableEntityList<ServerTextChannel>
 
-    val voiceChannels: Collection<VoiceChannel>
+    val voiceChannels: NameableEntityList<ServerVoiceChannel>
 
-    val categories: Collection<Category>
+    val categories: NameableEntityList<Category>
 
-    fun getRoleById(id: Long): Role?
+    suspend fun edit(
+            //name: String = client.serverMap[id]!!.name,
+            //iconHash: String = client.serverMap[id],
+            // a: String = client.serverMap.elements().toList()
+
+    ) {
+
+    }
 }

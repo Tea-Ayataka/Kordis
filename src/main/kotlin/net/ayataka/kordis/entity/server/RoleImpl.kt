@@ -1,11 +1,11 @@
 package net.ayataka.kordis.entity.server
 
 import kotlinx.serialization.json.*
-import net.ayataka.kordis.DiscordClient
+import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.entity.DiscordEntity
 import java.awt.Color
 
-class RoleImpl(client: DiscordClient, json: JsonObject) : Role, DiscordEntity(client, json["id"].long) {
+class RoleImpl(client: DiscordClientImpl, json: JsonObject) : Role, DiscordEntity(client, json["id"].long) {
     @Volatile
     override var name: String = ""
     @Volatile

@@ -1,13 +1,14 @@
 package net.ayataka.kordis.entity.server
 
 import net.ayataka.kordis.entity.Entity
+import net.ayataka.kordis.entity.Nameable
 import java.awt.Color
 
-interface Role : Entity {
+interface Role : Nameable, Entity {
     /**
      * The name of this role
      */
-    val name: String
+    override val name: String
 
     /**
      * The allowed permissions of this role

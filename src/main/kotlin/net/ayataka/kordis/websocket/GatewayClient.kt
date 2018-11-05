@@ -3,7 +3,7 @@ package net.ayataka.kordis.websocket
 import kotlinx.coroutines.*
 import kotlinx.serialization.json.*
 import net.ayataka.kordis.ConnectionStatus
-import net.ayataka.kordis.DiscordClient
+import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.LOGGER
 import net.ayataka.kordis.utils.*
 import net.ayataka.kordis.websocket.handlers.channel.ChannelCreateHandler
@@ -25,7 +25,7 @@ import java.util.concurrent.ConcurrentLinkedQueue
 const val GATEWAY_VERSION = 6
 
 class GatewayClient(
-        private val client: DiscordClient,
+        private val client: DiscordClientImpl,
         endpoint: String
 ) : CoroutineScope, WebSocketClient(URI("$endpoint/?v=$GATEWAY_VERSION&encoding=json")) {
 

@@ -1,6 +1,4 @@
 package net.ayataka.kordis.entity.server.channel
 
-import net.ayataka.kordis.entity.Entity
-
-interface Category : Channel {
+interface Category : ServerChannel {
 }

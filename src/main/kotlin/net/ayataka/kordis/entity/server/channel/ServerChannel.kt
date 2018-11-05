@@ -1,6 +1,8 @@
 package net.ayataka.kordis.entity.server.channel
 
 import net.ayataka.kordis.entity.Entity
+import net.ayataka.kordis.entity.Nameable
 
-interface Channel : Entity {
+interface ServerChannel : Nameable, Entity {
+
 }

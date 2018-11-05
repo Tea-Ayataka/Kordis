@@ -1,46 +1,16 @@
 package net.ayataka.kordis
 
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
-import kotlinx.serialization.json.content
-import net.ayataka.kordis.entity.server.ServerImpl
-import net.ayataka.kordis.entity.user.User
-import net.ayataka.kordis.event.EventManager
-import net.ayataka.kordis.rest.Endpoint
-import net.ayataka.kordis.rest.RestClient
-import net.ayataka.kordis.websocket.GatewayClient
-import org.apache.logging.log4j.LogManager
-import java.util.concurrent.ConcurrentHashMap
+import net.ayataka.kordis.entity.collection.ServerList
+import net.ayataka.kordis.entity.collection.UserList
 
-val LOGGER = LogManager.getLogger()
+interface DiscordClient {
+    val status: ConnectionStatus
 
-class DiscordClient(val token: String, val shard: Int = 0, val maxShards: Int = 0) {
-    var status = ConnectionStatus.DISCONNECTED
+    val servers: ServerList
+    val users: UserList
 
-    private val rest = RestClient(this)
-    lateinit var gateway: GatewayClient
-        private set
+    suspend fun addListener(listener: Any)
+    suspend fun removeListener(listener: Any)
 
-    val eventManager = EventManager()
-
-    val servers = ConcurrentHashMap<Long, ServerImpl>()
-    val users = ConcurrentHashMap<Long, User>()
-
-    suspend fun connect() {
-        if (status != ConnectionStatus.DISCONNECTED) {
-            throw UnsupportedOperationException("")
-        }
-
-        status = ConnectionStatus.CONNECTING
-
-        // Connect to the gateway
-        gateway = GatewayClient(this, rest.request(Endpoint.GET_GATEWAY_BOT.format())["url"].content)
-        GlobalScope.launch { gateway.connectBlocking() }.join()
-
-        status = ConnectionStatus.CONNECTED
-    }
-}
-
-enum class ConnectionStatus {
-    DISCONNECTED, CONNECTING, CONNECTED, RECONNECTING
+    suspend fun connect()
 }

@@ -3,10 +3,10 @@ package net.ayataka.kordis.entity.user
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.content
 import kotlinx.serialization.json.long
-import net.ayataka.kordis.DiscordClient
+import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.entity.DiscordEntity
 
-class UserImpl(client: DiscordClient, json: JsonObject) : User, DiscordEntity(client, json["id"].long) {
+class UserImpl(client: DiscordClientImpl, json: JsonObject) : User, DiscordEntity(client, json["id"].long) {
     override var avatarId = ""
     override var name = ""
     override var discriminator = ""
@@ -15,10 +15,9 @@ class UserImpl(client: DiscordClient, json: JsonObject) : User, DiscordEntity(cl
         update(json)
 
         synchronized(client.users) {
-            if (client.users[id] != null) {
-                throw IllegalStateException("The user is already initialized")
+            if (!client.users.add(this)) {
+                throw IllegalStateException("This user is already initialized")
             }
-            client.users[id] = this
         }
     }
 

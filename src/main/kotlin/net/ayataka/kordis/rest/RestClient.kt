@@ -16,11 +16,11 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonTreeParser
 import kotlinx.serialization.json.boolean
 import kotlinx.serialization.json.long
-import net.ayataka.kordis.DiscordClient
+import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.LOGGER
 import java.util.concurrent.TimeoutException
 
-class RestClient(private val discordClient: DiscordClient) {
+class RestClient(private val discordClient: DiscordClientImpl) {
     private val rateLimiter = InternalRateLimiter()
     private val httpClient = HttpClient {
         defaultRequest {

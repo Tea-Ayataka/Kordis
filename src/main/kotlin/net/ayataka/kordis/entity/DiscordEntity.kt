@@ -1,9 +1,9 @@
 package net.ayataka.kordis.entity
 
-import net.ayataka.kordis.DiscordClient
+import net.ayataka.kordis.DiscordClientImpl
 
 abstract class DiscordEntity(
-        override val client: DiscordClient,
+        override val client: DiscordClientImpl,
         override val id: Long
 ) : Entity {
     override fun equals(other: Any?): Boolean {
