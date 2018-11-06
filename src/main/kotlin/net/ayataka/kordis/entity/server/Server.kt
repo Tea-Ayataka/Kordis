@@ -4,7 +4,7 @@ import net.ayataka.kordis.entity.Entity
 import net.ayataka.kordis.entity.Nameable
 import net.ayataka.kordis.entity.channel.TextChannel
 import net.ayataka.kordis.entity.collection.MemberSet
-import net.ayataka.kordis.entity.collection.NameableIterableEntitySet
+import net.ayataka.kordis.entity.collection.NameableEntitySet
 import net.ayataka.kordis.entity.server.channel.Category
 import net.ayataka.kordis.entity.server.channel.ServerTextChannel
 import net.ayataka.kordis.entity.server.channel.ServerVoiceChannel
@@ -62,17 +62,17 @@ interface Server : Nameable, Entity {
 
     val explicitContentFilterLevel: ExplicitContentFilterLevel
 
-    val roles: NameableIterableEntitySet<Role>
+    val roles: NameableEntitySet<Role>
 
-    val emojis: NameableIterableEntitySet<Emoji>
+    val emojis: NameableEntitySet<Emoji>
 
     val mfaLevel: MfaLevel
 
-    val textChannels: NameableIterableEntitySet<ServerTextChannel>
+    val textChannels: NameableEntitySet<ServerTextChannel>
 
-    val voiceChannels: NameableIterableEntitySet<ServerVoiceChannel>
+    val voiceChannels: NameableEntitySet<ServerVoiceChannel>
 
-    val categories: NameableIterableEntitySet<Category>
+    val categories: NameableEntitySet<Category>
 
     suspend fun edit(
             //name: String = client.serverMap[id]!!.name,

@@ -2,7 +2,7 @@ package net.ayataka.kordis.entity.server.channel
 
 import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.entity.channel.TextChannel
-import net.ayataka.kordis.entity.message.EmbedBuilder
+import net.ayataka.kordis.entity.message.embed.EmbedBuilder
 import net.ayataka.kordis.entity.message.Message
 import net.ayataka.kordis.entity.message.MessageBuilder
 import net.ayataka.kordis.entity.message.MessageImpl
@@ -30,7 +30,7 @@ interface ServerTextChannel : ServerChannel, TextChannel {
 
     override suspend fun send(block: EmbedBuilder.() -> Unit): Message {
         return sendMessage {
-            embed = EmbedBuilder().apply(block).build()
+            embed = EmbedBuilder().apply(block).build().toJson()
         }
     }
 
@@ -41,6 +41,6 @@ interface ServerTextChannel : ServerChannel, TextChannel {
                 MessageBuilder().apply(block).build()
         )
 
-        return MessageImpl(client, response)
+        return MessageImpl(client, response, server)
     }
 }
