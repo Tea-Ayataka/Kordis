@@ -16,17 +16,19 @@ class InternalRateLimiter {
     private val rateLimitEnds = ConcurrentHashMap<Int, Long>()
     private val rateLimitRemaining = ConcurrentHashMap<Int, Int>()
 
-    fun setGlobalRateLimitEnds(delay: Long) {
+    private fun getMutex(endPoint: FormattedEndPoint) = mutexes.getOrPut(endPoint.majorHash()) { Mutex() }
+
+    suspend fun setGlobalRateLimitEnds(delay: Long) = mutex.withLock {
         globalRateLimitEnds = System.currentTimeMillis() + delay
         LOGGER.info("Hit global rate limit ($delay ms)")
     }
 
-    fun setRateLimitEnds(endPoint: FormattedEndPoint, time: Long) {
+    suspend fun setRateLimitEnds(endPoint: FormattedEndPoint, time: Long) = getMutex(endPoint).withLock {
         rateLimitEnds[endPoint.majorHash()] = Math.max(rateLimitEnds[endPoint.majorHash()]
                 ?: 0, time)
     }
 
-    fun setRateLimit(endPoint: FormattedEndPoint, value: Int) {
+    suspend fun setRateLimit(endPoint: FormattedEndPoint, value: Int) = getMutex(endPoint).withLock {
         // First time
         if (rateLimits[endPoint.majorHash()] == null) {
             rateLimitRemaining[endPoint.majorHash()] = value - 1
@@ -35,7 +37,7 @@ class InternalRateLimiter {
         rateLimits[endPoint.majorHash()] = value
     }
 
-    fun incrementRateLimitRemaining(endPoint: FormattedEndPoint) {
+    suspend fun incrementRateLimitRemaining(endPoint: FormattedEndPoint) = getMutex(endPoint).withLock {
         rateLimitRemaining[endPoint.majorHash()] = (rateLimitRemaining[endPoint.majorHash()] ?: return) + 1
     }
 
@@ -48,14 +50,14 @@ class InternalRateLimiter {
         }
 
         // Wait for per route rate limit
-        mutexes.getOrPut(endPoint.majorHash()) { Mutex() }.withLock {
+        getMutex(endPoint).withLock {
             rateLimitRemaining[endPoint.majorHash()]?.let {
                 // If the remaining count is 0
                 if (it <= 0) {
                     val rateLimitEnds = rateLimitEnds[endPoint.majorHash()]!!
 
                     // Wait until it's reset
-                    LOGGER.debug("Wait ${rateLimitEnds - System.currentTimeMillis()}")
+                    LOGGER.debug("Hit a rate limit internally. Wait ${rateLimitEnds - System.currentTimeMillis()}ms")
                     delay(rateLimitEnds - System.currentTimeMillis())
 
                     // Reset

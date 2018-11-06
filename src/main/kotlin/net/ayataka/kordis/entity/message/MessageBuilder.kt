@@ -5,6 +5,14 @@ import kotlinx.serialization.json.json
 
 class MessageBuilder {
     var content = ""
+        set(value) {
+            if (value.length > 2000) {
+                throw IllegalArgumentException("Text length can not be longer than 2000 characters")
+            }
+
+            field = value
+        }
+
     var tts = false
     var embed: JsonObject? = null
 

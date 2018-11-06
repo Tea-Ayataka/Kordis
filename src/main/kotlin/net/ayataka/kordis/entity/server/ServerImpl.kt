@@ -11,7 +11,7 @@ import net.ayataka.kordis.entity.collection.MemberSetImpl
 import net.ayataka.kordis.entity.collection.NameableEntitySetImpl
 import net.ayataka.kordis.entity.server.channel.*
 import net.ayataka.kordis.entity.server.enums.*
-import net.ayataka.kordis.entity.user.MemberImpl
+import net.ayataka.kordis.entity.server.member.MemberImpl
 import net.ayataka.kordis.entity.user.UserImpl
 
 class ServerImpl(client: DiscordClientImpl, json: JsonObject) : Server, DiscordEntity(client, json["id"].long) {

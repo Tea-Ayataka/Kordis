@@ -1,4 +1,4 @@
-package net.ayataka.kordis.entity.user
+package net.ayataka.kordis.entity.server.member
 
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.content
@@ -7,6 +7,7 @@ import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.entity.DiscordEntity
 import net.ayataka.kordis.entity.server.Role
 import net.ayataka.kordis.entity.server.Server
+import net.ayataka.kordis.entity.user.User
 import java.time.Instant
 import java.time.format.DateTimeFormatter
 

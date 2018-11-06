@@ -9,27 +9,64 @@ import java.time.format.DateTimeFormatter
 
 class EmbedBuilder {
     var title: String? = null
+        set(value) {
+            if (value?.length ?: 0 > 256) {
+                throw IllegalArgumentException("Embed title cannot be longer than 2000 characters")
+            }
+            field = value
+        }
+
     var description: String? = null
+        set(value) {
+            if (value?.length ?: 0 > 2048) {
+                throw IllegalArgumentException("Embed description cannot be longer than 2048 characters")
+            }
+            field = value
+        }
+
     var url: String? = null
     var color: Color? = null
     var timestamp: Instant? = null
-    var footer: Footer? = null
     var imageUrl: String? = null
     var thumbnailUrl: String? = null
-    var author: Author? = null
 
-    val fields: MutableList<Field> = mutableListOf()
+    private var footer: Footer? = null
+    private var author: Author? = null
+    private val fields: MutableList<Field> = mutableListOf()
 
     fun footer(block: Footer.() -> Unit) {
-        footer = Footer(null, null).apply { block(this) }
+        val footer = Footer(null, null).apply { block(this) }
+        if (footer.text?.length ?: 0 > 2048) {
+            throw IllegalArgumentException("Embed footer text cannot be longer than 2048 characters")
+        }
+
+        this.footer = footer
     }
 
     fun author(block: Author.() -> Unit) {
-        author = Author(null, null, null).apply { block(this) }
+        val author = Author(null, null, null).apply { block(this) }
+        if (author.name?.length ?: 0 > 256) {
+            throw IllegalArgumentException("Embed author name cannot be longer than 256 characters")
+        }
+
+        this.author = author
     }
 
-    fun field(name: String? = null, value: String? = null, inline: Boolean = false) {
-        fields.add(Field(name, value, inline))
+    fun field(block: Field.() -> Unit) {
+        if (fields.size >= 25) {
+            throw IllegalArgumentException("Embed cannot have more than 25 fields")
+        }
+
+        val field = Field(null, null, false).apply { block(this) }
+        if (field.name?.length ?: 0 > 256) {
+            throw IllegalArgumentException("Embed field name cannot be longer than 256 characters")
+        }
+
+        if (field.value?.length ?: 0 > 2048) {
+            throw IllegalArgumentException("Embed field value cannot be longer than 2048 characters")
+        }
+
+        fields.add(field)
     }
 
     fun build() = json {

@@ -17,11 +17,23 @@ class GuildCreateHandler : GatewayHandler {
             return
         }
 
-        val server = ServerImpl(client, data)
+        val id = data["id"].long
+        val isLarge = data["large"].booleanOrNull == true
 
-        if (data["large"].booleanOrNull == true) {
+        // Update server when reconnect
+        client.servers.find(id)?.let {
+            (it as ServerImpl).update(data)
+
+            if (isLarge) {
+                client.gateway.memberChunkRequestQueue.offer(id)
+            }
+            return
+        }
+
+        val server = ServerImpl(client, data)
+        if (isLarge) {
             // Request additional members
-            client.gateway.memberChunkRequestQueue.offer(data["id"].long)
+            client.gateway.memberChunkRequestQueue.offer(id)
         } else {
             client.eventManager.fire(ServerReadyEvent(server))
         }

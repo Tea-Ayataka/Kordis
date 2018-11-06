@@ -15,16 +15,23 @@ class ServerTextChannelImpl(
     override var category: Category? = null
 
     init {
-        update(json)
+        try {
+            update(json)
+        } catch (ex: Exception) {
+            ex.printStackTrace()
+            println(json)
+            throw ex
+        }
     }
 
     fun update(json: JsonObject) {
         name = json["name"].content
-        topic = json["topic"].contentOrNull
-        isNsfw = json["nsfw"].boolean
-        rateLimitPerUser = json["rate_limit_per_user"].int
+        topic = json.getOrNull("topic")?.content
+        isNsfw = json.getOrNull("nsfw")?.boolean == true
+        rateLimitPerUser = json.getOrNull("rate_limit_per_user")?.int ?: 0
         position = json["position"].int
-        json["parent_id"].longOrNull?.let {
+
+        json.getOrNull("parent_id")?.long?.let {
             category = server.categories.find(it)
         }
 
