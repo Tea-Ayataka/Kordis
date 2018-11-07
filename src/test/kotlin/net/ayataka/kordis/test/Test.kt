@@ -6,6 +6,7 @@ import net.ayataka.kordis.Kordis
 import net.ayataka.kordis.event.EventListener
 import net.ayataka.kordis.event.events.ServerReadyEvent
 import net.ayataka.kordis.event.events.message.MessageReceiveEvent
+import net.ayataka.kordis.utils.formatAsDate
 import java.awt.Color
 import java.time.Instant
 
@@ -35,9 +36,42 @@ class TestBot {
 
     @EventListener
     suspend fun onMessageReceive(event: MessageReceiveEvent) {
-        if (event.message.content.startsWith("!ping")) {
-            val time = System.currentTimeMillis()
-            event.message.channel?.send("Pong!")?.edit("Pong! `${System.currentTimeMillis() - time}ms`")
+        val author = event.message.author ?: return
+        val server = event.server ?: return
+        val channel = event.message.serverChannel ?: return
+        val text = event.message.content
+
+        if (author.name != "Ayataka") {
+            return
+        }
+
+        if (text == "!serverinfo") {
+            channel.send {
+                author(name = server.name)
+                field("ID", server.id)
+                field("Server created", server.timestamp.formatAsDate(), true)
+                field("Members", server.members.joinToString { it.mention }, true)
+                field("Text channels", server.textChannels.joinToString { it.mention })
+                field("Voice channels", server.voiceChannels.joinToString { it.name }.ifEmpty { "None" })
+                field("Emojis", server.emojis.size, true)
+                field("Roles", server.roles.joinToString { it.mention }, true)
+                field("Owner", server.owner!!.mention, true)
+                field("Region", server.region.displayName, true)
+            }
+        }
+
+        if (text == "!channelinfo") {
+            channel.send {
+                author(name = channel.name)
+                field("ID", channel.id)
+                field("Channel created", channel.timestamp.formatAsDate(), true)
+                field("Position", channel.position, true)
+                field("Category", channel.category?.name ?: "None", true)
+                field("Topic", channel.topic.ifEmpty { "Empty" }, true)
+                field("NSFW", channel.nsfw.toString(), true)
+                field("Permission Overwrites (User)", channel.userPermissionOverwrites.size, true)
+                field("Permission Overwrites (Role)", channel.rolePermissionOverwrites.size, true)
+            }
         }
     }
 
@@ -54,9 +88,9 @@ class TestBot {
             println(it)
         }
 
-        val channel = event.server.textChannels.findByName("test")!!
+        val channel = event.server.textChannels.findByName("aaasaaaaa")
 
-        channel.send {
+        channel?.send {
             title = "title ~~(did you know you can have markdown here too?)~~"
             description = "this supports [named links](https://discordapp.com) on top of the previously shown subset of markdown. ```\\nyes, even code blocks```"
             url = "https://discordapp.com"

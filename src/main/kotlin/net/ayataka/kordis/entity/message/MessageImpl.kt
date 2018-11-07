@@ -9,6 +9,7 @@ import net.ayataka.kordis.entity.message.embed.EmbedImpl
 import net.ayataka.kordis.entity.server.Server
 import net.ayataka.kordis.entity.user.User
 import net.ayataka.kordis.entity.user.UserImpl
+import java.lang.IllegalStateException
 import java.time.Instant
 import java.time.format.DateTimeFormatter
 
@@ -19,7 +20,7 @@ class MessageImpl(client: DiscordClientImpl, json: JsonObject, _server: Server? 
     override val mentionsEveryone: Boolean
     override val pinned: Boolean
     override var author: User? = null
-    override val channel: TextChannel?
+    override val channel: TextChannel
     override val content: String
     override val embeds: List<Embed>
     override val tts: Boolean
@@ -40,7 +41,7 @@ class MessageImpl(client: DiscordClientImpl, json: JsonObject, _server: Server? 
                 ?.let { Instant.from(DateTimeFormatter.ISO_DATE_TIME.parse(it)) }
 
         server = _server ?: json.getOrNull("guild_id")?.let { client.servers.find(it.long) }
-        channel = server?.textChannels?.find(json["channel_id"].long)
+        channel = server?.textChannels?.find(json["channel_id"].long) ?: throw IllegalStateException()
 
         if (!json.containsKey("webhook_id")) {
             val authorId = json["author"].jsonObject["id"].long

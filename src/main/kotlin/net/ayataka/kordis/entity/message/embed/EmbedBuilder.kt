@@ -46,9 +46,17 @@ class EmbedBuilder {
         author = Author(name, url, iconUrl)
     }
 
+    fun field(name: String, value: Number, inline: Boolean = false) {
+        field(name, value.toString(), inline)
+    }
+
     fun field(name: String, value: String, inline: Boolean = false) {
         if (fields.size >= 25) {
             throw IllegalArgumentException("Embed cannot have more than 25 fields")
+        }
+
+        if (name.isEmpty() || value.isEmpty()) {
+            throw IllegalArgumentException("Embed field name and value cannot be empty")
         }
 
         if (name.length > 256) {

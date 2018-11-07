@@ -46,7 +46,7 @@ interface Server : Nameable, Entity {
     /**
      * the AFK channel of this server
      */
-    val afkChannel: TextChannel?
+    val afkChannel: ServerTextChannel?
 
     /**
      * The afk timeout in seconds

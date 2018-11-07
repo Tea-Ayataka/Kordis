@@ -6,7 +6,6 @@ import kotlinx.serialization.json.int
 import kotlinx.serialization.json.long
 import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.entity.DiscordEntity
-import net.ayataka.kordis.entity.channel.TextChannel
 import net.ayataka.kordis.entity.collection.MemberSetImpl
 import net.ayataka.kordis.entity.collection.NameableEntitySetImpl
 import net.ayataka.kordis.entity.server.channel.*
@@ -22,7 +21,7 @@ class ServerImpl(client: DiscordClientImpl, json: JsonObject) : Server, DiscordE
     override var splashHash: String? = null
 
     override var region = Region.UNKNOWN
-    override var afkChannel: TextChannel? = null
+    override var afkChannel: ServerTextChannel? = null
     override var afkTimeout = -1
     override var verificationLevel = VerificationLevel.NONE
     override var defaultMessageNotificationLevel = MessageNotificationLevel.ALL_MESSAGES
@@ -63,14 +62,26 @@ class ServerImpl(client: DiscordClientImpl, json: JsonObject) : Server, DiscordE
         members.addAll(json["members"].jsonArray.map { MemberImpl(client, it.jsonObject, this, UserImpl(client, it.jsonObject["user"].jsonObject)) })
 
         val channels = json["channels"].jsonArray
-        categories.clear()
-        channels.filter { it.jsonObject["type"].int == ChannelType.GUILD_CATEGORY.id }.forEach {
-            categories.add(CategoryImpl(this, client, it.jsonObject))
-        }
 
+        // Load categories first
+        categories.clear()
+        categories.addAll(
+                channels.filter { it.jsonObject["type"].int == ChannelType.GUILD_CATEGORY.id }
+                        .map { CategoryImpl(this, client, it.jsonObject) }
+        )
+
+        // Load text channels
         textChannels.clear()
-        channels.filter { it.jsonObject["type"].int == ChannelType.GUILD_TEXT.id }.filter {
-            textChannels.add(ServerTextChannelImpl(this, client, it.jsonObject))
-        }
+        textChannels.addAll(
+                channels.filter { it.jsonObject["type"].int == ChannelType.GUILD_TEXT.id }
+                        .map { ServerTextChannelImpl(this, client, it.jsonObject) }
+        )
+
+        // Load voice channels
+        voiceChannels.clear()
+        voiceChannels.addAll(
+                channels.filter { it.jsonObject["type"].int == ChannelType.GUILD_VOICE.id }
+                        .map { VoiceChannelImpl(this, client, it.jsonObject) }
+        )
     }
 }

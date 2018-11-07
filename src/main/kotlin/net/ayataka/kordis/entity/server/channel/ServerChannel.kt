@@ -7,7 +7,6 @@ import net.ayataka.kordis.entity.server.permission.RolePermissionOverwrite
 import net.ayataka.kordis.entity.server.permission.UserPermissionOverwrite
 
 interface ServerChannel : Nameable, Entity {
-    override val name: String
     val server: Server
     val position: Int
 

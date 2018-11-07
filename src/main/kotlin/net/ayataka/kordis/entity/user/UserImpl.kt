@@ -28,6 +28,6 @@ class UserImpl(client: DiscordClientImpl, json: JsonObject) : User, DiscordEntit
     }
 
     override fun toString(): String {
-        return "UserImpl(Id='$id', name='$name', discriminator=$discriminator)"
+        return "User(Id='$id', name='$name', discriminator=$discriminator)"
     }
 }

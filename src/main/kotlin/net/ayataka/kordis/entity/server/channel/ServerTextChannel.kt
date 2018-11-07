@@ -1,26 +1,25 @@
 package net.ayataka.kordis.entity.server.channel
 
 import net.ayataka.kordis.DiscordClientImpl
+import net.ayataka.kordis.entity.Mentionable
 import net.ayataka.kordis.entity.channel.TextChannel
-import net.ayataka.kordis.entity.message.embed.EmbedBuilder
 import net.ayataka.kordis.entity.message.Message
 import net.ayataka.kordis.entity.message.MessageBuilder
 import net.ayataka.kordis.entity.message.MessageImpl
-import net.ayataka.kordis.entity.server.Server
+import net.ayataka.kordis.entity.message.embed.EmbedBuilder
 import net.ayataka.kordis.rest.Endpoint
 
-interface ServerTextChannel : ServerChannel, TextChannel {
-    /**
-     * The name of this text channel
-     */
-    override val name: String
-    override val server: Server
-    override val position: Int
-
-    val topic: String?
-    val isNsfw: Boolean
+interface ServerTextChannel : ServerChannel, Mentionable, TextChannel {
+    val topic: String
+    val nsfw: Boolean
     val rateLimitPerUser: Int
     val category: Category?
+
+    /**
+     * The mention tag of this text channel
+     */
+    override val mention: String
+        get() = "<#$id>"
 
     override suspend fun send(text: String): Message {
         return sendMessage {

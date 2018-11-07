@@ -95,4 +95,13 @@ open class EntitySetImpl<T : Entity> : IterableEntitySet<T>, MutableCollection<T
     override fun find(id: Long): T? {
         return entities[id]
     }
+
+    fun remove(id: Long): Boolean {
+        if (entities[id] == null) {
+            return false
+        }
+
+        entities.remove(id)
+        return true
+    }
 }

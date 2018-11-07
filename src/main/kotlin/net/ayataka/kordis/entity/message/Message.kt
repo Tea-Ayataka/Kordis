@@ -5,7 +5,9 @@ import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.entity.Entity
 import net.ayataka.kordis.entity.channel.TextChannel
 import net.ayataka.kordis.entity.message.embed.Embed
+import net.ayataka.kordis.entity.message.embed.EmbedBuilder
 import net.ayataka.kordis.entity.server.Server
+import net.ayataka.kordis.entity.server.channel.ServerTextChannel
 import net.ayataka.kordis.entity.server.member.Member
 import net.ayataka.kordis.entity.user.User
 import net.ayataka.kordis.rest.Endpoint
@@ -39,7 +41,13 @@ interface Message : Entity {
     /**
      * The text channel this message was sent in
      */
-    val channel: TextChannel?
+    val channel: TextChannel
+
+    /**
+     * The server text channel this message was sent in
+     */
+    val serverChannel: ServerTextChannel?
+        get() = channel as? ServerTextChannel
 
     /**
      * The text content of this message
@@ -50,11 +58,6 @@ interface Message : Entity {
      * The embed contents of this message
      */
     val embeds: Collection<Embed>
-
-    /**
-     * The creation timestamp of this message
-     */
-    val timestamp: Instant
 
     /**
      * The edited timestamp of this message
@@ -79,7 +82,7 @@ interface Message : Entity {
     /**
      * Edit this message
      */
-    suspend fun edit(text: String): Message {
+    suspend fun edit(text: String = "", embed: (EmbedBuilder.() -> Unit)? = null): Message {
         if (server == null || channel == null) {
             throw UnsupportedOperationException()
         }
@@ -87,7 +90,12 @@ interface Message : Entity {
         val client = client as DiscordClientImpl
         val response = client.rest.request(
                 Endpoint.EDIT_MESSAGE.format(mapOf("message.id" to id, "channel.id" to channel!!.id)),
-                json { "content" to text }
+                json {
+                    "content" to text
+                    if (embed != null) {
+                        "embed" to EmbedBuilder().apply { embed(this) }.build().toJson()
+                    }
+                }
         )
 
         return MessageImpl(client, response)

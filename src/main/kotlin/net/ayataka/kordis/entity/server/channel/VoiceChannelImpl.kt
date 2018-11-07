@@ -4,14 +4,13 @@ import kotlinx.serialization.json.*
 import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.entity.server.Server
 
-class ServerTextChannelImpl(
+class VoiceChannelImpl(
         server: Server,
         client: DiscordClientImpl,
         json: JsonObject
-) : ServerTextChannel, ServerChannelImpl(server, client, json["id"].long) {
-    override var topic: String = ""
-    override var nsfw = false
-    override var rateLimitPerUser = -1
+) : ServerVoiceChannel, ServerChannelImpl(server, client, json["id"].long) {
+    override var bitrate: Int = -1
+    override var userLimit: Int = -1
     override var category: Category? = null
 
     init {
@@ -26,10 +25,9 @@ class ServerTextChannelImpl(
 
     fun update(json: JsonObject) {
         name = json["name"].content
-        topic = json.getOrNull("topic")?.content ?: ""
-        nsfw = json.getOrNull("nsfw")?.boolean == true
-        rateLimitPerUser = json.getOrNull("rate_limit_per_user")?.int ?: 0
         position = json["position"].int
+        bitrate = json["bitrate"].int
+        userLimit = json["user_limit"].int
 
         json.getOrNull("parent_id")?.longOrNull?.let {
             category = server.categories.find(it)
@@ -39,6 +37,6 @@ class ServerTextChannelImpl(
     }
 
     override fun toString(): String {
-        return "ServerTextChannelImpl(id=$id, server=$server, name='$name', topic=$topic, nsfw=$nsfw, rateLimitPerUser=$rateLimitPerUser, position=$position, category=$category, userPermissionOverwrites=$userPermissionOverwrites, rolePermissionOverwrites=$rolePermissionOverwrites)"
+        return "VoiceChannelImpl(name=$name, position=$position, bitrate=$bitrate, userLimit=$userLimit, category=$category)"
     }
 }

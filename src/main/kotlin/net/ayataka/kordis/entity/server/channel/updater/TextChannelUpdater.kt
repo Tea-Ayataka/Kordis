@@ -1,4 +1,4 @@
-package net.ayataka.kordis.entity.server.channel
+package net.ayataka.kordis.entity.server.channel.updater
 
 import net.ayataka.kordis.entity.channel.TextChannel
 

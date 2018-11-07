@@ -1,10 +1,11 @@
 package net.ayataka.kordis.entity.server
 
 import net.ayataka.kordis.entity.Entity
+import net.ayataka.kordis.entity.Mentionable
 import net.ayataka.kordis.entity.Nameable
 import java.awt.Color
 
-interface Role : Nameable, Entity {
+interface Role : Mentionable, Nameable, Entity {
     /**
      * The name of this role
      */
@@ -41,6 +42,12 @@ interface Role : Nameable, Entity {
      * Whether this role is mentionable
      */
     val isMentionable: Boolean
+
+    /**
+     * The mention tag of this role
+     */
+    override val mention: String
+        get() = "<@&$id>"
 
     fun edit(name: String? = null, permissions: Int? = null, color: Color? = null)
 }
