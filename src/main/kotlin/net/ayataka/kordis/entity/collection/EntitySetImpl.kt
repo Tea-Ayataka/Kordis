@@ -1,6 +1,8 @@
 package net.ayataka.kordis.entity.collection
 
+import kotlinx.serialization.json.JsonObject
 import net.ayataka.kordis.entity.Entity
+import net.ayataka.kordis.entity.Updatable
 import java.util.concurrent.ConcurrentHashMap
 
 open class EntitySetImpl<T : Entity> : IterableEntitySet<T>, MutableCollection<T> {
@@ -103,5 +105,43 @@ open class EntitySetImpl<T : Entity> : IterableEntitySet<T>, MutableCollection<T
 
         entities.remove(id)
         return true
+    }
+
+    @Suppress("FoldInitializerAndIfToElvis")
+    fun update(id: Long, data: JsonObject) {
+        synchronized(entities) {
+            val entity = entities[id] ?: return
+            if (entity !is Updatable) {
+                throw UnsupportedOperationException("The entities are not updatable")
+            }
+
+            entity.update(data)
+        }
+    }
+
+    fun updateOrPut(id: Long, data: JsonObject, value: () -> T) {
+        synchronized(entities) {
+            val entity = entities[id]
+            if (entity == null) {
+                add(value())
+                return
+            }
+
+            if (entity !is Updatable) {
+                throw UnsupportedOperationException("The entities are not updatable")
+            }
+
+            entity.update(data)
+        }
+    }
+
+    fun getOrPut(id: Long, value: () -> T): T {
+        synchronized(entities) {
+            entities[id]?.let { return it }
+
+            val entity = value()
+            add(entity)
+            return entity
+        }
     }
 }

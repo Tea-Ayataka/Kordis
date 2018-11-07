@@ -16,8 +16,8 @@ open class ServerChannelImpl(
         client: DiscordClientImpl,
         id: Long
 ) : ServerChannel, DiscordEntity(client, id) {
-    final override var name = ""
-    final override var position = -1
+    @Volatile final override var name = ""
+    @Volatile final override var position = -1
     final override val userPermissionOverwrites = mutableSetOf<UserPermissionOverwrite>()
     final override val rolePermissionOverwrites = mutableSetOf<RolePermissionOverwrite>()
 

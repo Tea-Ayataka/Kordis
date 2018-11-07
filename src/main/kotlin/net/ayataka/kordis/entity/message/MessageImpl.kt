@@ -9,7 +9,6 @@ import net.ayataka.kordis.entity.message.embed.EmbedImpl
 import net.ayataka.kordis.entity.server.Server
 import net.ayataka.kordis.entity.user.User
 import net.ayataka.kordis.entity.user.UserImpl
-import java.lang.IllegalStateException
 import java.time.Instant
 import java.time.format.DateTimeFormatter
 
@@ -44,16 +43,10 @@ class MessageImpl(client: DiscordClientImpl, json: JsonObject, _server: Server? 
         channel = server?.textChannels?.find(json["channel_id"].long) ?: throw IllegalStateException()
 
         if (!json.containsKey("webhook_id")) {
-            val authorId = json["author"].jsonObject["id"].long
+            val authorData = json["author"].jsonObject
+            val authorId = authorData["id"].long
 
-            synchronized(client.users) {
-                if (client.users.find(authorId) == null) {
-                    client.users.add(UserImpl(client, json["author"].jsonObject))
-                } else {
-                    (client.users.find(authorId)!! as UserImpl).update(json["author"].jsonObject)
-                }
-            }
-
+            client.users.updateOrPut(authorId, authorData) { UserImpl(client, authorData) }
             author = client.users.find(authorId)!!
         }
     }

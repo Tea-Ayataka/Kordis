@@ -26,6 +26,8 @@ const val GATEWAY_VERSION = 6
 
 class GatewayClient(
         private val client: DiscordClientImpl,
+        val shard: Int,
+        val maxShards: Int,
         endpoint: String
 ) : CoroutineScope, WebSocketClient(URI("$endpoint/?v=$GATEWAY_VERSION&encoding=json")) {
 

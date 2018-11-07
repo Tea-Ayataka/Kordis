@@ -9,9 +9,9 @@ class VoiceChannelImpl(
         client: DiscordClientImpl,
         json: JsonObject
 ) : ServerVoiceChannel, ServerChannelImpl(server, client, json["id"].long) {
-    override var bitrate: Int = -1
-    override var userLimit: Int = -1
-    override var category: Category? = null
+    @Volatile override var bitrate: Int = -1
+    @Volatile override var userLimit: Int = -1
+    @Volatile override var category: Category? = null
 
     init {
         try {

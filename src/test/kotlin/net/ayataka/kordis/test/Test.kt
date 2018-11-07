@@ -3,12 +3,16 @@ package net.ayataka.kordis.test
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import net.ayataka.kordis.Kordis
+import net.ayataka.kordis.addListener
+import net.ayataka.kordis.entity.permissions
+import net.ayataka.kordis.entity.server.permission.Permission
 import net.ayataka.kordis.event.EventListener
 import net.ayataka.kordis.event.events.ServerReadyEvent
 import net.ayataka.kordis.event.events.message.MessageReceiveEvent
 import net.ayataka.kordis.utils.formatAsDate
 import java.awt.Color
 import java.time.Instant
+import kotlin.random.Random
 
 fun main(args: Array<String>) = runBlocking {
     TestBot().start(args[0])
@@ -18,10 +22,8 @@ class TestBot {
     suspend fun start(token: String) {
         val client = Kordis.create {
             this.token = token
+            addListener(this@TestBot)
         }
-
-        client.addListener(this)
-        client.connect()
 
         client.servers.findByName("TestServer")
         client.servers.find(9999)
@@ -50,11 +52,11 @@ class TestBot {
                 author(name = server.name)
                 field("ID", server.id)
                 field("Server created", server.timestamp.formatAsDate(), true)
-                field("Members", server.members.joinToString { it.mention }, true)
-                field("Text channels", server.textChannels.joinToString { it.mention })
+                field("Members", server.members.joinToString { it.name }, true)
+                field("Text channels", server.textChannels.joinToString { it.name })
                 field("Voice channels", server.voiceChannels.joinToString { it.name }.ifEmpty { "None" })
                 field("Emojis", server.emojis.size, true)
-                field("Roles", server.roles.joinToString { it.mention }, true)
+                field("Roles", server.roles.joinToString { it.name }, true)
                 field("Owner", server.owner!!.mention, true)
                 field("Region", server.region.displayName, true)
             }
@@ -71,6 +73,22 @@ class TestBot {
                 field("NSFW", channel.nsfw.toString(), true)
                 field("Permission Overwrites (User)", channel.userPermissionOverwrites.size, true)
                 field("Permission Overwrites (Role)", channel.rolePermissionOverwrites.size, true)
+            }
+
+            event.server?.members?.find(author.id)?.unban()
+        }
+
+        if (text.startsWith("!roleinfo")) {
+            val role = server.roles.findByName(text.split(" ")[1])!!
+
+            channel.send {
+                author(role.name)
+                field("Permissions", role.permissions.toString())
+                field("Position", role.position)
+                field("Color", role.color.rgb)
+                field("hoist", role.hoist.toString())
+                field("mentionable", role.mentionable.toString())
+                field("managed", role.managed.toString())
             }
         }
     }
@@ -107,6 +125,11 @@ class TestBot {
             field("\uD83E\uDD14", "an informative error should show up, and this view will remain as-is until all issues are fixed")
             field("\uD83E\uDD14", "these last two", true)
             field("\uD83E\uDD14", "are inline fields", true)
+        }
+
+        event.server.roles.findByName("Premium")?.edit {
+            color = Color(Random.nextInt(0xFFFFFF))
+            permissions = permissions(Permission.ADMINISTRATOR)
         }
     }
 }

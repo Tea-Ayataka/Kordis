@@ -1,19 +1,26 @@
 package net.ayataka.kordis
 
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.content
+import net.ayataka.kordis.entity.collection.EntitySetImpl
 import net.ayataka.kordis.entity.collection.NameableEntitySetImpl
-import net.ayataka.kordis.entity.collection.UserSetImpl
 import net.ayataka.kordis.entity.server.Server
+import net.ayataka.kordis.entity.user.User
+import net.ayataka.kordis.entity.user.UserImpl
 import net.ayataka.kordis.event.EventManager
 import net.ayataka.kordis.rest.Endpoint
 import net.ayataka.kordis.rest.RestClient
 import net.ayataka.kordis.websocket.GatewayClient
-import org.apache.logging.log4j.LogManager
 
-val LOGGER = LogManager.getLogger()
-
-class DiscordClientImpl(val token: String, val shard: Int = 0, val maxShards: Int = 0) : DiscordClient {
+class DiscordClientImpl(
+        val token: String,
+        val shard: Int,
+        val maxShards: Int,
+        listeners: Collection<Any>
+) : DiscordClient {
     override var status = ConnectionStatus.DISCONNECTED
+    override lateinit var botUser: User
+        private set
 
     val rest = RestClient(this)
     lateinit var gateway: GatewayClient
@@ -22,18 +29,27 @@ class DiscordClientImpl(val token: String, val shard: Int = 0, val maxShards: In
     val eventManager = EventManager()
 
     override val servers = NameableEntitySetImpl<Server>()
-    override val users = UserSetImpl()
+    override val users = NameableEntitySetImpl<User>()
 
-    override suspend fun connect() {
+    init {
+        runBlocking {
+            listeners.forEach { eventManager.register(it) }
+        }
+    }
+
+    suspend fun connect() {
         if (status != ConnectionStatus.DISCONNECTED) {
-            throw UnsupportedOperationException("")
+            throw IllegalStateException()
         }
 
         status = ConnectionStatus.CONNECTING
 
+        // Get the bot user
+        botUser = UserImpl(this, rest.request(Endpoint.GET_CURRENT_USER.format()))
+
         // Connect to the gateway
-        val gatewayEndpoint = rest.request(Endpoint.GET_GATEWAY_BOT.format())["url"].content
-        gateway = GatewayClient(this, gatewayEndpoint)
+        val endpoint = rest.request(Endpoint.GET_GATEWAY_BOT.format())["url"].content
+        gateway = GatewayClient(this, shard, maxShards, endpoint)
         gateway.connectBlocking()
 
         status = ConnectionStatus.CONNECTED
@@ -46,8 +62,4 @@ class DiscordClientImpl(val token: String, val shard: Int = 0, val maxShards: In
     override suspend fun removeListener(listener: Any) {
         eventManager.unregister(listener)
     }
-}
-
-enum class ConnectionStatus {
-    DISCONNECTED, CONNECTING, CONNECTED, RECONNECTING
 }

@@ -3,49 +3,34 @@ package net.ayataka.kordis.entity.server
 import kotlinx.serialization.json.*
 import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.entity.DiscordEntity
+import net.ayataka.kordis.entity.Updatable
+import net.ayataka.kordis.entity.server.permission.PermissionSet
 import java.awt.Color
 
-class RoleImpl(client: DiscordClientImpl, json: JsonObject) : Role, DiscordEntity(client, json["id"].long) {
-    @Volatile
-    override var name: String = ""
-    @Volatile
-    override var permissions: Int = -1
-    @Volatile
-    override var color: Color = Color.BLACK
-    @Volatile
-    override var position: Int = -1
-    @Volatile
-    override var isHoisted: Boolean = false
-    @Volatile
-    override var isManaged: Boolean = false
-    @Volatile
-    override var isMentionable: Boolean = false
-
+class RoleImpl(client: DiscordClientImpl, json: JsonObject, override val server: Server) : Role, Updatable, DiscordEntity(client, json["id"].long) {
+    @Volatile override var name: String = ""
+    @Volatile override var permissions: PermissionSet = PermissionSet(0)
+    @Volatile override var color: Color = Color.BLACK
+    @Volatile override var position: Int = -1
+    @Volatile override var hoist: Boolean = false
+    @Volatile override var managed: Boolean = false
+    @Volatile override var mentionable: Boolean = false
+    
     init {
         update(json)
     }
 
-    fun update(json: JsonObject) {
+    override fun update(json: JsonObject) {
         name = json["name"].content
-        permissions = json["permissions"].int
+        permissions = PermissionSet(json["permissions"].int)
         color = Color(json["color"].int)
         position = json["position"].int
-        isHoisted = json["hoist"].boolean
-        isManaged = json["managed"].boolean
-        isMentionable = json["mentionable"].boolean
-    }
-
-    override fun edit(name: String?, permissions: Int?, color: Color?) {
-        // initialize updater
-
-        if (name != null && name != name) {
-            // setName(name)
-        }
-
-        // update
+        hoist = json["hoist"].boolean
+        managed = json["managed"].boolean
+        mentionable = json["mentionable"].boolean
     }
 
     override fun toString(): String {
-        return "RoleImpl(name='$name', permissions=$permissions, color=$color, position=$position, isHoisted=$isHoisted, isManaged=$isManaged, isMentionable=$isMentionable)"
+        return "RoleImpl(name='$name', permissions=$permissions, color=$color, position=$position, hoist=$hoist, managed=$managed, mentionable=$mentionable)"
     }
 }

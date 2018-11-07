@@ -1,15 +1,16 @@
 package net.ayataka.kordis.entity.server
 
+import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.entity.Entity
 import net.ayataka.kordis.entity.Nameable
-import net.ayataka.kordis.entity.channel.TextChannel
-import net.ayataka.kordis.entity.collection.MemberSet
 import net.ayataka.kordis.entity.collection.NameableEntitySet
 import net.ayataka.kordis.entity.server.channel.Category
 import net.ayataka.kordis.entity.server.channel.ServerTextChannel
 import net.ayataka.kordis.entity.server.channel.ServerVoiceChannel
 import net.ayataka.kordis.entity.server.enums.*
+import net.ayataka.kordis.entity.server.member.Member
 import net.ayataka.kordis.entity.user.User
+import net.ayataka.kordis.rest.Endpoint
 
 interface Server : Nameable, Entity {
     /**
@@ -20,7 +21,7 @@ interface Server : Nameable, Entity {
     /**
      * The members in this server
      */
-    val members: MemberSet
+    val members: NameableEntitySet<Member>
 
     /**
      * The hash id of the server icon
@@ -73,6 +74,26 @@ interface Server : Nameable, Entity {
     val voiceChannels: NameableEntitySet<ServerVoiceChannel>
 
     val categories: NameableEntitySet<Category>
+
+    /**
+     * Kick this member
+     */
+    suspend fun kick(member: Member)
+
+    /**
+     * Ban this user from a server
+     */
+    suspend fun ban(user: User)
+
+    /**
+     * Unban this user from a server
+     */
+    suspend fun unban(user: User)
+
+    /**
+     * Ban this user from a server
+     */
+    suspend fun ban(server: Server, deleteMessageDays: Int = 0, reason: String? = null)
 
     suspend fun edit(
             //name: String = client.serverMap[id]!!.name,

@@ -9,10 +9,10 @@ class ServerTextChannelImpl(
         client: DiscordClientImpl,
         json: JsonObject
 ) : ServerTextChannel, ServerChannelImpl(server, client, json["id"].long) {
-    override var topic: String = ""
-    override var nsfw = false
-    override var rateLimitPerUser = -1
-    override var category: Category? = null
+    @Volatile override var topic: String = ""
+    @Volatile override var nsfw = false
+    @Volatile override var rateLimitPerUser = -1
+    @Volatile override var category: Category? = null
 
     init {
         try {

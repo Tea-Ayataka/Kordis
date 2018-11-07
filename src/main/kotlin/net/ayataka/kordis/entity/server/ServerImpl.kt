@@ -6,34 +6,37 @@ import kotlinx.serialization.json.int
 import kotlinx.serialization.json.long
 import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.entity.DiscordEntity
-import net.ayataka.kordis.entity.collection.MemberSetImpl
+import net.ayataka.kordis.entity.Updatable
 import net.ayataka.kordis.entity.collection.NameableEntitySetImpl
 import net.ayataka.kordis.entity.server.channel.*
 import net.ayataka.kordis.entity.server.enums.*
+import net.ayataka.kordis.entity.server.member.Member
 import net.ayataka.kordis.entity.server.member.MemberImpl
+import net.ayataka.kordis.entity.server.permission.Permission
 import net.ayataka.kordis.entity.user.UserImpl
+import net.ayataka.kordis.rest.Endpoint
 
-class ServerImpl(client: DiscordClientImpl, json: JsonObject) : Server, DiscordEntity(client, json["id"].long) {
-    private var ownerId: Long = -1
+class ServerImpl(client: DiscordClientImpl, json: JsonObject) : Server, Updatable, DiscordEntity(client, json["id"].long) {
+    @Volatile private var ownerId: Long = -1
 
-    override var name = ""
-    override var iconHash: String? = null
-    override var splashHash: String? = null
+    @Volatile override var name = ""
+    @Volatile override var iconHash: String? = null
+    @Volatile override var splashHash: String? = null
 
-    override var region = Region.UNKNOWN
-    override var afkChannel: ServerTextChannel? = null
-    override var afkTimeout = -1
-    override var verificationLevel = VerificationLevel.NONE
-    override var defaultMessageNotificationLevel = MessageNotificationLevel.ALL_MESSAGES
-    override var explicitContentFilterLevel = ExplicitContentFilterLevel.DISABLED
-    override var mfaLevel = MfaLevel.NONE
+    @Volatile override var region = Region.UNKNOWN
+    @Volatile override var afkChannel: ServerTextChannel? = null
+    @Volatile override var afkTimeout = -1
+    @Volatile override var verificationLevel = VerificationLevel.NONE
+    @Volatile override var defaultMessageNotificationLevel = MessageNotificationLevel.ALL_MESSAGES
+    @Volatile override var explicitContentFilterLevel = ExplicitContentFilterLevel.DISABLED
+    @Volatile override var mfaLevel = MfaLevel.NONE
 
     override val roles = NameableEntitySetImpl<Role>()
     override val emojis = NameableEntitySetImpl<Emoji>()
     override val textChannels = NameableEntitySetImpl<ServerTextChannel>()
     override val voiceChannels = NameableEntitySetImpl<ServerVoiceChannel>()
     override val categories = NameableEntitySetImpl<Category>()
-    override val members = MemberSetImpl()
+    override val members = NameableEntitySetImpl<Member>()
 
     override val owner
         get() = client.users.find(ownerId)
@@ -48,7 +51,7 @@ class ServerImpl(client: DiscordClientImpl, json: JsonObject) : Server, DiscordE
         }
     }
 
-    fun update(json: JsonObject) {
+    override fun update(json: JsonObject) {
         name = json["name"].content
         ownerId = json["owner_id"].long
         defaultMessageNotificationLevel = MessageNotificationLevel.values()[json["default_message_notifications"].int]
@@ -56,10 +59,20 @@ class ServerImpl(client: DiscordClientImpl, json: JsonObject) : Server, DiscordE
         afkTimeout = json["afk_timeout"].int
 
         roles.clear()
-        roles.addAll(json["roles"].jsonArray.map { RoleImpl(client, it.jsonObject) })
+        roles.addAll(json["roles"].jsonArray.map { RoleImpl(client, it.jsonObject, this) })
 
         members.clear()
-        members.addAll(json["members"].jsonArray.map { MemberImpl(client, it.jsonObject, this, UserImpl(client, it.jsonObject["user"].jsonObject)) })
+        members.addAll(json["members"].jsonArray.map {
+            val userData = it.jsonObject["user"].jsonObject
+
+            MemberImpl(
+                    client,
+                    it.jsonObject,
+                    this,
+                    client.users.getOrPut(userData["id"].long) {
+                        UserImpl(client, userData)
+                    })
+        })
 
         val channels = json["channels"].jsonArray
 
@@ -82,6 +95,15 @@ class ServerImpl(client: DiscordClientImpl, json: JsonObject) : Server, DiscordE
         voiceChannels.addAll(
                 channels.filter { it.jsonObject["type"].int == ChannelType.GUILD_VOICE.id }
                         .map { VoiceChannelImpl(this, client, it.jsonObject) }
+        )
+    }
+
+    override suspend fun kick(member: Member) {
+        checkPermission(this, Permission.KICK_MEMBERS)
+        checkManageable(member)
+
+        client.rest.request(
+                Endpoint.REMOVE_GUILD_MEMBER.format(mapOf("guild.id" to id, "user.id" to member.id))
         )
     }
 }

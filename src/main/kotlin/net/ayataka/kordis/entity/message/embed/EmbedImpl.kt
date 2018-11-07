@@ -1,6 +1,7 @@
 package net.ayataka.kordis.entity.message.embed
 
 import kotlinx.serialization.json.*
+import net.ayataka.kordis.utils.uRgb
 import java.awt.Color
 import java.time.Instant
 import java.time.ZoneOffset
@@ -53,7 +54,7 @@ class EmbedImpl(
         "title" to title
         "description" to description
         "url" to url
-        "color" to color?.run { ((red and 0xFF) shl 16) or ((green and 0xFF) shl 8) or ((blue and 0xFF) shl 0) }
+        "color" to color?.uRgb()
         "timestamp" to timestamp?.run { DateTimeFormatter.ISO_DATE_TIME.format(this.atOffset(ZoneOffset.UTC)) }
         "footer" to json {
             "icon_url" to footer?.iconUrl

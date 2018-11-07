@@ -83,7 +83,7 @@ interface Message : Entity {
      * Edit this message
      */
     suspend fun edit(text: String = "", embed: (EmbedBuilder.() -> Unit)? = null): Message {
-        if (server == null || channel == null) {
+        if (server == null) {
             throw UnsupportedOperationException()
         }
 

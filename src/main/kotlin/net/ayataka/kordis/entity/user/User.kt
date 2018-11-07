@@ -6,7 +6,6 @@ import net.ayataka.kordis.entity.Nameable
 
 interface User : Mentionable, Nameable, Entity {
     val avatarId: String
-    override val name: String
     val discriminator: String
 
     override val mention: String
