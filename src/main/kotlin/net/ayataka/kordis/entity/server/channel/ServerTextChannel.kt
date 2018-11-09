@@ -13,7 +13,7 @@ interface ServerTextChannel : ServerChannel, Mentionable, TextChannel {
     val topic: String
     val nsfw: Boolean
     val rateLimitPerUser: Int
-    val category: Category?
+    val channelCategory: ChannelCategory?
 
     /**
      * The mention tag of this text channel

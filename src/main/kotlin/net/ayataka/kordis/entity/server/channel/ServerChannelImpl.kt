@@ -7,9 +7,11 @@ import kotlinx.serialization.json.long
 import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.entity.DiscordEntity
 import net.ayataka.kordis.entity.server.Server
+import net.ayataka.kordis.entity.server.permission.Permission
 import net.ayataka.kordis.entity.server.permission.PermissionSet
 import net.ayataka.kordis.entity.server.permission.RolePermissionOverwrite
 import net.ayataka.kordis.entity.server.permission.UserPermissionOverwrite
+import net.ayataka.kordis.rest.Endpoint
 
 open class ServerChannelImpl(
         override val server: Server,
@@ -44,5 +46,11 @@ open class ServerChannelImpl(
                 return@forEach
             }
         }
+    }
+
+    override suspend fun delete() {
+        checkPermission(server, Permission.MANAGE_CHANNELS)
+
+        client.rest.request(Endpoint.DELETE_CHANNEL.format(mapOf("channel.id" to id)))
     }
 }

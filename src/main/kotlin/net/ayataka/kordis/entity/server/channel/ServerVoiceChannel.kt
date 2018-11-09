@@ -1,7 +1,7 @@
 package net.ayataka.kordis.entity.server.channel
 
 interface ServerVoiceChannel : ServerChannel {
-    val category: Category?
+    val channelCategory: ChannelCategory?
 
     /**
      * The bitrate of this voice channel

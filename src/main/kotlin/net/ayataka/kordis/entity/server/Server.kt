@@ -4,7 +4,7 @@ import net.ayataka.kordis.entity.Entity
 import net.ayataka.kordis.entity.Nameable
 import net.ayataka.kordis.entity.collection.NameableEntitySet
 import net.ayataka.kordis.entity.image.Icon
-import net.ayataka.kordis.entity.server.channel.Category
+import net.ayataka.kordis.entity.server.channel.ChannelCategory
 import net.ayataka.kordis.entity.server.channel.ServerTextChannel
 import net.ayataka.kordis.entity.server.channel.ServerVoiceChannel
 import net.ayataka.kordis.entity.server.enums.*
@@ -95,9 +95,9 @@ interface Server : Nameable, Entity {
     val voiceChannels: NameableEntitySet<ServerVoiceChannel>
 
     /**
-     * The channel categories on this server
+     * The channel channelCategories on this server
      */
-    val categories: NameableEntitySet<Category>
+    val channelCategories: NameableEntitySet<ChannelCategory>
 
     /**
      * Kick a member from this server

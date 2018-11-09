@@ -68,7 +68,7 @@ class TestBot {
                 field("ID", channel.id)
                 field("Channel created", channel.timestamp.formatAsDate(), true)
                 field("Position", channel.position, true)
-                field("Category", channel.category?.name ?: "None", true)
+                field("ChannelCategory", channel.channelCategory?.name ?: "None", true)
                 field("Topic", channel.topic.ifEmpty { "Empty" }, true)
                 field("NSFW", channel.nsfw.toString(), true)
                 field("Permission Overwrites (User)", channel.userPermissionOverwrites.size, true)
@@ -114,6 +114,7 @@ class TestBot {
 
         val channel = event.server.textChannels.findByName("aaasaaaaa")
 
+        channel?.delete()
         channel?.send {
             title = "title ~~(did you know you can have markdown here too?)~~"
             description = "this supports [named links](https://discordapp.com) on top of the previously shown subset of markdown. ```\\nyes, even code blocks```"

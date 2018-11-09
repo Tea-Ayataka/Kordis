@@ -36,7 +36,7 @@ class ServerImpl(client: DiscordClientImpl, json: JsonObject) : Server, Updatabl
     override val emojis = NameableEntitySetImpl<Emoji>()
     override val textChannels = NameableEntitySetImpl<ServerTextChannel>()
     override val voiceChannels = NameableEntitySetImpl<ServerVoiceChannel>()
-    override val categories = NameableEntitySetImpl<Category>()
+    override val channelCategories = NameableEntitySetImpl<ChannelCategory>()
     override val members = NameableEntitySetImpl<Member>()
 
     init {
@@ -94,13 +94,13 @@ class ServerImpl(client: DiscordClientImpl, json: JsonObject) : Server, Updatabl
             val channelIds = channelObjects.map { it["id"].long }
 
             // Clear deleted channels
-            categories.removeIf { it.id !in channelIds }
+            channelCategories.removeIf { it.id !in channelIds }
             textChannels.removeIf { it.id !in channelIds }
             voiceChannels.removeIf { it.id !in channelIds }
 
-            // Load categories first
+            // Load channelCategories first
             channelObjects.filter { it["type"].int == ChannelType.GUILD_CATEGORY.id }.forEach {
-                categories.updateOrPut(it["id"].long, it) { CategoryImpl(this, client, it) }
+                channelCategories.updateOrPut(it["id"].long, it) { ChannelCategoryImpl(this, client, it) }
             }
 
             // Load text channels
@@ -110,7 +110,7 @@ class ServerImpl(client: DiscordClientImpl, json: JsonObject) : Server, Updatabl
 
             // Load voice channels
             channelObjects.filter { it["type"].int == ChannelType.GUILD_VOICE.id }.forEach {
-                voiceChannels.updateOrPut(it["id"].long, it) { VoiceChannelImpl(this, client, it) }
+                voiceChannels.updateOrPut(it["id"].long, it) { ServerVoiceChannelImpl(this, client, it) }
             }
         }
 

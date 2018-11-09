@@ -12,7 +12,7 @@ class ServerTextChannelImpl(
     @Volatile override var topic: String = ""
     @Volatile override var nsfw = false
     @Volatile override var rateLimitPerUser = -1
-    @Volatile override var category: Category? = null
+    @Volatile override var channelCategory: ChannelCategory? = null
 
     init {
         try {
@@ -32,13 +32,13 @@ class ServerTextChannelImpl(
         position = json["position"].int
 
         json.getOrNull("parent_id")?.longOrNull?.let {
-            category = server.categories.find(it)
+            channelCategory = server.channelCategories.find(it)
         }
 
         loadPermissionOverwrites(json)
     }
 
     override fun toString(): String {
-        return "ServerTextChannelImpl(id=$id, server=$server, name='$name', topic=$topic, nsfw=$nsfw, rateLimitPerUser=$rateLimitPerUser, position=$position, category=$category, userPermissionOverwrites=$userPermissionOverwrites, rolePermissionOverwrites=$rolePermissionOverwrites)"
+        return "ServerTextChannelImpl(id=$id, server=$server, name='$name', topic=$topic, nsfw=$nsfw, rateLimitPerUser=$rateLimitPerUser, position=$position, channelCategory=$channelCategory, userPermissionOverwrites=$userPermissionOverwrites, rolePermissionOverwrites=$rolePermissionOverwrites)"
     }
 }

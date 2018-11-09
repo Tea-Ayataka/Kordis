@@ -15,6 +15,6 @@ class ChannelDeleteHandler : GatewayHandler {
 
         if (server.textChannels.remove(id)) return
         if (server.voiceChannels.remove(id)) return
-        if (server.categories.remove(id)) return
+        if (server.channelCategories.remove(id)) return
     }
 }

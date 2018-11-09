@@ -12,4 +12,9 @@ interface ServerChannel : Nameable, Entity {
 
     val userPermissionOverwrites: Collection<UserPermissionOverwrite>
     val rolePermissionOverwrites: Collection<RolePermissionOverwrite>
+
+    /**
+     * Delete the channel
+     */
+    suspend fun delete()
 }

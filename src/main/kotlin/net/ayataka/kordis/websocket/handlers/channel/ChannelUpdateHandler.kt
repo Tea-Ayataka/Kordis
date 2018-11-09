@@ -6,7 +6,7 @@ import kotlinx.serialization.json.long
 import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.LOGGER
 import net.ayataka.kordis.entity.server.ServerImpl
-import net.ayataka.kordis.entity.server.channel.CategoryImpl
+import net.ayataka.kordis.entity.server.channel.ChannelCategoryImpl
 import net.ayataka.kordis.entity.server.channel.ServerTextChannelImpl
 import net.ayataka.kordis.entity.server.enums.ChannelType
 import net.ayataka.kordis.websocket.handlers.GatewayHandler
@@ -26,7 +26,7 @@ class ChannelUpdateHandler : GatewayHandler {
 
             }
             ChannelType.GUILD_CATEGORY.id -> {
-                (server?.categories?.find(id) as? CategoryImpl)?.update(data)
+                (server?.channelCategories?.find(id) as? ChannelCategoryImpl)?.update(data)
             }
             else -> {
                 LOGGER.error("Invalid channel type received: ${data["type"].int}")
