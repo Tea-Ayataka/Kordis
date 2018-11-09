@@ -8,6 +8,7 @@ import net.ayataka.kordis.LOGGER
 import net.ayataka.kordis.entity.server.ServerImpl
 import net.ayataka.kordis.entity.server.channel.CategoryImpl
 import net.ayataka.kordis.entity.server.channel.ServerTextChannelImpl
+import net.ayataka.kordis.entity.server.channel.VoiceChannelImpl
 import net.ayataka.kordis.entity.server.enums.ChannelType
 import net.ayataka.kordis.websocket.handlers.GatewayHandler
 
@@ -22,7 +23,7 @@ class ChannelCreateHandler : GatewayHandler {
                 server?.textChannels?.add(ServerTextChannelImpl(server, client, data))
             }
             ChannelType.GUILD_VOICE.id -> {
-
+                server?.voiceChannels?.add(VoiceChannelImpl(server, client, data))
             }
             ChannelType.GUILD_CATEGORY.id -> {
                 server?.categories?.add(CategoryImpl(server, client, data))

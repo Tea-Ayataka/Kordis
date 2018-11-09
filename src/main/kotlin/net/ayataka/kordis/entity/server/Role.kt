@@ -1,14 +1,10 @@
 package net.ayataka.kordis.entity.server
 
-import kotlinx.serialization.json.json
-import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.entity.Entity
 import net.ayataka.kordis.entity.Mentionable
 import net.ayataka.kordis.entity.Nameable
 import net.ayataka.kordis.entity.server.permission.PermissionSet
 import net.ayataka.kordis.entity.server.updater.RoleUpdater
-import net.ayataka.kordis.rest.Endpoint
-import net.ayataka.kordis.utils.uRgb
 import java.awt.Color
 
 interface Role : Mentionable, Nameable, Entity {
@@ -53,48 +49,10 @@ interface Role : Mentionable, Nameable, Entity {
      * The mention tag of this role
      */
     override val mention: String
-        get() = "<@&$id>"
+        get() = if (position == 0) "@everyone" else "<@&$id>"
 
-    suspend fun edit(block: RoleUpdater.() -> Unit) {
-        val updater = RoleUpdater(this).apply(block)
-
-        val json = json {
-            if (updater.name != name) {
-                "name" to updater.name
-            }
-
-            if (updater.hoist != hoist) {
-                "hoist" to updater.hoist
-            }
-
-            if (updater.mentionable != mentionable) {
-                "mentionable" to updater.mentionable
-            }
-
-            if (updater.permissions != permissions) {
-                "permissions" to updater.permissions.compile()
-            }
-
-            if (updater.color != color) {
-                "color" to updater.color.uRgb()
-            }
-        }
-
-        if (json.isNotEmpty()) {
-            (client as DiscordClientImpl).rest.request(
-                    Endpoint.MODIFY_GUILD_ROLE.format(mapOf("guild.id" to server.id, "role.id" to id)),
-                    json
-            )
-        }
-
-        if (updater.position != position) {
-            (client as DiscordClientImpl).rest.request(
-                    Endpoint.MODIFY_GUILD_ROLE_POSITIONS.format(mapOf("guild.id" to server.id)),
-                    json {
-                        "id" to id
-                        "position" to updater.position
-                    }
-            )
-        }
-    }
+    /**
+     * Edit this role
+     */
+    suspend fun edit(block: RoleUpdater.() -> Unit)
 }

@@ -8,5 +8,11 @@ enum class MessageType(val id: Int) {
     CHANNEL_NAME_CHANGE(4),
     CHANNEL_ICON_CHANGE(5),
     CHANNEL_PINNED_MESSAGE(6),
-    GUILD_MEMBER_JOIN(7)
+    GUILD_MEMBER_JOIN(7),
+
+    UNKNOWN(-1);
+
+    companion object {
+        operator fun get(id: Int) = values().find { it != UNKNOWN && it.id == id } ?: UNKNOWN
+    }
 }

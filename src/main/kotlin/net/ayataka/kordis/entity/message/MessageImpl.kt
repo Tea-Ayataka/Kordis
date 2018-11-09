@@ -27,9 +27,7 @@ class MessageImpl(client: DiscordClientImpl, json: JsonObject, _server: Server? 
     override val editedTimestamp: Instant?
 
     init {
-        type = MessageType.values().find { it.id == json["type"].int }
-                ?: throw IllegalArgumentException("Unknown message type : ${json["type"].int}")
-
+        type = MessageType[json["type"].int]
         mentionsEveryone = json["mention_everyone"].boolean
         pinned = json["pinned"].boolean
         content = json["content"].content

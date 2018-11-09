@@ -13,7 +13,7 @@ import java.time.Instant
 import java.time.format.DateTimeFormatter
 
 class MemberImpl(client: DiscordClientImpl, json: JsonObject, override val server: Server, val user: User) : Member, Updatable, DiscordEntity(client, user.id) {
-    override val avatarId get() = user.avatarId
+    override val avatar = user.avatar
     override val name = user.name
     override val discriminator = user.discriminator
 
@@ -29,6 +29,9 @@ class MemberImpl(client: DiscordClientImpl, json: JsonObject, override val serve
         joinedAt = Instant.from(DateTimeFormatter.ISO_DATE_TIME.parse(json["joined_at"].content))
         roles = json["roles"].jsonArray.mapNotNull { server.roles.find(it.long) }.toMutableSet()
         nickname = json.getOrNull("nick")?.content
+
+        // Update the user
+        client.users.update(json["user"].jsonObject["id"].long, json["user"].jsonObject)
     }
 
     override fun toString(): String {

@@ -20,6 +20,8 @@ import kotlinx.serialization.json.boolean
 import kotlinx.serialization.json.long
 import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.LOGGER
+import net.ayataka.kordis.exception.DiscordException
+import net.ayataka.kordis.exception.RateLimitedException
 import java.util.concurrent.TimeoutException
 
 class RestClient(private val discordClient: DiscordClientImpl) {

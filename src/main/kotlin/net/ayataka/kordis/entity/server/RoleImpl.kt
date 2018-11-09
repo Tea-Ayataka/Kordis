@@ -4,7 +4,11 @@ import kotlinx.serialization.json.*
 import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.entity.DiscordEntity
 import net.ayataka.kordis.entity.Updatable
+import net.ayataka.kordis.entity.server.permission.Permission
 import net.ayataka.kordis.entity.server.permission.PermissionSet
+import net.ayataka.kordis.entity.server.updater.RoleUpdater
+import net.ayataka.kordis.rest.Endpoint
+import net.ayataka.kordis.utils.uRgb
 import java.awt.Color
 
 class RoleImpl(client: DiscordClientImpl, json: JsonObject, override val server: Server) : Role, Updatable, DiscordEntity(client, json["id"].long) {
@@ -15,7 +19,7 @@ class RoleImpl(client: DiscordClientImpl, json: JsonObject, override val server:
     @Volatile override var hoist: Boolean = false
     @Volatile override var managed: Boolean = false
     @Volatile override var mentionable: Boolean = false
-    
+
     init {
         update(json)
     }
@@ -32,5 +36,51 @@ class RoleImpl(client: DiscordClientImpl, json: JsonObject, override val server:
 
     override fun toString(): String {
         return "RoleImpl(name='$name', permissions=$permissions, color=$color, position=$position, hoist=$hoist, managed=$managed, mentionable=$mentionable)"
+    }
+
+    override suspend fun edit(block: RoleUpdater.() -> Unit) {
+        checkPermission(server, Permission.MANAGE_ROLES)
+        checkManageable(this)
+
+        val updater = RoleUpdater(this).apply(block)
+
+        val json = json {
+            if (updater.name != name) {
+                "name" to updater.name
+            }
+
+            if (updater.hoist != hoist) {
+                "hoist" to updater.hoist
+            }
+
+            if (updater.mentionable != mentionable) {
+                "mentionable" to updater.mentionable
+            }
+
+            if (updater.permissions != permissions) {
+                "permissions" to updater.permissions.compile()
+            }
+
+            if (updater.color != color) {
+                "color" to updater.color.uRgb()
+            }
+        }
+
+        if (json.isNotEmpty()) {
+            client.rest.request(
+                    Endpoint.MODIFY_GUILD_ROLE.format(mapOf("guild.id" to server.id, "role.id" to id)),
+                    json
+            )
+        }
+
+        if (updater.position != position) {
+            client.rest.request(
+                    Endpoint.MODIFY_GUILD_ROLE_POSITIONS.format(mapOf("guild.id" to server.id)),
+                    json {
+                        "id" to id
+                        "position" to updater.position
+                    }
+            )
+        }
     }
 }

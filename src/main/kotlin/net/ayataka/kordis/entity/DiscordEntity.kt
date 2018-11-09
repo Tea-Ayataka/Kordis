@@ -2,6 +2,7 @@ package net.ayataka.kordis.entity
 
 import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.entity.collection.find
+import net.ayataka.kordis.entity.server.Role
 import net.ayataka.kordis.entity.server.Server
 import net.ayataka.kordis.entity.server.member.Member
 import net.ayataka.kordis.entity.server.permission.Permission
@@ -19,14 +20,20 @@ abstract class DiscordEntity(
     }
 
     fun checkPermission(server: Server, permission: Permission) {
-        if (server.members.find(client.botUser)?.has(permission) != true) {
-            throw MissingPermissionsException(server)
+        if (server.members.find(client.botUser)?.hasPermission(permission) != true) {
+            throw MissingPermissionsException(server, "Permission: ${permission.desciption}")
         }
     }
 
     fun checkManageable(member: Member) {
         if (member.server.members.find(client.botUser)?.canManage(member) != true) {
-            throw MissingPermissionsException(member.server)
+            throw MissingPermissionsException(member.server, "User: ${member.tag} (${member.id})")
+        }
+    }
+
+    fun checkManageable(role: Role) {
+        if (role.server.members.find(client.botUser)?.canManage(role) != true) {
+            throw MissingPermissionsException(role.server, "Role: ${role.name} (${role.id})")
         }
     }
 

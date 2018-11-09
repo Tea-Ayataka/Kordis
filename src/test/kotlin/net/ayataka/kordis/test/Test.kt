@@ -4,8 +4,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import net.ayataka.kordis.Kordis
 import net.ayataka.kordis.addListener
-import net.ayataka.kordis.entity.permissions
 import net.ayataka.kordis.entity.server.permission.Permission
+import net.ayataka.kordis.entity.server.permission.permissions
 import net.ayataka.kordis.event.EventListener
 import net.ayataka.kordis.event.events.ServerReadyEvent
 import net.ayataka.kordis.event.events.message.MessageReceiveEvent
@@ -75,7 +75,9 @@ class TestBot {
                 field("Permission Overwrites (Role)", channel.rolePermissionOverwrites.size, true)
             }
 
-            event.server?.members?.find(author.id)?.unban()
+            event.server?.edit {
+                name = "VeryName"
+            }
         }
 
         if (text.startsWith("!roleinfo")) {
@@ -100,6 +102,10 @@ class TestBot {
         event.server.members.find(9999999)
         event.server.members.forEach {
             println("Name: ${it.tag}, Roles: ${it.roles.joinToString()}}")
+        }
+        println("Roles:")
+        event.server.roles.forEach {
+            println("Name: ${it.name}, Pos: ${it.position}")
         }
         println("Text Channels:")
         event.server.textChannels.forEach {

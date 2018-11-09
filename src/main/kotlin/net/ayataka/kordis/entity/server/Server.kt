@@ -1,16 +1,16 @@
 package net.ayataka.kordis.entity.server
 
-import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.entity.Entity
 import net.ayataka.kordis.entity.Nameable
 import net.ayataka.kordis.entity.collection.NameableEntitySet
+import net.ayataka.kordis.entity.image.Icon
 import net.ayataka.kordis.entity.server.channel.Category
 import net.ayataka.kordis.entity.server.channel.ServerTextChannel
 import net.ayataka.kordis.entity.server.channel.ServerVoiceChannel
 import net.ayataka.kordis.entity.server.enums.*
 import net.ayataka.kordis.entity.server.member.Member
+import net.ayataka.kordis.entity.server.updater.ServerUpdater
 import net.ayataka.kordis.entity.user.User
-import net.ayataka.kordis.rest.Endpoint
 
 interface Server : Nameable, Entity {
     /**
@@ -24,14 +24,14 @@ interface Server : Nameable, Entity {
     val members: NameableEntitySet<Member>
 
     /**
-     * The hash id of the server icon
+     * The url of the server icon
      */
-    val iconHash: String?
+    val icon: Icon?
 
     /**
-     * The hash id of the server splash
+     * The url of the server splash
      */
-    val splashHash: String?
+    val splash: Icon?
 
     /**
      * The owner of this server
@@ -59,48 +59,65 @@ interface Server : Nameable, Entity {
      */
     val verificationLevel: VerificationLevel
 
+    /**
+     * The default message notification level of this server
+     */
     val defaultMessageNotificationLevel: MessageNotificationLevel
 
+    /**
+     * The explicit content filter level of this server
+     */
     val explicitContentFilterLevel: ExplicitContentFilterLevel
 
-    val roles: NameableEntitySet<Role>
-
-    val emojis: NameableEntitySet<Emoji>
-
+    /**
+     * The Multi-Factor-Authorization level of this server
+     */
     val mfaLevel: MfaLevel
 
+    /**
+     * The roles on this server
+     */
+    val roles: NameableEntitySet<Role>
+
+    /**
+     * The emojis on this server
+     */
+    val emojis: NameableEntitySet<Emoji>
+
+    /**
+     * The text channels on this server
+     */
     val textChannels: NameableEntitySet<ServerTextChannel>
 
+    /**
+     * The voice channels on this server
+     */
     val voiceChannels: NameableEntitySet<ServerVoiceChannel>
 
+    /**
+     * The channel categories on this server
+     */
     val categories: NameableEntitySet<Category>
 
     /**
-     * Kick this member
+     * Kick a member from this server
      */
     suspend fun kick(member: Member)
 
     /**
-     * Ban this user from a server
+     * Ban a user from this server
      */
-    suspend fun ban(user: User)
+    suspend fun ban(user: User, deleteMessageDays: Int = 0, reason: String? = null)
 
     /**
-     * Unban this user from a server
+     * Unban a user from this server
      */
     suspend fun unban(user: User)
 
     /**
-     * Ban this user from a server
+     * Edit this server
+     *
+     * Requires Manage Server permission
      */
-    suspend fun ban(server: Server, deleteMessageDays: Int = 0, reason: String? = null)
-
-    suspend fun edit(
-            //name: String = client.serverMap[id]!!.name,
-            //iconHash: String = client.serverMap[id],
-            // a: String = client.serverMap.elements().toList()
-
-    ) {
-
-    }
+    suspend fun edit(block: ServerUpdater.() -> Unit)
 }
