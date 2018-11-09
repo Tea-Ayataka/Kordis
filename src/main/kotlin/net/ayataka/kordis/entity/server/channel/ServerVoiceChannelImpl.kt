@@ -11,7 +11,7 @@ class ServerVoiceChannelImpl(
 ) : ServerVoiceChannel, ServerChannelImpl(server, client, json["id"].long) {
     @Volatile override var bitrate: Int = -1
     @Volatile override var userLimit: Int = -1
-    @Volatile override var channelCategory: ChannelCategory? = null
+    @Volatile override var category: ChannelCategory? = null
 
     init {
         try {
@@ -30,13 +30,13 @@ class ServerVoiceChannelImpl(
         userLimit = json["user_limit"].int
 
         json.getOrNull("parent_id")?.longOrNull?.let {
-            channelCategory = server.channelCategories.find(it)
+            category = server.channelCategories.find(it)
         }
 
         loadPermissionOverwrites(json)
     }
 
     override fun toString(): String {
-        return "ServerVoiceChannelImpl(name=$name, position=$position, bitrate=$bitrate, userLimit=$userLimit, channelCategory=$channelCategory)"
+        return "ServerVoiceChannelImpl(name=$name, position=$position, bitrate=$bitrate, userLimit=$userLimit, category=$category)"
     }
 }

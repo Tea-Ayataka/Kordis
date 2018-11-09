@@ -3,6 +3,7 @@ package net.ayataka.kordis.event
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import net.ayataka.kordis.LOGGER
 import net.ayataka.kordis.utils.start
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.reflect.KClass
@@ -59,9 +60,7 @@ class EventManager {
                     try {
                         item.second.callSuspend(item.first, event)
                     } catch (ex: Exception) {
-                        println("A exception occurred during invoking ${item.first::class.qualifiedName}::${item.second.name}")
-                        ex.printStackTrace()
-                        ex.cause?.printStackTrace()
+                        LOGGER.error("An exception occurred during invoking ${item.first::class.qualifiedName}::${item.second.name}", ex.cause ?: ex)
                     }
                 }
             }

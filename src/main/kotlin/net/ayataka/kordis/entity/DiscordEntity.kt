@@ -4,6 +4,7 @@ import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.entity.collection.find
 import net.ayataka.kordis.entity.server.Role
 import net.ayataka.kordis.entity.server.Server
+import net.ayataka.kordis.entity.server.channel.ServerChannel
 import net.ayataka.kordis.entity.server.member.Member
 import net.ayataka.kordis.entity.server.permission.Permission
 import net.ayataka.kordis.exception.MissingPermissionsException
@@ -34,6 +35,12 @@ abstract class DiscordEntity(
     fun checkManageable(role: Role) {
         if (role.server.members.find(client.botUser)?.canManage(role) != true) {
             throw MissingPermissionsException(role.server, "Role: ${role.name} (${role.id})")
+        }
+    }
+
+    fun checkManageable(channel: ServerChannel) {
+        if (channel.server.members.find(client.botUser)?.canManage(channel) != true) {
+            throw MissingPermissionsException(channel.server, "Channel: ${channel.name} (${channel.id})")
         }
     }
 

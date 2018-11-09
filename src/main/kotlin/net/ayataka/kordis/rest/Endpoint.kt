@@ -113,15 +113,15 @@ enum class Endpoint(val method: HttpMethod, val path: String) {
     GET_GATEWAY_BOT(HttpMethod.Get, "/gateway/bot")
     ;
 
-    fun format(args: Map<String, Any>? = null): FormattedEndPoint {
+    fun format(vararg args: Pair<String, Any>): FormattedEndPoint {
         var path = this.path
         val majorParams = mutableListOf<String>()
 
-        args?.forEach {
-            path = path.replace("{${it.key}}", it.value.toString())
+        args.forEach {
+            path = path.replace("{${it.first}}", it.second.toString())
 
-            if (it.key in MAJOR_RATELIMIT_PARAMETERS) {
-                majorParams.add(it.value.toString())
+            if (it.first in MAJOR_RATELIMIT_PARAMETERS) {
+                majorParams.add(it.second.toString())
             }
         }
 

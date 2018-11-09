@@ -4,6 +4,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import net.ayataka.kordis.Kordis
 import net.ayataka.kordis.addListener
+import net.ayataka.kordis.entity.collection.botUser
+import net.ayataka.kordis.entity.collection.findByTag
 import net.ayataka.kordis.entity.server.permission.Permission
 import net.ayataka.kordis.entity.server.permission.permissions
 import net.ayataka.kordis.event.EventListener
@@ -68,7 +70,7 @@ class TestBot {
                 field("ID", channel.id)
                 field("Channel created", channel.timestamp.formatAsDate(), true)
                 field("Position", channel.position, true)
-                field("ChannelCategory", channel.channelCategory?.name ?: "None", true)
+                field("ChannelCategory", channel.category?.name ?: "None", true)
                 field("Topic", channel.topic.ifEmpty { "Empty" }, true)
                 field("NSFW", channel.nsfw.toString(), true)
                 field("Permission Overwrites (User)", channel.userPermissionOverwrites.size, true)
@@ -110,6 +112,11 @@ class TestBot {
         println("Text Channels:")
         event.server.textChannels.forEach {
             println(it)
+            if (event.server.members.botUser.canManage(it)) {
+                it.edit {
+                    name = "Hehe! " + Random.nextInt(999999)
+                }
+            }
         }
 
         val channel = event.server.textChannels.findByName("aaasaaaaa")

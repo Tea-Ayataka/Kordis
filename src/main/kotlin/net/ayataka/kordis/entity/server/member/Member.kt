@@ -2,6 +2,7 @@ package net.ayataka.kordis.entity.server.member
 
 import net.ayataka.kordis.entity.server.Role
 import net.ayataka.kordis.entity.server.Server
+import net.ayataka.kordis.entity.server.channel.ServerChannel
 import net.ayataka.kordis.entity.server.permission.Permission
 import net.ayataka.kordis.entity.user.User
 import java.time.Instant
@@ -61,4 +62,68 @@ interface Member : User {
      * Checks if this member can manage the role or not
      */
     fun canManage(role: Role) = role.position < roles.maxBy { it.position }!!.position
+
+    /**
+     * Checks if this member can manage the channel or not
+     */
+    // TODO: MAKE THIS SMARTER
+    fun canManage(channel: ServerChannel): Boolean {
+        var result = true
+
+        channel.rolePermissionOverwrites
+                .filter { it.role in roles }
+                .sortedBy { it.role.position }
+                .forEach {
+                    if (Permission.VIEW_CHANNEL in it.deny) {
+                        result = false
+                    } else if (Permission.VIEW_CHANNEL in it.allow) {
+                        result = true
+                    }
+                }
+
+        channel.userPermissionOverwrites
+                .filter { it.user.id == id }
+                .forEach {
+                    if (Permission.VIEW_CHANNEL in it.deny) {
+                        result = false
+                    } else if (Permission.VIEW_CHANNEL in it.allow) {
+                        result = true
+                    }
+                }
+
+        if (result) {
+            channel.rolePermissionOverwrites
+                    .filter { it.role in roles }
+                    .sortedBy { it.role.position }
+                    .forEach {
+                        if (Permission.MANAGE_CHANNELS in it.deny) {
+                            result = false
+                        } else if (Permission.MANAGE_CHANNELS in it.allow) {
+                            result = true
+                        }
+                    }
+
+            channel.userPermissionOverwrites
+                    .filter { it.user.id == id }
+                    .forEach {
+                        if (Permission.MANAGE_CHANNELS in it.deny) {
+                            result = false
+                        } else if (Permission.MANAGE_CHANNELS in it.allow) {
+                            result = true
+                        }
+                    }
+        }
+
+        return result
+    }
+
+    /**
+     * Add a role to the member
+     */
+    suspend fun addRole(role: Role)
+
+    /**
+     * Remove a role from the member
+     */
+    suspend fun removeRole(role: Role)
 }

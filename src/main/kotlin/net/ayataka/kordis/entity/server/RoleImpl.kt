@@ -68,14 +68,14 @@ class RoleImpl(client: DiscordClientImpl, json: JsonObject, override val server:
 
         if (json.isNotEmpty()) {
             client.rest.request(
-                    Endpoint.MODIFY_GUILD_ROLE.format(mapOf("guild.id" to server.id, "role.id" to id)),
+                    Endpoint.MODIFY_GUILD_ROLE.format("guild.id" to server.id, "role.id" to id),
                     json
             )
         }
 
         if (updater.position != position) {
             client.rest.request(
-                    Endpoint.MODIFY_GUILD_ROLE_POSITIONS.format(mapOf("guild.id" to server.id)),
+                    Endpoint.MODIFY_GUILD_ROLE_POSITIONS.format("guild.id" to server.id),
                     json {
                         "id" to id
                         "position" to updater.position

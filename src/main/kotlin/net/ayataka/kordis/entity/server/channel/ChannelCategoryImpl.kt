@@ -62,7 +62,7 @@ class ChannelCategoryImpl(
 
         if (json.isNotEmpty()) {
             client.rest.request(
-                    Endpoint.MODIFY_CHANNEL_PATCH.format(mapOf("channel.id" to id)),
+                    Endpoint.MODIFY_CHANNEL_PATCH.format("channel.id" to id),
                     json
             )
         }

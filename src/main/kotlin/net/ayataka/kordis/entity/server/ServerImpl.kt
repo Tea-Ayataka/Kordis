@@ -124,7 +124,7 @@ class ServerImpl(client: DiscordClientImpl, json: JsonObject) : Server, Updatabl
         checkManageable(member)
 
         client.rest.request(
-                Endpoint.REMOVE_GUILD_MEMBER.format(mapOf("guild.id" to id, "user.id" to member.id))
+                Endpoint.REMOVE_GUILD_MEMBER.format("guild.id" to id, "user.id" to member.id)
         )
     }
 
@@ -133,7 +133,7 @@ class ServerImpl(client: DiscordClientImpl, json: JsonObject) : Server, Updatabl
         members.find(user)?.let { checkManageable(it) }
 
         client.rest.request(
-                Endpoint.CREATE_GUILD_BAN.format(mapOf("guild.id" to id, "user.id" to user.id)),
+                Endpoint.CREATE_GUILD_BAN.format("guild.id" to id, "user.id" to user.id),
                 json {
                     "delete-message-days" to deleteMessageDays
                     if (reason != null && reason.isNotEmpty()) {
@@ -147,7 +147,7 @@ class ServerImpl(client: DiscordClientImpl, json: JsonObject) : Server, Updatabl
         checkPermission(this, Permission.KICK_MEMBERS)
 
         client.rest.request(
-                Endpoint.REMOVE_GUILD_BAN.format(mapOf("guild.id" to id, "user.id" to user.id))
+                Endpoint.REMOVE_GUILD_BAN.format("guild.id" to id, "user.id" to user.id)
         )
     }
 
@@ -185,7 +185,7 @@ class ServerImpl(client: DiscordClientImpl, json: JsonObject) : Server, Updatabl
 
         if (json.isNotEmpty()) {
             client.rest.request(
-                    Endpoint.MODIFY_GUILD.format(mapOf("guild.id" to id)),
+                    Endpoint.MODIFY_GUILD.format("guild.id" to id),
                     json
             )
         }

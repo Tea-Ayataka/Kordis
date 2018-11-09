@@ -89,7 +89,7 @@ interface Message : Entity {
 
         val client = client as DiscordClientImpl
         val response = client.rest.request(
-                Endpoint.EDIT_MESSAGE.format(mapOf("message.id" to id, "channel.id" to channel!!.id)),
+                Endpoint.EDIT_MESSAGE.format("message.id" to id, "channel.id" to channel.id),
                 json {
                     "content" to text
                     if (embed != null) {
