@@ -5,10 +5,12 @@ import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.entity.DiscordEntity
 import net.ayataka.kordis.entity.channel.TextChannel
 import net.ayataka.kordis.entity.message.embed.Embed
+import net.ayataka.kordis.entity.message.embed.EmbedBuilder
 import net.ayataka.kordis.entity.message.embed.EmbedImpl
 import net.ayataka.kordis.entity.server.Server
 import net.ayataka.kordis.entity.user.User
 import net.ayataka.kordis.entity.user.UserImpl
+import net.ayataka.kordis.rest.Endpoint
 import java.time.Instant
 import java.time.format.DateTimeFormatter
 
@@ -44,8 +46,23 @@ class MessageImpl(client: DiscordClientImpl, json: JsonObject, _server: Server? 
             val authorData = json["author"].jsonObject
             val authorId = authorData["id"].long
 
-            client.users.updateOrPut(authorId, authorData) { UserImpl(client, authorData) }
-            author = client.users.find(authorId)!!
+            author = client.users.updateOrPut(authorId, authorData) { UserImpl(client, authorData) }
         }
+    }
+
+    override suspend fun edit(text: String, embed: (EmbedBuilder.() -> Unit)?): Message {
+        val response = client.rest.request(
+                Endpoint.EDIT_MESSAGE.format("message.id" to id, "channel.id" to channel.id),
+                json {
+                    if (content.isNotEmpty()) {
+                        "content" to text
+                    }
+                    if (embed != null) {
+                        "embed" to EmbedBuilder().apply(embed).build().toJson()
+                    }
+                }
+        )
+
+        return MessageImpl(client, response.jsonObject)
     }
 }

@@ -1,16 +1,13 @@
 package net.ayataka.kordis.entity.message
 
-import kotlinx.serialization.json.json
-import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.entity.Entity
 import net.ayataka.kordis.entity.channel.TextChannel
 import net.ayataka.kordis.entity.message.embed.Embed
 import net.ayataka.kordis.entity.message.embed.EmbedBuilder
 import net.ayataka.kordis.entity.server.Server
-import net.ayataka.kordis.entity.server.channel.ServerTextChannel
+import net.ayataka.kordis.entity.server.channel.text.ServerTextChannel
 import net.ayataka.kordis.entity.server.member.Member
 import net.ayataka.kordis.entity.user.User
-import net.ayataka.kordis.rest.Endpoint
 import java.time.Instant
 
 interface Message : Entity {
@@ -82,22 +79,5 @@ interface Message : Entity {
     /**
      * Edit this message
      */
-    suspend fun edit(text: String = "", embed: (EmbedBuilder.() -> Unit)? = null): Message {
-        if (server == null) {
-            throw UnsupportedOperationException()
-        }
-
-        val client = client as DiscordClientImpl
-        val response = client.rest.request(
-                Endpoint.EDIT_MESSAGE.format("message.id" to id, "channel.id" to channel.id),
-                json {
-                    "content" to text
-                    if (embed != null) {
-                        "embed" to EmbedBuilder().apply { embed(this) }.build().toJson()
-                    }
-                }
-        )
-
-        return MessageImpl(client, response)
-    }
+    suspend fun edit(text: String = "", embed: (EmbedBuilder.() -> Unit)? = null): Message
 }

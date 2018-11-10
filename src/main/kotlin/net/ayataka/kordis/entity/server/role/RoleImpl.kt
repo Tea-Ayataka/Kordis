@@ -1,17 +1,17 @@
-package net.ayataka.kordis.entity.server
+package net.ayataka.kordis.entity.server.role
 
 import kotlinx.serialization.json.*
 import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.entity.DiscordEntity
 import net.ayataka.kordis.entity.Updatable
+import net.ayataka.kordis.entity.server.Server
 import net.ayataka.kordis.entity.server.permission.Permission
 import net.ayataka.kordis.entity.server.permission.PermissionSet
-import net.ayataka.kordis.entity.server.updater.RoleUpdater
 import net.ayataka.kordis.rest.Endpoint
 import net.ayataka.kordis.utils.uRgb
 import java.awt.Color
 
-class RoleImpl(client: DiscordClientImpl, json: JsonObject, override val server: Server) : Role, Updatable, DiscordEntity(client, json["id"].long) {
+class RoleImpl(override val server: Server, client: DiscordClientImpl, json: JsonObject) : Role, Updatable, DiscordEntity(client, json["id"].long) {
     @Volatile override var name: String = ""
     @Volatile override var permissions: PermissionSet = PermissionSet(0)
     @Volatile override var color: Color = Color.BLACK
@@ -38,11 +38,11 @@ class RoleImpl(client: DiscordClientImpl, json: JsonObject, override val server:
         return "RoleImpl(name='$name', permissions=$permissions, color=$color, position=$position, hoist=$hoist, managed=$managed, mentionable=$mentionable)"
     }
 
-    override suspend fun edit(block: RoleUpdater.() -> Unit) {
+    override suspend fun edit(block: RoleBuilder.() -> Unit) {
         checkPermission(server, Permission.MANAGE_ROLES)
         checkManageable(this)
 
-        val updater = RoleUpdater(this).apply(block)
+        val updater = RoleBuilder(this).apply(block)
 
         val json = json {
             if (updater.name != name) {
@@ -58,11 +58,11 @@ class RoleImpl(client: DiscordClientImpl, json: JsonObject, override val server:
             }
 
             if (updater.permissions != permissions) {
-                "permissions" to updater.permissions.compile()
+                "permissions" to updater.permissions?.compile()
             }
 
             if (updater.color != color) {
-                "color" to updater.color.uRgb()
+                "color" to updater.color?.uRgb()
             }
         }
 
@@ -82,5 +82,12 @@ class RoleImpl(client: DiscordClientImpl, json: JsonObject, override val server:
                     }
             )
         }
+    }
+
+    override suspend fun delete() {
+        checkPermission(server, Permission.MANAGE_ROLES)
+        checkManageable(this)
+
+        client.rest.request(Endpoint.DELETE_GUILD_ROLE.format("guild.id" to server.id, "role.id" to id))
     }
 }

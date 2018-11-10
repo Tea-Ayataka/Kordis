@@ -1,8 +1,9 @@
-package net.ayataka.kordis.entity.server.channel
+package net.ayataka.kordis.entity.server.channel.text
 
 import net.ayataka.kordis.entity.Mentionable
 import net.ayataka.kordis.entity.channel.TextChannel
-import net.ayataka.kordis.entity.server.channel.updater.ServerTextChannelUpdater
+import net.ayataka.kordis.entity.server.channel.category.ChannelCategory
+import net.ayataka.kordis.entity.server.channel.ServerChannel
 
 interface ServerTextChannel : ServerChannel, Mentionable, TextChannel {
     /**
@@ -34,5 +35,5 @@ interface ServerTextChannel : ServerChannel, Mentionable, TextChannel {
     /**
      * Edit the channel
      */
-    suspend fun edit(block: ServerTextChannelUpdater.() -> Unit)
+    suspend fun edit(block: ServerTextChannelBuilder.() -> Unit)
 }

@@ -1,8 +1,6 @@
-package net.ayataka.kordis.entity.server
+package net.ayataka.kordis.entity.server.member
 
-import net.ayataka.kordis.entity.server.member.Member
-import net.ayataka.kordis.entity.server.permission.Permission
-import net.ayataka.kordis.entity.server.permission.PermissionSet
+import net.ayataka.kordis.entity.server.Server
 import net.ayataka.kordis.entity.user.User
 
 suspend fun User.unban(server: Server) {

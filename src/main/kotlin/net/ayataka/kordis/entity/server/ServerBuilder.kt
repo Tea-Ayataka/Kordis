@@ -1,8 +1,6 @@
-package net.ayataka.kordis.entity.server.updater
+package net.ayataka.kordis.entity.server
 
-import net.ayataka.kordis.entity.server.Server
-
-class ServerUpdater(val server: Server) {
+class ServerBuilder(val server: Server) {
     var name = server.name
     var region = server.region
     var afkChannel = server.afkChannel

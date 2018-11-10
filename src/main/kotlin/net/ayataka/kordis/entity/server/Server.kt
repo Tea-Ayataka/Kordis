@@ -4,25 +4,22 @@ import net.ayataka.kordis.entity.Entity
 import net.ayataka.kordis.entity.Nameable
 import net.ayataka.kordis.entity.collection.NameableEntitySet
 import net.ayataka.kordis.entity.image.Icon
-import net.ayataka.kordis.entity.server.channel.ChannelCategory
-import net.ayataka.kordis.entity.server.channel.ServerTextChannel
-import net.ayataka.kordis.entity.server.channel.ServerVoiceChannel
+import net.ayataka.kordis.entity.server.ban.Ban
+import net.ayataka.kordis.entity.server.channel.ServerChannelBuilder
+import net.ayataka.kordis.entity.server.channel.category.ChannelCategory
+import net.ayataka.kordis.entity.server.channel.text.ServerTextChannel
+import net.ayataka.kordis.entity.server.channel.text.ServerTextChannelBuilder
+import net.ayataka.kordis.entity.server.channel.voice.ServerVoiceChannel
+import net.ayataka.kordis.entity.server.channel.voice.ServerVoiceChannelBuilder
+import net.ayataka.kordis.entity.server.emoji.Emoji
+import net.ayataka.kordis.entity.server.emoji.EmojiBuilder
 import net.ayataka.kordis.entity.server.enums.*
 import net.ayataka.kordis.entity.server.member.Member
-import net.ayataka.kordis.entity.server.updater.ServerUpdater
+import net.ayataka.kordis.entity.server.role.Role
+import net.ayataka.kordis.entity.server.role.RoleBuilder
 import net.ayataka.kordis.entity.user.User
 
 interface Server : Nameable, Entity {
-    /**
-     * The name of this server
-     */
-    override val name: String
-
-    /**
-     * The members in this server
-     */
-    val members: NameableEntitySet<Member>
-
     /**
      * The url of the server icon
      */
@@ -75,6 +72,11 @@ interface Server : Nameable, Entity {
     val mfaLevel: MfaLevel
 
     /**
+     * The members in this server
+     */
+    val members: NameableEntitySet<Member>
+
+    /**
      * The roles on this server
      */
     val roles: NameableEntitySet<Role>
@@ -100,6 +102,11 @@ interface Server : Nameable, Entity {
     val channelCategories: NameableEntitySet<ChannelCategory>
 
     /**
+     * Get server bans
+     */
+    suspend fun bans(): Collection<Ban>
+
+    /**
      * Kick a member from this server
      */
     suspend fun kick(member: Member)
@@ -116,8 +123,31 @@ interface Server : Nameable, Entity {
 
     /**
      * Edit this server
-     *
-     * Requires Manage Server permission
      */
-    suspend fun edit(block: ServerUpdater.() -> Unit)
+    suspend fun edit(block: ServerBuilder.() -> Unit)
+
+    /**
+     * Create a text channel
+     */
+    suspend fun createTextChannel(block: ServerTextChannelBuilder.() -> Unit): ServerTextChannel
+
+    /**
+     * Create a voice channel
+     */
+    suspend fun createVoiceChannel(block: ServerVoiceChannelBuilder.() -> Unit): ServerVoiceChannel
+
+    /**
+     * Create a channel category
+     */
+    suspend fun createChannelCategory(block: ServerChannelBuilder.() -> Unit): ChannelCategory
+
+    /**
+     * Create a role
+     */
+    suspend fun createRole(block: RoleBuilder.() -> Unit): Role
+
+    /**
+     * Create an emoji
+     */
+    suspend fun createEmoji(block: EmojiBuilder.() -> Unit): Emoji
 }

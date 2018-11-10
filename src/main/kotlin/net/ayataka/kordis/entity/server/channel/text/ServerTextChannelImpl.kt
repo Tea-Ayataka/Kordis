@@ -1,4 +1,4 @@
-package net.ayataka.kordis.entity.server.channel
+package net.ayataka.kordis.entity.server.channel.text
 
 import kotlinx.serialization.json.*
 import net.ayataka.kordis.DiscordClientImpl
@@ -7,7 +7,8 @@ import net.ayataka.kordis.entity.message.MessageBuilder
 import net.ayataka.kordis.entity.message.MessageImpl
 import net.ayataka.kordis.entity.message.embed.EmbedBuilder
 import net.ayataka.kordis.entity.server.Server
-import net.ayataka.kordis.entity.server.channel.updater.ServerTextChannelUpdater
+import net.ayataka.kordis.entity.server.channel.ServerChannelImpl
+import net.ayataka.kordis.entity.server.channel.category.ChannelCategory
 import net.ayataka.kordis.entity.server.permission.Permission
 import net.ayataka.kordis.rest.Endpoint
 
@@ -22,16 +23,10 @@ class ServerTextChannelImpl(
     @Volatile override var category: ChannelCategory? = null
 
     init {
-        try {
-            update(json)
-        } catch (ex: Exception) {
-            ex.printStackTrace()
-            println(json)
-            throw ex
-        }
+        update(json)
     }
 
-    fun update(json: JsonObject) {
+    override fun update(json: JsonObject) {
         name = json["name"].content
         topic = json.getOrNull("topic")?.content ?: ""
         nsfw = json.getOrNull("nsfw")?.boolean == true
@@ -61,11 +56,11 @@ class ServerTextChannelImpl(
         }
     }
 
-    override suspend fun edit(block: ServerTextChannelUpdater.() -> Unit) {
+    override suspend fun edit(block: ServerTextChannelBuilder.() -> Unit) {
         checkPermission(server, Permission.MANAGE_CHANNELS)
         checkManageable(this)
 
-        val updater = ServerTextChannelUpdater(this).apply(block)
+        val updater = ServerTextChannelBuilder(this).apply(block)
 
         val json = json {
             if (updater.name != name) {
@@ -88,31 +83,13 @@ class ServerTextChannelImpl(
                 "rate_limit_per_user" to updater.rateLimitPerUser
             }
 
-            if (updater.categoy != category) {
-                "parent_id" to updater.categoy?.id
+            if (updater.category != category) {
+                "parent_id" to updater.category?.id
             }
 
             if (updater.userPermissionOverwrites != userPermissionOverwrites
                     || updater.rolePermissionOverwrites != rolePermissionOverwrites) {
-                "permission_overwrites" to jsonArray {
-                    updater.userPermissionOverwrites.forEach {
-                        +json {
-                            "id" to it.user.id
-                            "allow" to it.allow
-                            "deny" to it.deny
-                            "type" to "user"
-                        }
-                    }
-
-                    updater.rolePermissionOverwrites.forEach {
-                        +json {
-                            "id" to it.role.id
-                            "allow" to it.allow
-                            "deny" to it.deny
-                            "type" to "role"
-                        }
-                    }
-                }
+                "permission_overwrites" to permissionOverwritesToJson(updater)
             }
         }
 
@@ -130,6 +107,6 @@ class ServerTextChannelImpl(
                 MessageBuilder().apply(block).build()
         )
 
-        return MessageImpl(client, response, server)
+        return MessageImpl(client, response.jsonObject, server)
     }
 }

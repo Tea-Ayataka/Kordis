@@ -1,6 +1,6 @@
 package net.ayataka.kordis.entity.server.member
 
-import net.ayataka.kordis.entity.server.Role
+import net.ayataka.kordis.entity.server.role.Role
 import net.ayataka.kordis.entity.server.Server
 import net.ayataka.kordis.entity.server.channel.ServerChannel
 import net.ayataka.kordis.entity.server.permission.Permission
@@ -66,23 +66,13 @@ interface Member : User {
     /**
      * Checks if this member can manage the channel or not
      */
-    // TODO: MAKE THIS SMARTER
     fun canManage(channel: ServerChannel): Boolean {
         var result = true
 
         channel.rolePermissionOverwrites
                 .filter { it.role in roles }
                 .sortedBy { it.role.position }
-                .forEach {
-                    if (Permission.VIEW_CHANNEL in it.deny) {
-                        result = false
-                    } else if (Permission.VIEW_CHANNEL in it.allow) {
-                        result = true
-                    }
-                }
-
-        channel.userPermissionOverwrites
-                .filter { it.user.id == id }
+                .plus(channel.userPermissionOverwrites.filter { it.user == this })
                 .forEach {
                     if (Permission.VIEW_CHANNEL in it.deny) {
                         result = false
@@ -95,16 +85,7 @@ interface Member : User {
             channel.rolePermissionOverwrites
                     .filter { it.role in roles }
                     .sortedBy { it.role.position }
-                    .forEach {
-                        if (Permission.MANAGE_CHANNELS in it.deny) {
-                            result = false
-                        } else if (Permission.MANAGE_CHANNELS in it.allow) {
-                            result = true
-                        }
-                    }
-
-            channel.userPermissionOverwrites
-                    .filter { it.user.id == id }
+                    .plus(channel.userPermissionOverwrites.filter { it.user == this })
                     .forEach {
                         if (Permission.MANAGE_CHANNELS in it.deny) {
                             result = false

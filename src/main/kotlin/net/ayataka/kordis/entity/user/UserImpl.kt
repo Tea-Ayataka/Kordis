@@ -16,12 +16,6 @@ class UserImpl(client: DiscordClientImpl, json: JsonObject) : User, Updatable, D
 
     init {
         update(json)
-
-        synchronized(client.users) {
-            if (!client.users.add(this)) {
-                throw IllegalStateException("This user is already initialized")
-            }
-        }
     }
 
     override fun update(json: JsonObject) {

@@ -2,7 +2,6 @@ package net.ayataka.kordis
 
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.content
-import net.ayataka.kordis.entity.collection.EntitySetImpl
 import net.ayataka.kordis.entity.collection.NameableEntitySetImpl
 import net.ayataka.kordis.entity.server.Server
 import net.ayataka.kordis.entity.user.User
@@ -45,10 +44,10 @@ class DiscordClientImpl(
         status = ConnectionStatus.CONNECTING
 
         // Get the bot user
-        botUser = UserImpl(this, rest.request(Endpoint.GET_CURRENT_USER.format()))
+        botUser = users.put(UserImpl(this, rest.request(Endpoint.GET_CURRENT_USER.format()).jsonObject))
 
         // Connect to the gateway
-        val endpoint = rest.request(Endpoint.GET_GATEWAY_BOT.format())["url"].content
+        val endpoint = rest.request(Endpoint.GET_GATEWAY_BOT.format()).jsonObject["url"].content
         gateway = GatewayClient(this, shard, maxShards, endpoint)
         gateway.connectBlocking()
 

@@ -1,5 +1,5 @@
 package net.ayataka.kordis.entity
 
-interface Mentionable : Entity {
+interface Mentionable  {
     val mention: String
 }

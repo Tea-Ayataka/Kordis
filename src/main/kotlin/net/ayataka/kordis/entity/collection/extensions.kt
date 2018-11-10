@@ -1,7 +1,7 @@
 package net.ayataka.kordis.entity.collection
 
-import net.ayataka.kordis.entity.server.Role
 import net.ayataka.kordis.entity.server.member.Member
+import net.ayataka.kordis.entity.server.role.Role
 import net.ayataka.kordis.entity.user.User
 
 fun NameableEntitySet<Member>.find(user: User) =

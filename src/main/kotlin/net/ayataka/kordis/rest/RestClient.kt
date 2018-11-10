@@ -14,10 +14,7 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import kotlinx.coroutines.delay
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonTreeParser
-import kotlinx.serialization.json.boolean
-import kotlinx.serialization.json.long
+import kotlinx.serialization.json.*
 import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.LOGGER
 import net.ayataka.kordis.exception.DiscordException
@@ -33,7 +30,7 @@ class RestClient(private val discordClient: DiscordClientImpl) {
         }
     }
 
-    suspend fun request(endPoint: FormattedEndPoint, data: JsonObject? = null, rateLimitRetries: Int = 50): JsonObject {
+    suspend fun request(endPoint: FormattedEndPoint, data: JsonObject? = null, rateLimitRetries: Int = 50): JsonElement {
         repeat(rateLimitRetries) {
             rateLimiter.wait(endPoint)
 
@@ -49,7 +46,7 @@ class RestClient(private val discordClient: DiscordClientImpl) {
 
                 // Receive the body
                 val json = if (call.response.contentType() == ContentType.Application.Json) {
-                    JsonTreeParser(call.response.readText(Charsets.UTF_8)).readFully().jsonObject
+                    JsonTreeParser(call.response.readText(Charsets.UTF_8)).readFully()
                 } else {
                     null
                 }
@@ -65,9 +62,9 @@ class RestClient(private val discordClient: DiscordClientImpl) {
                         throw RateLimitedException()
                     }
 
-                    val delay = json["retry_after"].long
+                    val delay = json.jsonObject["retry_after"].long
 
-                    if (json["global"].boolean) {
+                    if (json.jsonObject["global"].boolean) {
                         rateLimiter.setGlobalRateLimitEnds(delay)
                     } else {
                         rateLimiter.setRateLimitEnds(endPoint, System.currentTimeMillis() + delay)

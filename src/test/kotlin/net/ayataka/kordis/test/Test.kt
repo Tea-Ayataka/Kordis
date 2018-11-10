@@ -2,6 +2,7 @@ package net.ayataka.kordis.test
 
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.Kordis
 import net.ayataka.kordis.addListener
 import net.ayataka.kordis.entity.collection.botUser
@@ -11,6 +12,7 @@ import net.ayataka.kordis.entity.server.permission.permissions
 import net.ayataka.kordis.event.EventListener
 import net.ayataka.kordis.event.events.ServerReadyEvent
 import net.ayataka.kordis.event.events.message.MessageReceiveEvent
+import net.ayataka.kordis.rest.Endpoint
 import net.ayataka.kordis.utils.formatAsDate
 import java.awt.Color
 import java.time.Instant
@@ -34,6 +36,8 @@ class TestBot {
         }
 
         client.users.find(-1)
+
+        println((client as DiscordClientImpl).rest.request(Endpoint.LIST_VOICE_REGIONS.format()))
 
         delay(99999999999999)
     }

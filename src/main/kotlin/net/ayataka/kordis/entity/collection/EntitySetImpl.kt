@@ -27,13 +27,9 @@ open class EntitySetImpl<T : Entity> : IterableEntitySet<T>, MutableCollection<T
         return entities.values.iterator()
     }
 
+    @Deprecated("use add(id: Long, element: () -> T) instead of this")
     override fun add(element: T): Boolean {
-        if (entities[element.id] != null) {
-            return false
-        }
-
-        entities[element.id] = element
-        return true
+        throw UnsupportedOperationException()
     }
 
     override fun addAll(elements: Collection<T>): Boolean {
@@ -98,40 +94,49 @@ open class EntitySetImpl<T : Entity> : IterableEntitySet<T>, MutableCollection<T
         return entities[id]
     }
 
-    fun remove(id: Long): Boolean {
-        if (entities[id] == null) {
-            return false
-        }
+    fun put(value: T): T {
+        synchronized(entities) {
+            if (entities[value.id] != null) {
+                throw IllegalArgumentException("The entity is already in the set! ($value)")
+            }
 
-        entities.remove(id)
-        return true
+            entities[value.id] = value
+            return value
+        }
+    }
+
+    fun remove(id: Long) {
+        synchronized(entities) {
+            if (entities[id] != null) {
+                entities.remove(id)
+            }
+        }
     }
 
     @Suppress("FoldInitializerAndIfToElvis")
-    fun update(id: Long, data: JsonObject) {
+    fun update(id: Long, data: JsonObject): T? {
         synchronized(entities) {
-            val entity = entities[id] ?: return
+            val entity = entities[id] ?: return null
             if (entity !is Updatable) {
                 throw UnsupportedOperationException("The entities are not updatable")
             }
 
             entity.update(data)
+            return entity
         }
     }
 
-    fun updateOrPut(id: Long, data: JsonObject, value: () -> T) {
+    @Suppress("FoldInitializerAndIfToElvis")
+    fun updateOrPut(id: Long, data: JsonObject, value: () -> T): T {
         synchronized(entities) {
-            val entity = entities[id]
-            if (entity == null) {
-                add(value())
-                return
-            }
+            val entity = entities[id] ?: return put(value())
 
             if (entity !is Updatable) {
                 throw UnsupportedOperationException("The entities are not updatable")
             }
 
             entity.update(data)
+            return entity
         }
     }
 
@@ -140,7 +145,7 @@ open class EntitySetImpl<T : Entity> : IterableEntitySet<T>, MutableCollection<T
             entities[id]?.let { return it }
 
             val entity = value()
-            add(entity)
+            put(entity)
             return entity
         }
     }

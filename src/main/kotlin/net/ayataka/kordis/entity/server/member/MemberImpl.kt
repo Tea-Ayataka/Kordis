@@ -7,7 +7,7 @@ import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.entity.DiscordEntity
 import net.ayataka.kordis.entity.Updatable
 import net.ayataka.kordis.entity.collection.everyone
-import net.ayataka.kordis.entity.server.Role
+import net.ayataka.kordis.entity.server.role.Role
 import net.ayataka.kordis.entity.server.Server
 import net.ayataka.kordis.entity.server.permission.Permission
 import net.ayataka.kordis.entity.user.User

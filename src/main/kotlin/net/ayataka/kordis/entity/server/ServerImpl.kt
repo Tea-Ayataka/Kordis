@@ -5,19 +5,35 @@ import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.entity.DiscordEntity
 import net.ayataka.kordis.entity.Updatable
 import net.ayataka.kordis.entity.collection.NameableEntitySetImpl
+import net.ayataka.kordis.entity.collection.botUser
 import net.ayataka.kordis.entity.collection.find
 import net.ayataka.kordis.entity.image.Icon
 import net.ayataka.kordis.entity.image.IconImpl
-import net.ayataka.kordis.entity.server.channel.*
+import net.ayataka.kordis.entity.server.ban.Ban
+import net.ayataka.kordis.entity.server.channel.ServerChannelBuilder
+import net.ayataka.kordis.entity.server.channel.ServerChannelImpl
+import net.ayataka.kordis.entity.server.channel.category.ChannelCategory
+import net.ayataka.kordis.entity.server.channel.category.ChannelCategoryImpl
+import net.ayataka.kordis.entity.server.channel.text.ServerTextChannel
+import net.ayataka.kordis.entity.server.channel.text.ServerTextChannelBuilder
+import net.ayataka.kordis.entity.server.channel.text.ServerTextChannelImpl
+import net.ayataka.kordis.entity.server.channel.voice.ServerVoiceChannel
+import net.ayataka.kordis.entity.server.channel.voice.ServerVoiceChannelBuilder
+import net.ayataka.kordis.entity.server.channel.voice.ServerVoiceChannelImpl
+import net.ayataka.kordis.entity.server.emoji.Emoji
+import net.ayataka.kordis.entity.server.emoji.EmojiBuilder
 import net.ayataka.kordis.entity.server.enums.*
 import net.ayataka.kordis.entity.server.member.Member
 import net.ayataka.kordis.entity.server.member.MemberImpl
 import net.ayataka.kordis.entity.server.permission.Permission
-import net.ayataka.kordis.entity.server.updater.ServerUpdater
+import net.ayataka.kordis.entity.server.role.Role
+import net.ayataka.kordis.entity.server.role.RoleBuilder
+import net.ayataka.kordis.entity.server.role.RoleImpl
 import net.ayataka.kordis.entity.user.User
 import net.ayataka.kordis.entity.user.UserImpl
 import net.ayataka.kordis.rest.Endpoint
 import net.ayataka.kordis.utils.base64
+import net.ayataka.kordis.utils.uRgb
 
 class ServerImpl(client: DiscordClientImpl, json: JsonObject) : Server, Updatable, DiscordEntity(client, json["id"].long) {
     @Volatile override var name = ""
@@ -41,12 +57,6 @@ class ServerImpl(client: DiscordClientImpl, json: JsonObject) : Server, Updatabl
 
     init {
         update(json)
-
-        synchronized(client.servers) {
-            if (!client.servers.add(this)) {
-                throw IllegalStateException("This server is already initialized!")
-            }
-        }
     }
 
     override fun update(json: JsonObject) {
@@ -66,7 +76,7 @@ class ServerImpl(client: DiscordClientImpl, json: JsonObject) : Server, Updatabl
 
         roles.removeIf { it.id !in roleIds }
         roleObjects.forEach {
-            roles.updateOrPut(it["id"].long, it) { RoleImpl(client, it, this) }
+            roles.updateOrPut(it["id"].long, it) { RoleImpl(this, client, it) }
         }
 
         // Update members
@@ -151,10 +161,10 @@ class ServerImpl(client: DiscordClientImpl, json: JsonObject) : Server, Updatabl
         )
     }
 
-    override suspend fun edit(block: ServerUpdater.() -> Unit) {
+    override suspend fun edit(block: ServerBuilder.() -> Unit) {
         checkPermission(this, Permission.MANAGE_GUILD)
 
-        val updater = ServerUpdater(this).apply(block)
+        val updater = ServerBuilder(this).apply(block)
 
         val json = json {
             if (updater.name != name) {
@@ -181,6 +191,9 @@ class ServerImpl(client: DiscordClientImpl, json: JsonObject) : Server, Updatabl
             if (updater.mfaLevel != mfaLevel) {
                 "mfa_level" to updater.mfaLevel.id
             }
+            if (updater.verificationLevel != verificationLevel) {
+                "verification_level" to updater.verificationLevel
+            }
         }
 
         if (json.isNotEmpty()) {
@@ -189,5 +202,154 @@ class ServerImpl(client: DiscordClientImpl, json: JsonObject) : Server, Updatabl
                     json
             )
         }
+    }
+
+    override suspend fun bans(): Collection<Ban> {
+        TODO("not implemented")
+    }
+
+    override suspend fun createTextChannel(block: ServerTextChannelBuilder.() -> Unit): ServerTextChannel {
+        checkPermission(this, Permission.MANAGE_CHANNELS)
+
+        val builder = ServerTextChannelBuilder().apply(block)
+        val json = json {
+            "type" to ChannelType.GUILD_TEXT.id
+            "name" to (builder.name ?: throw IllegalArgumentException("channel name must be specified"))
+            "nsfw" to builder.nsfw
+            "rate_limit_per_user" to builder.rateLimitPerUser
+
+            if (builder.topic != null && builder.topic!!.isNotEmpty()) {
+                "topic" to builder.topic
+            }
+
+            if (builder.position != null) {
+                "position" to builder.position
+            }
+
+            if (builder.category != null) {
+                checkManageable(builder.category!!)
+                "parent_id" to builder.category!!.id
+            }
+
+            if (builder.rolePermissionOverwrites.isNotEmpty() || builder.userPermissionOverwrites.isNotEmpty()) {
+                "permission_overwrite" to ServerChannelImpl.permissionOverwritesToJson(builder)
+            }
+        }
+
+        val response = client.rest.request(
+                Endpoint.CREATE_GUILD_CHANNEL.format("guild.id" to id),
+                json
+        ).jsonObject
+
+        return textChannels.put(ServerTextChannelImpl(this, client, response))
+    }
+
+    override suspend fun createVoiceChannel(block: ServerVoiceChannelBuilder.() -> Unit): ServerVoiceChannel {
+        checkPermission(this, Permission.MANAGE_CHANNELS)
+
+        val builder = ServerVoiceChannelBuilder().apply(block)
+        val json = json {
+            "type" to ChannelType.GUILD_VOICE.id
+            "name" to (builder.name ?: throw IllegalArgumentException("channel name must be specified"))
+            "user_limit" to builder.userLimit
+
+            if (builder.bitrate != null) {
+                "bitrate" to builder.bitrate
+            }
+
+            if (builder.position != null) {
+                "position" to builder.position
+            }
+
+            if (builder.category != null) {
+                checkManageable(builder.category!!)
+                "parent_id" to builder.category!!.id
+            }
+
+            if (builder.rolePermissionOverwrites.isNotEmpty() || builder.userPermissionOverwrites.isNotEmpty()) {
+                "permission_overwrite" to ServerChannelImpl.permissionOverwritesToJson(builder)
+            }
+        }
+
+        val response = client.rest.request(
+                Endpoint.CREATE_GUILD_CHANNEL.format("guild.id" to id),
+                json
+        ).jsonObject
+
+        return voiceChannels.put(ServerVoiceChannelImpl(this, client, response))
+    }
+
+    override suspend fun createChannelCategory(block: ServerChannelBuilder.() -> Unit): ChannelCategory {
+        checkPermission(this, Permission.MANAGE_CHANNELS)
+
+        val builder = ServerVoiceChannelBuilder().apply(block)
+        val json = json {
+            "type" to ChannelType.GUILD_VOICE.id
+            "name" to (builder.name ?: throw IllegalArgumentException("channel name must be specified"))
+            "user_limit" to builder.userLimit
+
+            if (builder.bitrate != null) {
+                "bitrate" to builder.bitrate
+            }
+
+            if (builder.position != null) {
+                "position" to builder.position
+            }
+
+            if (builder.category != null) {
+                checkManageable(builder.category!!)
+                "parent_id" to builder.category!!.id
+            }
+
+            if (builder.rolePermissionOverwrites.isNotEmpty() || builder.userPermissionOverwrites.isNotEmpty()) {
+                "permission_overwrite" to ServerChannelImpl.permissionOverwritesToJson(builder)
+            }
+        }
+
+        val response = client.rest.request(
+                Endpoint.CREATE_GUILD_CHANNEL.format("guild.id" to id),
+                json
+        ).jsonObject
+
+        return channelCategories.put(ChannelCategoryImpl(this, client, response))
+    }
+
+    override suspend fun createRole(block: RoleBuilder.() -> Unit): Role {
+        checkPermission(this, Permission.MANAGE_ROLES)
+
+        val builder = RoleBuilder().apply(block)
+        val json = json {
+            "name" to (builder.name ?: throw IllegalArgumentException("role name must be specified"))
+
+            builder.color?.let {
+                "color" to it.uRgb()
+            }
+            builder.hoist?.let {
+                "hoist" to it
+            }
+            builder.mentionable?.let {
+                "mentionable" to it
+            }
+            builder.permissions?.let {
+                "permissions" to it.compile()
+            }
+            builder.position?.let {
+                if (it > members.botUser.roles.map { it.position }.max()!!) {
+                    throw IllegalArgumentException("The specified position is higher than the top role i have")
+                }
+                "position" to it
+            }
+        }
+
+        val response = client.rest.request(
+                Endpoint.CREATE_GUILD_ROLE.format("guild.id" to id),
+                json
+        ).jsonObject
+
+        return roles.put(RoleImpl(this, client, response))
+    }
+
+    override suspend fun createEmoji(block: EmojiBuilder.() -> Unit): Emoji {
+        TODO("not implemented")
     }
 }
