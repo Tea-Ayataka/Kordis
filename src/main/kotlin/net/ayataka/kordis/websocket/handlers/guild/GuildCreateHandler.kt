@@ -30,7 +30,7 @@ class GuildCreateHandler : GatewayHandler {
             return
         }
 
-        val server = client.servers.add(id) { ServerImpl(client, data) }
+        val server = client.servers.getOrPut(id) { ServerImpl(client, data) }
         if (isLarge) {
             // Request additional members
             client.gateway.memberChunkRequestQueue.offer(id)

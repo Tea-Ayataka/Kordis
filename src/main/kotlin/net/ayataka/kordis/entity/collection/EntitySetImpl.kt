@@ -105,11 +105,14 @@ open class EntitySetImpl<T : Entity> : IterableEntitySet<T>, MutableCollection<T
         }
     }
 
-    fun remove(id: Long) {
+    fun remove(id: Long): Boolean {
         synchronized(entities) {
-            if (entities[id] != null) {
-                entities.remove(id)
+            if (entities[id] == null) {
+                return false
             }
+
+            entities.remove(id)
+            return true
         }
     }
 

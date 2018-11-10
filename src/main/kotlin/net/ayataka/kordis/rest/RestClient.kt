@@ -1,62 +1,56 @@
 package net.ayataka.kordis.rest
 
-import io.ktor.client.HttpClient
-import io.ktor.client.call.call
-import io.ktor.client.call.receive
-import io.ktor.client.engine.apache.Apache
-import io.ktor.client.features.defaultRequest
-import io.ktor.client.request.header
-import io.ktor.client.request.url
-import io.ktor.client.response.readText
-import io.ktor.content.TextContent
-import io.ktor.http.ContentType
-import io.ktor.http.HttpHeaders
-import io.ktor.http.HttpStatusCode
-import io.ktor.http.contentType
 import kotlinx.coroutines.delay
 import kotlinx.serialization.json.*
 import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.LOGGER
 import net.ayataka.kordis.exception.DiscordException
 import net.ayataka.kordis.exception.RateLimitedException
-import java.util.concurrent.TimeoutException
+import net.ayataka.kordis.utils.executeAsync
+import okhttp3.MediaType
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody
+
+private val JSON_TYPE = MediaType.parse("application/json; charset=utf-8")!!
 
 class RestClient(private val discordClient: DiscordClientImpl) {
     private val rateLimiter = InternalRateLimiter()
-    private val httpClient = HttpClient(Apache) {
-        defaultRequest {
-            header(HttpHeaders.Authorization, "Bot ${discordClient.token}")
-            header(HttpHeaders.UserAgent, "DiscordBot (https://github.com/Tea-Ayataka/Kordis, development)")
-        }
-    }
+    private val httpClient = OkHttpClient()
 
     suspend fun request(endPoint: FormattedEndPoint, data: JsonObject? = null, rateLimitRetries: Int = 50): JsonElement {
         repeat(rateLimitRetries) {
             rateLimiter.wait(endPoint)
 
             try {
-                LOGGER.debug("Request: ${endPoint.url}, method: ${endPoint.method.value}, data: $data, retry: $it / $rateLimitRetries : ${System.currentTimeMillis() / 1000}")
-                val call = httpClient.call {
-                    method = endPoint.method
-                    url(endPoint.url)
-                    if (data != null) {
-                        body = TextContent(data.toString(), ContentType.Application.Json)
-                    }
-                }
+                LOGGER.debug("Request: ${endPoint.url}, method: ${endPoint.method.name}, data: $data, retry: $it / $rateLimitRetries")
 
-                // Receive the body
-                val json = if (call.response.contentType() == ContentType.Application.Json) {
-                    JsonTreeParser(call.response.readText(Charsets.UTF_8)).readFully()
+                val request = Request.Builder().apply {
+                    url(endPoint.url)
+                    header("Authorization", "Bot ${discordClient.token}")
+                    header("User-Agent", "DiscordBot (https://github.com/Tea-Ayataka/Kordis, development)")
+
+                    if (data == null) {
+                        method(endPoint.method.name, null)
+                    } else {
+                        method(endPoint.method.name, RequestBody.create(JSON_TYPE, data.toString()))
+                    }
+                }.build()
+
+                val response = httpClient.newCall(request).executeAsync()
+
+                val json = if (response.headers()["Content-Type"] == "application/json") {
+                    response.body()?.let { JsonTreeParser(it.string()).readFully() }
                 } else {
                     null
                 }
 
-                if (call.response.status.value != HttpStatusCode.OK.value) {
+                if (response.code() !in 200..299) {
                     rateLimiter.incrementRateLimitRemaining(endPoint)
                 }
 
-                // Handle rate limits
-                if (call.response.status.value == HttpStatusCode.TooManyRequests.value) {
+                // Handle rate limits (429 Too Many Requests)
+                if (response.code() == 429) {
                     if (json == null) {
                         // When get rate limited without body
                         throw RateLimitedException()
@@ -75,24 +69,24 @@ class RestClient(private val discordClient: DiscordClientImpl) {
                     return@repeat
                 }
 
-                if (call.response.status.value == HttpStatusCode.GatewayTimeout.value) {
-                    throw TimeoutException() // Retry
+                if (response.code() in 500..599) {
+                    throw Exception("Discord API returned internal server error (code: ${response.code()})") // Retry
                 }
 
-                if (call.response.status.value != HttpStatusCode.OK.value) {
-                    throw DiscordException("Discord API returned status code ${call.response.status.value} (${call.response.status.description}) with body ${json?.toString()}")
+                if (response.code() !in 200..299) {
+                    throw DiscordException("Discord API returned status code ${response.code()} with body ${json?.toString()}")
                 }
 
-                if (call.response.headers["X-RateLimit-Limit"] != null && call.response.headers["X-RateLimit-Reset"] != null) {
-                    val rateLimit = call.response.headers["X-RateLimit-Limit"]!!.toInt()
-                    val rateLimitEnds = call.response.headers["X-RateLimit-Reset"]!!.toLong() * 1000
+                if (response.headers()["X-RateLimit-Limit"] != null && response.headers()["X-RateLimit-Reset"] != null) {
+                    val rateLimit = response.headers()["X-RateLimit-Limit"]!!.toInt()
+                    val rateLimitEnds = response.headers()["X-RateLimit-Reset"]!!.toLong() * 1000
                     rateLimiter.setRateLimit(endPoint, rateLimit)
                     rateLimiter.setRateLimitEnds(endPoint, rateLimitEnds)
-                    LOGGER.debug("RateLimit: $rateLimit, Remaining: ${call.response.headers["X-RateLimit-Remaining"]}, Ends: $rateLimitEnds")
+                    LOGGER.debug("RateLimit: $rateLimit, Remaining: ${response.headers()["X-RateLimit-Remaining"]}, Ends: $rateLimitEnds")
                 }
 
                 if (json == null) {
-                    throw DiscordException("Discord API returned an invalid result: ${call.response.receive<String>()}")
+                    throw DiscordException("Discord API returned an invalid result: ${response.body()}")
                 }
 
                 LOGGER.debug("Response: $json")

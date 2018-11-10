@@ -37,8 +37,6 @@ class TestBot {
 
         client.users.find(-1)
 
-        println((client as DiscordClientImpl).rest.request(Endpoint.LIST_VOICE_REGIONS.format()))
-
         delay(99999999999999)
     }
 
@@ -116,11 +114,10 @@ class TestBot {
         println("Text Channels:")
         event.server.textChannels.forEach {
             println(it)
-            if (event.server.members.botUser.canManage(it)) {
-                it.edit {
-                    name = "Hehe! " + Random.nextInt(999999)
-                }
-            }
+        }
+        println("Bans:")
+        event.server.bans().forEach {
+            println(it)
         }
 
         val channel = event.server.textChannels.findByName("aaasaaaaa")

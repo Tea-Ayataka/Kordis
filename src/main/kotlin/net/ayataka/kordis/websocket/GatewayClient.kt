@@ -20,10 +20,11 @@ import net.ayataka.kordis.websocket.handlers.voice.VoiceStateUpdateHandler
 import org.java_websocket.client.WebSocketClient
 import org.java_websocket.handshake.ServerHandshake
 import java.net.URI
-import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.LinkedBlockingQueue
 
 const val GATEWAY_VERSION = 6
 
+@Suppress("EXPERIMENTAL_API_USAGE")
 class GatewayClient(
         private val client: DiscordClientImpl,
         val shard: Int,
@@ -39,7 +40,7 @@ class GatewayClient(
     @Volatile
     private var isHeartbeatAckReceived = false
     private var heartbeatTask: Job? = null
-    private val sendQueue = ConcurrentLinkedQueue<String>()
+    private val sendQueue = LinkedBlockingQueue<String>()
     private val rateLimiter = RateLimiter(60.seconds(), 100) // The actual limit is 120
 
     val memberChunkRequestQueue = AdvancedQueue<Long>(50) {
@@ -86,16 +87,18 @@ class GatewayClient(
     )
 
     init {
-        timer(30, false, CoroutineName("WebSocket Packet Dispatcher")) {
-            if (isClosing || isClosed) {
-                return@timer
-            }
+        launch(newSingleThreadContext("WebSocket Packet Dispatcher")) {
+            while (true) {
+                if (isClosing || isClosed) {
+                    continue
+                }
 
-            while (!rateLimiter.isLimited()) {
-                val json = sendQueue.poll() ?: return@timer
-                send(json)
-                rateLimiter.increment()
-                LOGGER.debug("Sent: $json")
+                while (!rateLimiter.isLimited()) {
+                    val json = sendQueue.take()
+                    send(json)
+                    rateLimiter.increment()
+                    LOGGER.debug("Sent: $json")
+                }
             }
         }
     }
@@ -128,9 +131,9 @@ class GatewayClient(
                 LOGGER.info("Starting heartbeat task")
 
                 val period = data!!["heartbeat_interval"].long
-
                 isHeartbeatAckReceived = true
-                heartbeatTask = timer(period) {
+
+                heartbeatTask = timer(period, context = newSingleThreadContext("Heartbeat Dispatcher")) {
                     if (isHeartbeatAckReceived) {
                         isHeartbeatAckReceived = false
                         queue(Opcode.HEARTBEAT)

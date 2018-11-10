@@ -10,6 +10,7 @@ import net.ayataka.kordis.entity.collection.find
 import net.ayataka.kordis.entity.image.Icon
 import net.ayataka.kordis.entity.image.IconImpl
 import net.ayataka.kordis.entity.server.ban.Ban
+import net.ayataka.kordis.entity.server.ban.BanImpl
 import net.ayataka.kordis.entity.server.channel.ServerChannelBuilder
 import net.ayataka.kordis.entity.server.channel.ServerChannelImpl
 import net.ayataka.kordis.entity.server.channel.category.ChannelCategory
@@ -205,7 +206,16 @@ class ServerImpl(client: DiscordClientImpl, json: JsonObject) : Server, Updatabl
     }
 
     override suspend fun bans(): Collection<Ban> {
-        TODO("not implemented")
+        val response = client.rest.request(Endpoint.GET_GUILD_BANS.format("guild.id" to id)).jsonArray
+
+        return response.map {
+            val reason = it.jsonObject["reason"].contentOrNull
+            val user = client.users.getOrPut(it.jsonObject["user"].jsonObject["id"].long) {
+                UserImpl(client, it.jsonObject["user"].jsonObject)
+            }
+
+            BanImpl(reason, user)
+        }
     }
 
     override suspend fun createTextChannel(block: ServerTextChannelBuilder.() -> Unit): ServerTextChannel {
