@@ -2,6 +2,7 @@ package net.ayataka.kordis.websocket
 
 import kotlinx.coroutines.*
 import kotlinx.serialization.json.*
+import net.ayataka.kordis.API_VERSION
 import net.ayataka.kordis.ConnectionStatus
 import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.LOGGER
@@ -22,24 +23,22 @@ import org.java_websocket.handshake.ServerHandshake
 import java.net.URI
 import java.util.concurrent.LinkedBlockingQueue
 
-const val GATEWAY_VERSION = 6
-
 @Suppress("EXPERIMENTAL_API_USAGE")
 class GatewayClient(
         private val client: DiscordClientImpl,
         val shard: Int,
         val maxShards: Int,
         endpoint: String
-) : CoroutineScope, WebSocketClient(URI("$endpoint/?v=$GATEWAY_VERSION&encoding=json")) {
+) : CoroutineScope, WebSocketClient(URI("$endpoint/?v=$API_VERSION&encoding=json")) {
 
     private val job = SupervisorJob()
     override val coroutineContext = Dispatchers.Default + job + CoroutineName("WebSocket Handler")
 
-    @Volatile
-    private var lastSequence = -1
-    @Volatile
-    private var isHeartbeatAckReceived = false
-    private var heartbeatTask: Job? = null
+    @Volatile private var sessionId: String? = null
+    @Volatile private var lastSequence = -1
+    @Volatile private var isHeartbeatAckReceived = false
+    @Volatile private var heartbeatTask: Job? = null
+
     private val sendQueue = LinkedBlockingQueue<String>()
     private val rateLimiter = RateLimiter(60.seconds(), 100) // The actual limit is 120
 
@@ -106,14 +105,28 @@ class GatewayClient(
     override fun onOpen(handshakedata: ServerHandshake) {
         LOGGER.info("Connected to the gateway with code ${handshakedata.httpStatus} (${handshakedata.httpStatusMessage})")
         client.status = ConnectionStatus.CONNECTED
+
+        if (sessionId == null) {
+            authenticate()
+        } else {
+            resume()
+        }
     }
 
     override fun onClose(code: Int, reason: String, remote: Boolean) {
-        LOGGER.warn("Websocket closed with code $code reason $reason. Reconnecting in a second...")
+        LOGGER.warn("WebSocket closed with code: $code reason: $reason remote: $remote")
 
         heartbeatTask?.cancel()
 
         launch {
+            // Invalidate cache
+            if (code == 1000 && !remote) {
+                sessionId = null
+
+                memberChunkRequestQueue.clear()
+                client.users.clear()
+            }
+
             delay(1000)
             reconnect()
         }
@@ -128,7 +141,7 @@ class GatewayClient(
 
         when (opcode) {
             Opcode.HELLO -> {
-                LOGGER.info("Starting heartbeat task")
+                LOGGER.debug("Starting heartbeat task")
 
                 val period = data!!["heartbeat_interval"].long
                 isHeartbeatAckReceived = true
@@ -137,26 +150,31 @@ class GatewayClient(
                     if (isHeartbeatAckReceived) {
                         isHeartbeatAckReceived = false
                         queue(Opcode.HEARTBEAT)
-                        LOGGER.info("Sent heartbeat (${period}ms)")
                     } else {
-                        LOGGER.info("Heartbeat ACK wasn't received. Reconnecting...")
-                        close()
+                        close(2000, "Heartbeat ACK wasn't received")
                     }
                 }
+            }
+            Opcode.RECONNECT -> {
 
-                LOGGER.info("Authenticating")
-                authenticate()
             }
             Opcode.HEARTBEAT_ACK -> {
                 LOGGER.info("Received heartbeat ACK")
                 isHeartbeatAckReceived = true
             }
             Opcode.DISPATCH -> {
-                val eventName = payloads["t"].content
-                LOGGER.info("Received an event ($eventName) $data")
+                val eventType = payloads["t"].content
+                lastSequence = payloads["s"].content.toInt()
 
-                // Handle the event
-                handlers.find { it.eventName == eventName }!!.handle(client, data!!)
+                LOGGER.debug("Received an event ($eventType) $data")
+
+                when (eventType) {
+                    "READY" -> {
+                        sessionId = data!!["session_id"].content
+                    }
+                }
+
+                handlers.find { it.eventType == eventType }?.handle(client, data!!)
             }
             else -> {
                 LOGGER.warn("Received an unknown packet (opcode: $opcode, data: $data)")
@@ -179,6 +197,15 @@ class GatewayClient(
                 "\$browser" to "who knows"
                 "\$device" to "who knows"
             }
+        })
+    }
+
+    private fun resume() {
+        val sessionId = sessionId ?: throw IllegalArgumentException("sessionId is null")
+        queue(Opcode.RESUME, json {
+            "session_id" to sessionId
+            "token" to client.token
+            "seq" to lastSequence
         })
     }
 

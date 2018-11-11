@@ -10,7 +10,7 @@ import net.ayataka.kordis.entity.server.enums.ChannelType
 import net.ayataka.kordis.websocket.handlers.GatewayHandler
 
 class ChannelUpdateHandler : GatewayHandler {
-    override val eventName = "CHANNEL_UPDATE"
+    override val eventType = "CHANNEL_UPDATE"
 
     override fun handle(client: DiscordClientImpl, data: JsonObject) {
         val server = data.getOrNull("guild_id")?.let { client.servers.find(it.long) } as? ServerImpl

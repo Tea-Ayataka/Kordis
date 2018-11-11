@@ -9,7 +9,7 @@ import net.ayataka.kordis.entity.user.UserImpl
 import net.ayataka.kordis.websocket.handlers.GatewayHandler
 
 class GuildMemberAddHandler : GatewayHandler {
-    override val eventName = "GUILD_MEMBER_ADD"
+    override val eventType = "GUILD_MEMBER_ADD"
 
     override fun handle(client: DiscordClientImpl, data: JsonObject) {
         val server = client.servers.find(data["guild_id"].long) as? ServerImpl ?: return

@@ -21,6 +21,11 @@ import net.ayataka.kordis.entity.user.User
 
 interface Server : Nameable, Entity {
     /**
+     * Whether the server is ready or not
+     */
+    val ready: Boolean
+
+    /**
      * The url of the server icon
      */
     val icon: Icon?

@@ -7,7 +7,7 @@ import net.ayataka.kordis.entity.server.ServerImpl
 import net.ayataka.kordis.websocket.handlers.GatewayHandler
 
 class GuildMemberRemoveHandler : GatewayHandler {
-    override val eventName = "GUILD_MEMBER_REMOVE"
+    override val eventType = "GUILD_MEMBER_REMOVE"
     override fun handle(client: DiscordClientImpl, data: JsonObject) {
         val server = client.servers.find(data["guild_id"].long) as? ServerImpl ?: return
         server.members.remove(data["user"].jsonObject["id"].long)

@@ -5,7 +5,7 @@ import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.websocket.handlers.GatewayHandler
 
 class UserUpdateHandler : GatewayHandler {
-    override val eventName = "USER_UPDATE"
+    override val eventType = "USER_UPDATE"
 
     override fun handle(client: DiscordClientImpl, data: JsonObject) {
 

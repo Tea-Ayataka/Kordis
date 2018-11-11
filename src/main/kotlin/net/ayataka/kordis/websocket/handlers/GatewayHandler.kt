@@ -5,6 +5,6 @@ import kotlinx.serialization.json.JsonObject
 import net.ayataka.kordis.DiscordClientImpl
 
 interface GatewayHandler {
-    val eventName: String
+    val eventType: String
     fun handle(client: DiscordClientImpl, data: JsonObject)
 }

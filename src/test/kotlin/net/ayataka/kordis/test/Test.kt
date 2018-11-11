@@ -2,17 +2,13 @@ package net.ayataka.kordis.test
 
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
-import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.Kordis
 import net.ayataka.kordis.addListener
-import net.ayataka.kordis.entity.collection.botUser
-import net.ayataka.kordis.entity.collection.findByTag
 import net.ayataka.kordis.entity.server.permission.Permission
 import net.ayataka.kordis.entity.server.permission.permissions
 import net.ayataka.kordis.event.EventListener
-import net.ayataka.kordis.event.events.ServerReadyEvent
+import net.ayataka.kordis.event.events.server.ServerReadyEvent
 import net.ayataka.kordis.event.events.message.MessageReceiveEvent
-import net.ayataka.kordis.rest.Endpoint
 import net.ayataka.kordis.utils.formatAsDate
 import java.awt.Color
 import java.time.Instant
@@ -42,7 +38,7 @@ class TestBot {
 
     @EventListener
     suspend fun onMessageReceive(event: MessageReceiveEvent) {
-        val author = event.message.author ?: return
+        val author = event.message.member ?: return
         val server = event.server ?: return
         val channel = event.message.serverChannel ?: return
         val text = event.message.content

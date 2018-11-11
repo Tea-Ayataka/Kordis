@@ -5,7 +5,7 @@ import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.websocket.handlers.GatewayHandler
 
 class GuildEmojisUpdateHandler : GatewayHandler {
-    override val eventName = "GUILD_EMOJIS_UPDATE"
+    override val eventType = "GUILD_EMOJIS_UPDATE"
 
     override fun handle(client: DiscordClientImpl, data: JsonObject) {
 

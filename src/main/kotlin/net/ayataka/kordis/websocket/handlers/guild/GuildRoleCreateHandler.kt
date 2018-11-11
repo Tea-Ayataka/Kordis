@@ -8,7 +8,7 @@ import net.ayataka.kordis.entity.server.role.RoleImpl
 import net.ayataka.kordis.websocket.handlers.GatewayHandler
 
 class GuildRoleCreateHandler : GatewayHandler {
-    override val eventName = "GUILD_ROLE_CREATE"
+    override val eventType = "GUILD_ROLE_CREATE"
 
     override fun handle(client: DiscordClientImpl, data: JsonObject) {
         val server = client.servers.find(data["guild_id"].long) as? ServerImpl ?: return

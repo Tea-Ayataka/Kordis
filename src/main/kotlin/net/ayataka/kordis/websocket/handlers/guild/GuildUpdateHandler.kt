@@ -6,7 +6,7 @@ import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.websocket.handlers.GatewayHandler
 
 class GuildUpdateHandler : GatewayHandler {
-    override val eventName = "GUILD_UPDATE"
+    override val eventType = "GUILD_UPDATE"
     override fun handle(client: DiscordClientImpl, data: JsonObject) {
         client.servers.update(data["id"].long, data)
     }

@@ -6,11 +6,11 @@ import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.long
 import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.entity.server.ServerImpl
-import net.ayataka.kordis.event.events.ServerReadyEvent
+import net.ayataka.kordis.event.events.server.ServerReadyEvent
 import net.ayataka.kordis.websocket.handlers.GatewayHandler
 
 class GuildCreateHandler : GatewayHandler {
-    override val eventName = "GUILD_CREATE"
+    override val eventType = "GUILD_CREATE"
 
     override fun handle(client: DiscordClientImpl, data: JsonObject) {
         if (data["unavailable"].boolean) {
@@ -30,11 +30,15 @@ class GuildCreateHandler : GatewayHandler {
             return
         }
 
-        val server = client.servers.getOrPut(id) { ServerImpl(client, data) }
+        val server = client.servers.updateOrPut(id, data) {
+            ServerImpl(client, data["id"].long).apply { update(data) }
+        } as ServerImpl
+
         if (isLarge) {
             // Request additional members
             client.gateway.memberChunkRequestQueue.offer(id)
         } else {
+            server.ready = true
             client.eventManager.fire(ServerReadyEvent(server))
         }
     }

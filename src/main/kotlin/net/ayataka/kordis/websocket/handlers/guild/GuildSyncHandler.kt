@@ -5,7 +5,7 @@ import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.websocket.handlers.GatewayHandler
 
 class GuildSyncHandler : GatewayHandler {
-    override val eventName = "GUILD_SYNC"
+    override val eventType = "GUILD_SYNC"
     override fun handle(client: DiscordClientImpl, data: JsonObject) {
 
     }

@@ -1,5 +1,6 @@
 package net.ayataka.kordis.entity.server.member
 
+import net.ayataka.kordis.entity.collection.find
 import net.ayataka.kordis.entity.server.Server
 import net.ayataka.kordis.entity.user.User
 
@@ -23,3 +24,4 @@ suspend fun Member.unban() {
     server.unban(this)
 }
 
+fun User.member(server: Server) = server.members.find(this)

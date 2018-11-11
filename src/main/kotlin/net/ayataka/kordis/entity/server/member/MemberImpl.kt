@@ -7,9 +7,9 @@ import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.entity.DiscordEntity
 import net.ayataka.kordis.entity.Updatable
 import net.ayataka.kordis.entity.collection.everyone
-import net.ayataka.kordis.entity.server.role.Role
 import net.ayataka.kordis.entity.server.Server
 import net.ayataka.kordis.entity.server.permission.Permission
+import net.ayataka.kordis.entity.server.role.Role
 import net.ayataka.kordis.entity.user.User
 import net.ayataka.kordis.rest.Endpoint
 import java.time.Instant
@@ -21,10 +21,10 @@ class MemberImpl(
         override val server: Server,
         val user: User
 ) : Member, Updatable, DiscordEntity(client, user.id) {
-
-    override val avatar = user.avatar
-    override val name = user.name
-    override val discriminator = user.discriminator
+    override val bot get() = user.bot
+    override val avatar get() = user.avatar
+    override val name get() = user.name
+    override val discriminator get() = user.discriminator
 
     @Volatile override var nickname: String? = null
     @Volatile override var joinedAt = Instant.now()!!

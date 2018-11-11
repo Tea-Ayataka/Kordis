@@ -8,7 +8,7 @@ import net.ayataka.kordis.event.events.message.MessageReceiveEvent
 import net.ayataka.kordis.websocket.handlers.GatewayHandler
 
 class MessageCreateHandler : GatewayHandler {
-    override val eventName = "MESSAGE_CREATE"
+    override val eventType = "MESSAGE_CREATE"
     override fun handle(client: DiscordClientImpl, data: JsonObject) {
         client.eventManager.fire(MessageReceiveEvent(MessageImpl(client, data)))
     }

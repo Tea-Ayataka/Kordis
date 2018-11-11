@@ -19,7 +19,6 @@ class DiscordClientImpl(
 ) : DiscordClient {
     override var status = ConnectionStatus.DISCONNECTED
     override lateinit var botUser: User
-        private set
 
     val rest = RestClient(this)
     lateinit var gateway: GatewayClient
@@ -43,15 +42,18 @@ class DiscordClientImpl(
 
         status = ConnectionStatus.CONNECTING
 
-        // Get the bot user
-        botUser = users.put(UserImpl(this, rest.request(Endpoint.GET_CURRENT_USER.format()).jsonObject))
-
         // Connect to the gateway
         val endpoint = rest.request(Endpoint.GET_GATEWAY_BOT.format()).jsonObject["url"].content
         gateway = GatewayClient(this, shard, maxShards, endpoint)
         gateway.connectBlocking()
 
         status = ConnectionStatus.CONNECTED
+
+        object {
+            fun aaa() {
+
+            }
+        }
     }
 
     override suspend fun addListener(listener: Any) {

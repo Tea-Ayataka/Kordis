@@ -48,4 +48,8 @@ class AdvancedQueue<T>(val amount: Int, val action: suspend (List<T>) -> Unit) {
             }
         }
     }
+
+    suspend fun clear() = locker.withLock {
+        queue.clear()
+    }
 }

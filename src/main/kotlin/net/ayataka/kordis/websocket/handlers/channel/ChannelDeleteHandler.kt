@@ -7,7 +7,7 @@ import net.ayataka.kordis.entity.server.ServerImpl
 import net.ayataka.kordis.websocket.handlers.GatewayHandler
 
 class ChannelDeleteHandler : GatewayHandler {
-    override val eventName = "CHANNEL_DELETE"
+    override val eventType = "CHANNEL_DELETE"
 
     override fun handle(client: DiscordClientImpl, data: JsonObject) {
         val server = client.servers.find(data["guild_id"].long) as? ServerImpl ?: return

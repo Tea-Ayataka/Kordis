@@ -36,7 +36,8 @@ import net.ayataka.kordis.rest.Endpoint
 import net.ayataka.kordis.utils.base64
 import net.ayataka.kordis.utils.uRgb
 
-class ServerImpl(client: DiscordClientImpl, json: JsonObject) : Server, Updatable, DiscordEntity(client, json["id"].long) {
+class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, DiscordEntity(client, id) {
+    @Volatile override var ready = false
     @Volatile override var name = ""
     @Volatile override var icon: Icon? = null
     @Volatile override var splash: Icon? = null
@@ -55,10 +56,6 @@ class ServerImpl(client: DiscordClientImpl, json: JsonObject) : Server, Updatabl
     override val voiceChannels = NameableEntitySetImpl<ServerVoiceChannel>()
     override val channelCategories = NameableEntitySetImpl<ChannelCategory>()
     override val members = NameableEntitySetImpl<Member>()
-
-    init {
-        update(json)
-    }
 
     override fun update(json: JsonObject) {
         name = json["name"].content

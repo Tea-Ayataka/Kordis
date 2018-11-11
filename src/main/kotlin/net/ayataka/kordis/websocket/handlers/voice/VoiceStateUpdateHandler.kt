@@ -5,7 +5,7 @@ import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.websocket.handlers.GatewayHandler
 
 class VoiceStateUpdateHandler : GatewayHandler {
-    override val eventName = "VOICE_STATE_UPDATE"
+    override val eventType = "VOICE_STATE_UPDATE"
 
     override fun handle(client: DiscordClientImpl, data: JsonObject) {
 
