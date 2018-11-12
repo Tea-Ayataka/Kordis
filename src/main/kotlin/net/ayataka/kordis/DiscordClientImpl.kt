@@ -5,6 +5,8 @@ import net.ayataka.kordis.entity.channel.PrivateTextChannel
 import net.ayataka.kordis.entity.collection.EntitySetImpl
 import net.ayataka.kordis.entity.collection.NameableEntitySetImpl
 import net.ayataka.kordis.entity.server.Server
+import net.ayataka.kordis.entity.server.enums.ActivityType
+import net.ayataka.kordis.entity.server.enums.UserStatus
 import net.ayataka.kordis.entity.user.User
 import net.ayataka.kordis.event.EventManager
 import net.ayataka.kordis.rest.Endpoint
@@ -52,4 +54,7 @@ class DiscordClientImpl(
     override suspend fun removeListener(listener: Any) {
         eventManager.unregister(listener)
     }
+
+    override fun updateStatus(status: UserStatus, type: ActivityType, name: String) =
+            gateway.updateStatus(status, type, name)
 }

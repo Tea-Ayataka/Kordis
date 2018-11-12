@@ -13,7 +13,7 @@ class GuildCreateHandler : GatewayHandler {
     override val eventType = "GUILD_CREATE"
 
     override fun handle(client: DiscordClientImpl, data: JsonObject) {
-        if (data["unavailable"].boolean) {
+        if (data.getOrNull("unavailable")?.boolean == true) {
             return
         }
 

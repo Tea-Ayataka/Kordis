@@ -12,7 +12,7 @@ class GuildRoleDeleteHandler : GatewayHandler {
 
     override fun handle(client: DiscordClientImpl, data: JsonObject) {
         val server = client.servers.find(data["guild_id"].long) as? ServerImpl ?: return
-        val role = server.roles.find(data["id"].long) ?: return
+        val role = server.roles.find(data["role_id"].long) ?: return
 
         server.roles.remove(role.id)
         client.eventManager.fire(RoleDeleteEvent(role))

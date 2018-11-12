@@ -4,6 +4,8 @@ import kotlinx.coroutines.runBlocking
 import net.ayataka.kordis.Kordis
 import net.ayataka.kordis.addHandler
 import net.ayataka.kordis.entity.server.channel.text.deleteMessages
+import net.ayataka.kordis.entity.server.enums.ActivityType
+import net.ayataka.kordis.entity.server.enums.UserStatus
 import net.ayataka.kordis.entity.server.permission.Permission
 import net.ayataka.kordis.entity.server.permission.permissions
 import net.ayataka.kordis.event.EventHandler
@@ -32,6 +34,8 @@ class TestBot {
             }
         }
 
+        client.updateStatus(UserStatus.ONLINE, ActivityType.PLAYING, "Kordis v0.0.1-SNAPSHOT")
+
         client.addHandler<MessageEditEvent> {
             println("Edited!")
         }
@@ -47,14 +51,6 @@ class TestBot {
 
     @EventHandler
     suspend fun onMessageReceive(event: MessageReceiveEvent) {
-        if (event.message.author?.bot == false && event.message.content == "Hello World Ya!") {
-            event.message.channel.send("Hello Ya!")
-            println("Message History:")
-            event.message.channel.getMessages(100).forEach {
-                println(it)
-            }
-        }
-
         val author = event.message.member ?: return
         val server = event.server ?: return
         val channel = event.message.serverChannel ?: return
@@ -205,7 +201,7 @@ class TestBot {
             }
         }
 
-        event.server.roles.findByName("Premium")?.edit {
+        event.server.roles.findByName("not found")?.edit {
             color = Color(Random.nextInt(0xFFFFFF))
             permissions = permissions(Permission.ADMINISTRATOR)
         }

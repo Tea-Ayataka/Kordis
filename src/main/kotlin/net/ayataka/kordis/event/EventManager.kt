@@ -77,8 +77,7 @@ class EventManager {
                         (item.second as? Listener<Event>)?.action?.invoke(event)
                                 ?: (item.second as? KFunction<*>)?.callSuspend(item.first, event)
                     } catch (ex: Exception) {
-                        LOGGER.error("An exception occurred during invoking ${item.first?.let { it::class.qualifiedName }}::${item.second}", ex.cause
-                                ?: ex)
+                        LOGGER.error("An exception occurred during invoking ${item.second}", ex.cause ?: ex)
                     }
                 }
             }

@@ -5,6 +5,7 @@ import net.ayataka.kordis.entity.server.channel.ServerChannel
 import net.ayataka.kordis.entity.server.permission.Permission
 import net.ayataka.kordis.entity.server.role.Role
 import net.ayataka.kordis.entity.user.User
+import net.ayataka.kordis.entity.server.enums.UserStatus
 import java.time.Instant
 
 interface Member : User {
@@ -26,7 +27,7 @@ interface Member : User {
     /**
      * The online status of the member
      */
-    val status: MemberStatus
+    val status: UserStatus
 
     /**
      * The roles the member has

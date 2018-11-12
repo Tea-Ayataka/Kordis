@@ -6,6 +6,8 @@ import net.ayataka.kordis.ConnectionStatus
 import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.Kordis.API_VERSION
 import net.ayataka.kordis.Kordis.LOGGER
+import net.ayataka.kordis.entity.server.enums.ActivityType
+import net.ayataka.kordis.entity.server.enums.UserStatus
 import net.ayataka.kordis.utils.AdvancedQueue
 import net.ayataka.kordis.utils.RateLimiter
 import net.ayataka.kordis.utils.start
@@ -38,6 +40,7 @@ class GatewayClient(
     @Volatile private var lastSequence = -1
     @Volatile private var heartbeatAckReceived = false
     @Volatile private var heartbeatTask: Job? = null
+    @Volatile private var activity: JsonObject? = null
 
     private val sendQueue = LinkedBlockingQueue<String>()
     private val rateLimiter = RateLimiter(60 * 1000, 100) // The actual limit is 120
@@ -85,7 +88,7 @@ class GatewayClient(
     )
 
     init {
-        launch(newSingleThreadContext("WebSocket Packet Dispatcher")) {
+        Thread({
             while (true) {
                 if (isClosing || isClosed) {
                     continue
@@ -98,7 +101,21 @@ class GatewayClient(
                     LOGGER.debug("Sent: $json")
                 }
             }
+        }, "WebSocket Packet Dispatcher").start()
+    }
+
+    fun updateStatus(status: UserStatus, type: ActivityType, name: String) {
+        activity = json {
+            "since" to JsonNull
+            "status" to status.id
+            "afk" to false
+            "game" to json {
+                "name" to name
+                "type" to type.id
+            }
         }
+
+        activity?.let { queue(Opcode.STATUS_UPDATE, it) }
     }
 
     override fun onOpen(handshakedata: ServerHandshake) {
@@ -124,6 +141,7 @@ class GatewayClient(
 
                 memberChunkRequestQueue.clear()
                 client.users.clear()
+                client.privateChannels.clear()
             }
 
             delay(1000)
@@ -134,8 +152,7 @@ class GatewayClient(
     override fun onMessage(message: String) = start {
         val payloads = JsonTreeParser(message).readFully().jsonObject
         val opcode = Opcode.values().find { it.code == payloads["op"].int }
-        val data = if (!payloads["d"].isNull) payloads["d"].jsonObject else null
-
+        val data = payloads.getObjectOrNull("d")
         LOGGER.debug("Gateway payload received ($opcode) - $payloads")
 
         when (opcode) {
@@ -210,6 +227,10 @@ class GatewayClient(
             "shard" to jsonArray {
                 +JsonPrimitive(client.shard)
                 +JsonPrimitive(client.maxShards)
+            }
+
+            activity?.let {
+                "presence" to it
             }
         })
     }

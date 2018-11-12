@@ -1,6 +1,6 @@
-package net.ayataka.kordis.entity.server.member
+package net.ayataka.kordis.entity.server.enums
 
-enum class MemberStatus(val id: String) {
+enum class UserStatus(val id: String) {
     IDLE("idle"),
     DO_NOT_DISTURB("dnd"),
     ONLINE("online"),

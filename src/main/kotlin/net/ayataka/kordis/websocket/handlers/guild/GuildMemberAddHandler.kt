@@ -14,7 +14,7 @@ class GuildMemberAddHandler : GatewayHandler {
 
     override fun handle(client: DiscordClientImpl, data: JsonObject) {
         val server = client.servers.find(data["guild_id"].long) as? ServerImpl ?: return
-        val user = client.users.getOrPut(data["user"].long) { UserImpl(client, data["user"].jsonObject) }
+        val user = client.users.getOrPut(data["user"].jsonObject["id"].long) { UserImpl(client, data["user"].jsonObject) }
         val member = server.members.updateOrPut(user.id, data) { MemberImpl(client, data, server, user) }
 
         client.eventManager.fire(UserJoinEvent(member))

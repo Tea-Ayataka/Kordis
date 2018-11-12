@@ -4,6 +4,8 @@ import net.ayataka.kordis.entity.channel.PrivateTextChannel
 import net.ayataka.kordis.entity.collection.EntitySet
 import net.ayataka.kordis.entity.collection.NameableEntitySet
 import net.ayataka.kordis.entity.server.Server
+import net.ayataka.kordis.entity.server.enums.ActivityType
+import net.ayataka.kordis.entity.server.enums.UserStatus
 import net.ayataka.kordis.entity.user.User
 
 interface DiscordClient {
@@ -16,4 +18,6 @@ interface DiscordClient {
 
     suspend fun addListener(listener: Any)
     suspend fun removeListener(listener: Any)
+
+    fun updateStatus(status: UserStatus, type: ActivityType, name: String)
 }

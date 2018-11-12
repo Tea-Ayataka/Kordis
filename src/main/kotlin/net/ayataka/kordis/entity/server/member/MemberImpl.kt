@@ -2,6 +2,7 @@ package net.ayataka.kordis.entity.server.member
 
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.content
+import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.long
 import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.entity.DiscordEntity
@@ -11,6 +12,7 @@ import net.ayataka.kordis.entity.server.Server
 import net.ayataka.kordis.entity.server.permission.Permission
 import net.ayataka.kordis.entity.server.role.Role
 import net.ayataka.kordis.entity.user.User
+import net.ayataka.kordis.entity.server.enums.UserStatus
 import net.ayataka.kordis.rest.Endpoint
 import java.time.Instant
 import java.time.format.DateTimeFormatter
@@ -27,8 +29,8 @@ class MemberImpl(
     override val discriminator get() = user.discriminator
 
     @Volatile override var nickname: String? = null
-    @Volatile override var joinedAt = Instant.now()!!
-    @Volatile override var status = MemberStatus.OFFLINE
+    @Volatile override var joinedAt = Instant.MIN!!
+    @Volatile override var status = UserStatus.OFFLINE
     @Volatile override var roles = mutableSetOf<Role>()
 
     init {
@@ -36,8 +38,8 @@ class MemberImpl(
     }
 
     override fun update(json: JsonObject) {
-        nickname = json.getOrNull("nick")?.content
-        joinedAt = Instant.from(DateTimeFormatter.ISO_DATE_TIME.parse(json["joined_at"].content))
+        json.getOrNull("nick")?.let { nickname = it.contentOrNull }
+        json.getOrNull("joined_at")?.let { joinedAt = Instant.from(DateTimeFormatter.ISO_DATE_TIME.parse(it.content)) }
         roles = json["roles"].jsonArray.mapNotNull { server.roles.find(it.long) }.plus(server.roles.everyone).toMutableSet()
 
         // Update the user
@@ -49,7 +51,7 @@ class MemberImpl(
             roles = it.jsonArray.mapNotNull { server.roles.find(it.long) }.plus(server.roles.everyone).toMutableSet()
         }
 
-        status = MemberStatus[json["status"].content]
+        status = UserStatus[json["status"].content]
     }
 
     override fun toString(): String {
