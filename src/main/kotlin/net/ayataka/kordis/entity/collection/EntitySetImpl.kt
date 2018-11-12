@@ -52,11 +52,13 @@ open class EntitySetImpl<T : Entity> : IterableEntitySet<T>, MutableCollection<T
     }
 
     override fun remove(element: T): Boolean {
-        if (entities[element.id] == null) {
-            return false
-        }
+        synchronized(entities) {
+            if (entities[element.id] == null) {
+                return false
+            }
 
-        entities.remove(element.id)
+            entities.remove(element.id)
+        }
         return true
     }
 

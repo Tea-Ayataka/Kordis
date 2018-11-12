@@ -12,7 +12,7 @@ import net.ayataka.kordis.websocket.handlers.channel.ChannelDeleteHandler
 import net.ayataka.kordis.websocket.handlers.channel.ChannelUpdateHandler
 import net.ayataka.kordis.websocket.handlers.guild.*
 import net.ayataka.kordis.websocket.handlers.message.*
-import net.ayataka.kordis.websocket.handlers.other.PresenseUpdateHandler
+import net.ayataka.kordis.websocket.handlers.guild.PresenseUpdateHandler
 import net.ayataka.kordis.websocket.handlers.other.ReadyHandler
 import net.ayataka.kordis.websocket.handlers.other.TypingStartHandler
 import net.ayataka.kordis.websocket.handlers.other.UserUpdateHandler
@@ -26,8 +26,6 @@ import java.util.concurrent.LinkedBlockingQueue
 @Suppress("EXPERIMENTAL_API_USAGE")
 class GatewayClient(
         private val client: DiscordClientImpl,
-        val shard: Int,
-        val maxShards: Int,
         endpoint: String
 ) : CoroutineScope, WebSocketClient(URI("$endpoint/?v=$API_VERSION&encoding=json")) {
 
@@ -36,7 +34,7 @@ class GatewayClient(
 
     @Volatile private var sessionId: String? = null
     @Volatile private var lastSequence = -1
-    @Volatile private var isHeartbeatAckReceived = false
+    @Volatile private var heartbeatAckReceived = false
     @Volatile private var heartbeatTask: Job? = null
 
     private val sendQueue = LinkedBlockingQueue<String>()
@@ -68,7 +66,6 @@ class GatewayClient(
             GuildRoleCreateHandler(),
             GuildRoleDeleteHandler(),
             GuildRoleUpdateHandler(),
-            GuildSyncHandler(),
             GuildUpdateHandler(),
             MessageCreateHandler(),
             MessageDeleteHandler(),
@@ -120,7 +117,7 @@ class GatewayClient(
 
         launch {
             // Invalidate cache
-            if (code == 1000 && !remote) {
+            if (code == 4007 || (code == 1000 && !remote)) {
                 sessionId = null
 
                 memberChunkRequestQueue.clear()
@@ -144,23 +141,28 @@ class GatewayClient(
                 LOGGER.debug("Starting heartbeat task")
 
                 val period = data!!["heartbeat_interval"].long
-                isHeartbeatAckReceived = true
+                heartbeatAckReceived = true
 
                 heartbeatTask = timer(period, context = newSingleThreadContext("Heartbeat Dispatcher")) {
-                    if (isHeartbeatAckReceived) {
-                        isHeartbeatAckReceived = false
-                        queue(Opcode.HEARTBEAT)
+                    if (heartbeatAckReceived) {
+                        heartbeatAckReceived = false
+                        queue(Opcode.HEARTBEAT, json { if (lastSequence > 0) "d" to lastSequence })
                     } else {
                         close(2000, "Heartbeat ACK wasn't received")
                     }
                 }
             }
             Opcode.RECONNECT -> {
-
+                LOGGER.info("Received reconnect request")
+                close(2001, "Received Reconnect Request")
+            }
+            Opcode.INVALID_SESSION -> {
+                LOGGER.info("The session id is invalid")
+                close(1000, "Invalid Session")
             }
             Opcode.HEARTBEAT_ACK -> {
-                LOGGER.info("Received heartbeat ACK")
-                isHeartbeatAckReceived = true
+                LOGGER.debug("Received heartbeat ACK")
+                heartbeatAckReceived = true
             }
             Opcode.DISPATCH -> {
                 val eventType = payloads["t"].content
@@ -196,6 +198,11 @@ class GatewayClient(
                 "\$os" to "who knows"
                 "\$browser" to "who knows"
                 "\$device" to "who knows"
+            }
+
+            "shard" to jsonArray {
+                +JsonPrimitive(client.shard)
+                +JsonPrimitive(client.maxShards)
             }
         })
     }

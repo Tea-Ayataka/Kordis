@@ -20,12 +20,15 @@ class GuildCreateHandler : GatewayHandler {
         val id = data["id"].long
         val isLarge = data["large"].booleanOrNull == true
 
-        // Update server when reconnect
+        // Update server after reconnection
         client.servers.find(id)?.let {
-            (it as ServerImpl).update(data)
+            it as ServerImpl
+            it.update(data)
 
             if (isLarge) {
                 client.gateway.memberChunkRequestQueue.offer(id)
+            } else {
+                it.ready = true
             }
             return
         }

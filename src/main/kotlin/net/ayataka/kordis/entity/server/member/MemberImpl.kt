@@ -28,6 +28,7 @@ class MemberImpl(
 
     @Volatile override var nickname: String? = null
     @Volatile override var joinedAt = Instant.now()!!
+    @Volatile override var status = MemberStatus.OFFLINE
     @Volatile override var roles = mutableSetOf<Role>()
 
     init {
@@ -41,6 +42,11 @@ class MemberImpl(
 
         // Update the user
         client.users.update(json["user"].jsonObject["id"].long, json["user"].jsonObject)
+    }
+
+    fun updatePresence(json: JsonObject) {
+        roles = json["roles"].jsonArray.mapNotNull { server.roles.find(it.long) }.plus(server.roles.everyone).toMutableSet()
+        status = MemberStatus[json["status"].content]
     }
 
     override fun toString(): String {

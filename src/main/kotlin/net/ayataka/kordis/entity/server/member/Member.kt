@@ -24,6 +24,11 @@ interface Member : User {
     val joinedAt: Instant
 
     /**
+     * The online status of the member
+     */
+    val status: MemberStatus
+
+    /**
      * The roles this member has
      */
     val roles: Collection<Role>

@@ -5,7 +5,6 @@ import kotlinx.serialization.json.content
 import net.ayataka.kordis.entity.collection.NameableEntitySetImpl
 import net.ayataka.kordis.entity.server.Server
 import net.ayataka.kordis.entity.user.User
-import net.ayataka.kordis.entity.user.UserImpl
 import net.ayataka.kordis.event.EventManager
 import net.ayataka.kordis.rest.Endpoint
 import net.ayataka.kordis.rest.RestClient
@@ -44,16 +43,10 @@ class DiscordClientImpl(
 
         // Connect to the gateway
         val endpoint = rest.request(Endpoint.GET_GATEWAY_BOT.format()).jsonObject["url"].content
-        gateway = GatewayClient(this, shard, maxShards, endpoint)
+        gateway = GatewayClient(this, endpoint)
         gateway.connectBlocking()
 
         status = ConnectionStatus.CONNECTED
-
-        object {
-            fun aaa() {
-
-            }
-        }
     }
 
     override suspend fun addListener(listener: Any) {
