@@ -40,7 +40,9 @@ class MessageImpl(client: DiscordClientImpl, json: JsonObject, _server: Server? 
                 ?.let { Instant.from(DateTimeFormatter.ISO_DATE_TIME.parse(it)) }
 
         server = _server ?: json.getOrNull("guild_id")?.let { client.servers.find(it.long) }
-        channel = server?.textChannels?.find(json["channel_id"].long) ?: throw IllegalStateException()
+        channel = server?.textChannels?.find(json["channel_id"].long)
+                ?: client.privateChannels.find(json["channel_id"].long)
+                ?: throw IllegalStateException("unknown channel id received $json")
 
         if (!json.containsKey("webhook_id")) {
             val authorData = json["author"].jsonObject
@@ -63,6 +65,22 @@ class MessageImpl(client: DiscordClientImpl, json: JsonObject, _server: Server? 
                 }
         )
 
-        return MessageImpl(client, response.jsonObject)
+        return MessageImpl(client, response.jsonObject, server)
+    }
+
+    override fun toString(): String {
+        return "Message(" +
+                "type=$type," +
+                "server=$server," +
+                "mentionsEveryone=$mentionsEveryone," +
+                "pinned=$pinned," +
+                "author=$author," +
+                "channel=$channel," +
+                "content='$content'," +
+                "embeds=$embeds," +
+                "tts=$tts," +
+                "timestamp=$timestamp," +
+                "editedTimestamp=$editedTimestamp" +
+                ")"
     }
 }

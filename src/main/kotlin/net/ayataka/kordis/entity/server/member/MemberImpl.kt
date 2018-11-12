@@ -45,7 +45,10 @@ class MemberImpl(
     }
 
     fun updatePresence(json: JsonObject) {
-        roles = json["roles"].jsonArray.mapNotNull { server.roles.find(it.long) }.plus(server.roles.everyone).toMutableSet()
+        json.getOrNull("roles")?.let {
+            roles = it.jsonArray.mapNotNull { server.roles.find(it.long) }.plus(server.roles.everyone).toMutableSet()
+        }
+
         status = MemberStatus[json["status"].content]
     }
 

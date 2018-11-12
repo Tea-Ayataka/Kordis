@@ -5,11 +5,11 @@ import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.entity.message.Message
 import net.ayataka.kordis.entity.message.MessageBuilder
 import net.ayataka.kordis.entity.message.MessageImpl
-import net.ayataka.kordis.entity.message.embed.EmbedBuilder
 import net.ayataka.kordis.entity.server.Server
 import net.ayataka.kordis.entity.server.channel.ServerChannelImpl
 import net.ayataka.kordis.entity.server.channel.category.ChannelCategory
 import net.ayataka.kordis.entity.server.permission.Permission
+import net.ayataka.kordis.exception.NotFoundException
 import net.ayataka.kordis.rest.Endpoint
 
 class ServerTextChannelImpl(
@@ -45,15 +45,16 @@ class ServerTextChannelImpl(
     }
 
     override suspend fun send(text: String): Message {
-        return sendMessage {
-            content = text
-        }
+        return send { content = text }
     }
 
-    override suspend fun send(block: EmbedBuilder.() -> Unit): Message {
-        return sendMessage {
-            embed = EmbedBuilder().apply(block).build().toJson()
-        }
+    override suspend fun send(block: MessageBuilder.() -> Unit): Message {
+        val response = client.rest.request(
+                Endpoint.CREATE_MESSAGE.format("channel.id" to id),
+                MessageBuilder().apply(block).build()
+        )
+
+        return MessageImpl(client, response.jsonObject, server)
     }
 
     override suspend fun edit(block: ServerTextChannelBuilder.() -> Unit) {
@@ -101,12 +102,61 @@ class ServerTextChannelImpl(
         }
     }
 
-    private suspend fun sendMessage(block: MessageBuilder.() -> Unit): Message {
+    override suspend fun getMessage(messageId: Long): Message? {
+        return try {
+            val response = client.rest.request(
+                    Endpoint.GET_CHANNEL_MESSAGE.format("channel.id" to id, "message.id" to messageId)
+            )
+
+            MessageImpl(client, response.jsonObject, server)
+        } catch (ex: NotFoundException) {
+            null
+        }
+    }
+
+    override suspend fun getMessages(limit: Int): Collection<Message> {
+        checkPermission(server, Permission.READ_MESSAGE_HISTORY)
+        checkAccess(this)
+
+        if (limit !in 1..100) {
+            throw IllegalArgumentException("limit must be between 1 and 100")
+        }
+
         val response = client.rest.request(
-                Endpoint.CREATE_MESSAGE.format("channel.id" to id),
-                MessageBuilder().apply(block).build()
+                Endpoint.GET_CHANNEL_MESSAGES.format("channel.id" to id),
+                json { "limit" to limit }
         )
 
-        return MessageImpl(client, response.jsonObject, server)
+        return response.jsonArray.map { MessageImpl(client, it.jsonObject, server) }
+    }
+
+    override suspend fun deleteMessage(messageId: Long) {
+        checkAccess(this)
+
+        client.rest.request(
+                Endpoint.DELETE_MESSAGE.format("channel.id" to id, "message.id" to messageId)
+        )
+    }
+
+    override suspend fun deleteMessages(messageIds: Collection<Long>) {
+        checkAccess(this)
+
+        if (messageIds.isEmpty()) {
+            return
+        }
+
+        if (messageIds.size == 1) {
+            deleteMessage(messageIds.first())
+            return
+        }
+
+        messageIds.chunked(100).forEach {
+            client.rest.request(
+                    Endpoint.BULK_DELETE_MESSAGES.format("channel.id" to id),
+                    json {
+                        "messages" to jsonArray { it.forEach { +JsonPrimitive(it) } }
+                    }
+            )
+        }
     }
 }

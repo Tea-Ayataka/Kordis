@@ -1,6 +1,6 @@
 package net.ayataka.kordis.entity.image
 
-interface Icon {
+interface Image {
     /**
      * The url of the image
      */

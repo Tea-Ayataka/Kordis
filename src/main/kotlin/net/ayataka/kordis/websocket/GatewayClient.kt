@@ -12,7 +12,6 @@ import net.ayataka.kordis.websocket.handlers.channel.ChannelDeleteHandler
 import net.ayataka.kordis.websocket.handlers.channel.ChannelUpdateHandler
 import net.ayataka.kordis.websocket.handlers.guild.*
 import net.ayataka.kordis.websocket.handlers.message.*
-import net.ayataka.kordis.websocket.handlers.guild.PresenseUpdateHandler
 import net.ayataka.kordis.websocket.handlers.other.ReadyHandler
 import net.ayataka.kordis.websocket.handlers.other.TypingStartHandler
 import net.ayataka.kordis.websocket.handlers.other.UserUpdateHandler
@@ -176,7 +175,12 @@ class GatewayClient(
                     }
                 }
 
-                handlers.find { it.eventType == eventType }?.handle(client, data!!)
+                try {
+                    handlers.find { it.eventType == eventType }?.handle(client, data!!)
+                } catch (ex: Exception) {
+                    LOGGER.error("Failed to handle the event! (type: $eventType, error: ${ex.message})")
+                    LOGGER.debug("packet handle error", ex)
+                }
             }
             else -> {
                 LOGGER.warn("Received an unknown packet (opcode: $opcode, data: $data)")

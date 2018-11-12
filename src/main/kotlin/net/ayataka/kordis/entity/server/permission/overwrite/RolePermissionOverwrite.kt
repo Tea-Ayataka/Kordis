@@ -7,4 +7,8 @@ class RolePermissionOverwrite(
         val role: Role,
         allow: PermissionSet,
         deny: PermissionSet
-) : PermissionOverwrite(role, allow, deny)
+) : PermissionOverwrite(role, allow, deny) {
+    override fun toString(): String {
+        return "RolePermissionOverwrite(role=$role, allow=$allow, deny=$deny)"
+    }
+}

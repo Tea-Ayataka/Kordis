@@ -13,7 +13,7 @@ class ReadyHandler : GatewayHandler {
 
     override fun handle(client: DiscordClientImpl, data: JsonObject) {
         // Set the bot user
-        client.botUser = client.users.put(UserImpl(client, data["user"].jsonObject))
+        client.botUser = client.users.getOrPut(data["user"].jsonObject["id"].long) { UserImpl(client, data["user"].jsonObject) }
 
         // Initialize servers
         val serverIds = data["guilds"].jsonArray.map { it.jsonObject["id"].long }
@@ -31,8 +31,5 @@ class ReadyHandler : GatewayHandler {
                 false
             }
         }
-
-        // TODO: Presences
-        // TODO: Private channels
     }
 }

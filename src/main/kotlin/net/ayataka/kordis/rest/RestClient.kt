@@ -5,6 +5,7 @@ import kotlinx.serialization.json.*
 import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.LOGGER
 import net.ayataka.kordis.exception.DiscordException
+import net.ayataka.kordis.exception.NotFoundException
 import net.ayataka.kordis.exception.RateLimitedException
 import net.ayataka.kordis.utils.executeAsync
 import okhttp3.MediaType
@@ -32,9 +33,15 @@ class RestClient(private val discordClient: DiscordClientImpl) {
 
                     if (data == null) {
                         method(endPoint.method.name, null)
-                    } else {
-                        method(endPoint.method.name, RequestBody.create(JSON_TYPE, data.toString()))
+                        return@apply
                     }
+
+                    if (endPoint.method == HttpMethod.GET) {
+                        url(endPoint.url + "?" + data.entries.joinToString("&") { "${it.key}=${it.value}" })
+                        return@apply
+                    }
+
+                    method(endPoint.method.name, RequestBody.create(JSON_TYPE, data.toString()))
                 }.build()
 
                 val response = httpClient.newCall(request).executeAsync()
@@ -44,6 +51,8 @@ class RestClient(private val discordClient: DiscordClientImpl) {
                 } else {
                     null
                 }
+
+                LOGGER.debug("Response: ${response.code()} ${response.message()}, body: $json")
 
                 if (response.code() !in 200..299) {
                     rateLimiter.incrementRateLimitRemaining(endPoint)
@@ -62,7 +71,13 @@ class RestClient(private val discordClient: DiscordClientImpl) {
                         rateLimiter.setGlobalRateLimitEnds(delay)
                     } else {
                         rateLimiter.setRateLimitEnds(endPoint, System.currentTimeMillis() + delay)
-                        LOGGER.warn("HIT ACTUAL RATE LIMIT! MAKE SURE YOUR COMPUTER'S CLOCK IS CORRECT! ($delay ms)")
+
+                        if (endPoint.endpoint != Endpoint.CREATE_GUILD_EMOJI
+                                && endPoint.endpoint != Endpoint.MODIFY_GUILD_EMOJI
+                                && endPoint.endpoint != Endpoint.DELETE_GUILD_EMOJI
+                        ) {
+                            LOGGER.warn("HIT ACTUAL RATE LIMIT! MAKE SURE YOUR COMPUTER'S CLOCK IS CORRECT! ($delay ms)")
+                        }
                     }
 
                     delay(delay)
@@ -71,6 +86,10 @@ class RestClient(private val discordClient: DiscordClientImpl) {
 
                 if (response.code() in 500..599) {
                     throw Exception("Discord API returned internal server error (code: ${response.code()})") // Retry
+                }
+
+                if (response.code() == 404) {
+                    throw NotFoundException()
                 }
 
                 if (response.code() !in 200..299) {
@@ -85,19 +104,16 @@ class RestClient(private val discordClient: DiscordClientImpl) {
                     LOGGER.debug("RateLimit: $rateLimit, Remaining: ${response.headers()["X-RateLimit-Remaining"]}, Ends: $rateLimitEnds")
                 }
 
-                if (json == null) {
-                    throw DiscordException("Discord API returned an invalid result: ${response.body()}")
-                }
-
-                LOGGER.debug("Response: $json")
-                return json
+                return json ?: JsonObject(emptyMap())
             } catch (ex: DiscordException) {
                 throw ex
             } catch (ex: RateLimitedException) {
                 throw ex
+            } catch (ex: NotFoundException) {
+                throw ex
             } catch (ex: Exception) {
-                LOGGER.warn("An unexpected exception thrown! retrying in 3 sec", ex)
-                delay(3000)
+                LOGGER.warn("An unexpected error has occurred! we will retry in a second", ex)
+                delay(1000)
             }
         }
 

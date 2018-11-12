@@ -7,8 +7,8 @@ import net.ayataka.kordis.entity.Updatable
 import net.ayataka.kordis.entity.collection.NameableEntitySetImpl
 import net.ayataka.kordis.entity.collection.botUser
 import net.ayataka.kordis.entity.collection.find
-import net.ayataka.kordis.entity.image.Icon
-import net.ayataka.kordis.entity.image.IconImpl
+import net.ayataka.kordis.entity.image.Image
+import net.ayataka.kordis.entity.image.ImageImpl
 import net.ayataka.kordis.entity.server.ban.Ban
 import net.ayataka.kordis.entity.server.ban.BanImpl
 import net.ayataka.kordis.entity.server.channel.ServerChannelBuilder
@@ -23,6 +23,7 @@ import net.ayataka.kordis.entity.server.channel.voice.ServerVoiceChannelBuilder
 import net.ayataka.kordis.entity.server.channel.voice.ServerVoiceChannelImpl
 import net.ayataka.kordis.entity.server.emoji.Emoji
 import net.ayataka.kordis.entity.server.emoji.EmojiBuilder
+import net.ayataka.kordis.entity.server.emoji.EmojiImpl
 import net.ayataka.kordis.entity.server.enums.*
 import net.ayataka.kordis.entity.server.member.Member
 import net.ayataka.kordis.entity.server.member.MemberImpl
@@ -35,12 +36,13 @@ import net.ayataka.kordis.entity.user.UserImpl
 import net.ayataka.kordis.rest.Endpoint
 import net.ayataka.kordis.utils.base64
 import net.ayataka.kordis.utils.uRgb
+import java.util.concurrent.ConcurrentHashMap
 
 class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, DiscordEntity(client, id) {
     @Volatile override var ready = false
     @Volatile override var name = ""
-    @Volatile override var icon: Icon? = null
-    @Volatile override var splash: Icon? = null
+    @Volatile override var icon: Image? = null
+    @Volatile override var splash: Image? = null
     @Volatile override var owner: User? = null
     @Volatile override var region = Region.UNKNOWN
     @Volatile override var afkChannel: ServerTextChannel? = null
@@ -57,16 +59,21 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
     override val channelCategories = NameableEntitySetImpl<ChannelCategory>()
     override val members = NameableEntitySetImpl<Member>()
 
+    private val temporallyUserPresences = ConcurrentHashMap<Long, JsonObject>()
+
     override fun update(json: JsonObject) {
         name = json["name"].content
-        icon = json["icon"].contentOrNull?.let { IconImpl.server(id, it) }
-        splash = json["splash"].contentOrNull?.let { IconImpl.splash(id, it) }
+        icon = json["icon"].contentOrNull?.let { ImageImpl.server(id, it) }
+        splash = json["splash"].contentOrNull?.let { ImageImpl.splash(id, it) }
         region = Region[json["region"].content]
         afkTimeout = json["afk_timeout"].int
         verificationLevel = VerificationLevel[json["verification_level"].int]
         defaultMessageNotificationLevel = MessageNotificationLevel[json["default_message_notifications"].int]
         explicitContentFilterLevel = ExplicitContentFilterLevel[json["explicit_content_filter"].int]
         mfaLevel = MfaLevel[json["mfa_level"].int]
+
+        // Update emojis
+        updateEmojis(json)
 
         // Update roles
         val roleObjects = json["roles"].jsonArray.map { it.jsonObject }
@@ -78,12 +85,12 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
         }
 
         // Update members
-        if (json.containsKey("members")) {
-            val memberObjects = json["members"].jsonArray.map { it.jsonObject }
-            val memberIds = memberObjects.map { it["user"].jsonObject["id"].long }
+        json.getOrNull("members")?.let {
+            val objects = it.jsonArray.map { it.jsonObject }
+            val ids = objects.map { it["user"].jsonObject["id"].long }
 
-            members.removeIf { it.id !in memberIds }
-            memberObjects.forEach {
+            members.removeIf { it.id !in ids }
+            objects.forEach {
                 val userObject = it["user"].jsonObject
                 val userId = userObject["id"].long
 
@@ -97,34 +104,61 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
             }
         }
 
-        if (json.containsKey("channels")) {
-            val channelObjects = json["channels"].jsonArray.map { it.jsonObject }
-            val channelIds = channelObjects.map { it["id"].long }
+        // Update channels
+        json.getOrNull("channels")?.let {
+            val objects = it.jsonArray.map { it.jsonObject }
+            val ids = objects.map { it["id"].long }
 
             // Clear deleted channels
-            channelCategories.removeIf { it.id !in channelIds }
-            textChannels.removeIf { it.id !in channelIds }
-            voiceChannels.removeIf { it.id !in channelIds }
+            channelCategories.removeIf { it.id !in ids }
+            textChannels.removeIf { it.id !in ids }
+            voiceChannels.removeIf { it.id !in ids }
 
             // Load channelCategories first
-            channelObjects.filter { it["type"].int == ChannelType.GUILD_CATEGORY.id }.forEach {
+            objects.filter { it["type"].int == ChannelType.GUILD_CATEGORY.id }.forEach {
                 channelCategories.updateOrPut(it["id"].long, it) { ChannelCategoryImpl(this, client, it) }
             }
 
             // Load text channels
-            channelObjects.filter { it["type"].int == ChannelType.GUILD_TEXT.id }.forEach {
+            objects.filter { it["type"].int == ChannelType.GUILD_TEXT.id }.forEach {
                 textChannels.updateOrPut(it["id"].long, it) { ServerTextChannelImpl(this, client, it) }
             }
 
             // Load voice channels
-            channelObjects.filter { it["type"].int == ChannelType.GUILD_VOICE.id }.forEach {
+            objects.filter { it["type"].int == ChannelType.GUILD_VOICE.id }.forEach {
                 voiceChannels.updateOrPut(it["id"].long, it) { ServerVoiceChannelImpl(this, client, it) }
             }
         }
 
-        // Initialize after loading other entities
+        // Update after loading other entities
+        // Update presences
+        json.getOrNull("presences")?.let { objects ->
+            objects.jsonArray.map { it.jsonObject }.forEach {
+                val userId = it["user"].jsonObject["id"].long
+                (members.find(userId) as? MemberImpl)?.updatePresence(it) ?: temporallyUserPresences.put(userId, it)
+            }
+        }
+
         afkChannel = json["afk_channel_id"].longOrNull?.let { textChannels.find(it) }
         owner = client.users.find(json["owner_id"].long)
+    }
+
+    fun updateEmojis(json: JsonObject) {
+        val objects = json["emojis"].jsonArray.map { it.jsonObject }
+        val ids = objects.map { it["id"].long }
+
+        emojis.removeIf { it.id !in ids }
+        objects.forEach {
+            emojis.updateOrPut(it["id"].long, it) { EmojiImpl(this, client, it) }
+        }
+    }
+
+    fun applyTemporaryPresences() {
+        temporallyUserPresences.forEach {
+            (members.find(it.key) as? MemberImpl)?.updatePresence(it.value)
+        }
+
+        temporallyUserPresences.clear()
     }
 
     override suspend fun kick(member: Member) {
@@ -248,7 +282,7 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
                 json
         ).jsonObject
 
-        return textChannels.put(ServerTextChannelImpl(this, client, response))
+        return textChannels.getOrPut(response["id"].long) { ServerTextChannelImpl(this, client, response) }
     }
 
     override suspend fun createVoiceChannel(block: ServerVoiceChannelBuilder.() -> Unit): ServerVoiceChannel {
@@ -283,7 +317,7 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
                 json
         ).jsonObject
 
-        return voiceChannels.put(ServerVoiceChannelImpl(this, client, response))
+        return voiceChannels.getOrPut(response["id"].long) { ServerVoiceChannelImpl(this, client, response) }
     }
 
     override suspend fun createChannelCategory(block: ServerChannelBuilder.() -> Unit): ChannelCategory {
@@ -318,7 +352,7 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
                 json
         ).jsonObject
 
-        return channelCategories.put(ChannelCategoryImpl(this, client, response))
+        return channelCategories.getOrPut(response["id"].long) { ChannelCategoryImpl(this, client, response) }
     }
 
     override suspend fun createRole(block: RoleBuilder.() -> Unit): Role {
@@ -353,10 +387,23 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
                 json
         ).jsonObject
 
-        return roles.put(RoleImpl(this, client, response))
+        return roles.getOrPut(response["id"].long) { RoleImpl(this, client, response) }
     }
 
     override suspend fun createEmoji(block: EmojiBuilder.() -> Unit): Emoji {
-        TODO("not implemented")
+        checkPermission(this, Permission.MANAGE_EMOJIS)
+
+        val builder = EmojiBuilder().apply(block)
+        val json = json {
+            "name" to builder.name
+            "image" to "data:image/png;base64,${builder.image!!.base64()}"
+        }
+
+        val response = client.rest.request(
+                Endpoint.CREATE_GUILD_EMOJI.format("guild.id" to id),
+                json
+        ).jsonObject
+
+        return emojis.getOrPut(response["id"].long) { EmojiImpl(this, client, response) }
     }
 }

@@ -2,6 +2,8 @@ package net.ayataka.kordis
 
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.content
+import net.ayataka.kordis.entity.channel.PrivateTextChannel
+import net.ayataka.kordis.entity.collection.EntitySetImpl
 import net.ayataka.kordis.entity.collection.NameableEntitySetImpl
 import net.ayataka.kordis.entity.server.Server
 import net.ayataka.kordis.entity.user.User
@@ -27,6 +29,7 @@ class DiscordClientImpl(
 
     override val servers = NameableEntitySetImpl<Server>()
     override val users = NameableEntitySetImpl<User>()
+    override val privateChannels = EntitySetImpl<PrivateTextChannel>()
 
     init {
         runBlocking {

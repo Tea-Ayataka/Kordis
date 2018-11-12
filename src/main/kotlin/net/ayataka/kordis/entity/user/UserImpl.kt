@@ -7,12 +7,12 @@ import kotlinx.serialization.json.long
 import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.entity.DiscordEntity
 import net.ayataka.kordis.entity.Updatable
-import net.ayataka.kordis.entity.image.Icon
-import net.ayataka.kordis.entity.image.IconImpl
+import net.ayataka.kordis.entity.image.Image
+import net.ayataka.kordis.entity.image.ImageImpl
 
 class UserImpl(client: DiscordClientImpl, json: JsonObject) : User, Updatable, DiscordEntity(client, json["id"].long) {
     @Volatile override var bot = false
-    @Volatile override var avatar: Icon? = null
+    @Volatile override var avatar: Image? = null
     @Volatile override var name = ""
     @Volatile override var discriminator = ""
 
@@ -23,7 +23,7 @@ class UserImpl(client: DiscordClientImpl, json: JsonObject) : User, Updatable, D
     override fun update(json: JsonObject) {
         name = json["username"].content
         discriminator = json["discriminator"].content
-        avatar = IconImpl.avatar(id, json["avatar"].content)
+        avatar = ImageImpl.avatar(id, json["avatar"].content)
         json.getOrNull("bot")?.let { bot = it.boolean }
     }
 

@@ -44,6 +44,12 @@ abstract class DiscordEntity(
         }
     }
 
+    fun checkAccess(channel: ServerChannel) {
+        if (channel.server.members.find(client.botUser)?.canAccess(channel) != true) {
+            throw MissingPermissionsException(channel.server, "Channel: ${channel.name} (${channel.id})")
+        }
+    }
+
     override fun hashCode() = id.hashCode()
     override fun toString() = "DiscordEntity (id: $id)"
 }

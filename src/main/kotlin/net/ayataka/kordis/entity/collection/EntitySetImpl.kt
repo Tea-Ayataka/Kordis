@@ -96,7 +96,7 @@ open class EntitySetImpl<T : Entity> : IterableEntitySet<T>, MutableCollection<T
         return entities[id]
     }
 
-    fun put(value: T): T {
+    private fun put(value: T): T {
         synchronized(entities) {
             if (entities[value.id] != null) {
                 throw IllegalArgumentException("The entity is already in the set! ($value)")

@@ -1,25 +1,25 @@
 package net.ayataka.kordis.entity.server.member
 
-import net.ayataka.kordis.entity.server.role.Role
 import net.ayataka.kordis.entity.server.Server
 import net.ayataka.kordis.entity.server.channel.ServerChannel
 import net.ayataka.kordis.entity.server.permission.Permission
+import net.ayataka.kordis.entity.server.role.Role
 import net.ayataka.kordis.entity.user.User
 import java.time.Instant
 
 interface Member : User {
     /**
-     * The server this member in
+     * The server the member in
      */
     val server: Server
 
     /**
-     * The nickname of this member
+     * The nickname of the member
      */
     val nickname: String?
 
     /**
-     * When this member joined to the server
+     * When the member joined to the server
      */
     val joinedAt: Instant
 
@@ -29,49 +29,73 @@ interface Member : User {
     val status: MemberStatus
 
     /**
-     * The roles this member has
+     * The roles the member has
      */
     val roles: Collection<Role>
 
     /**
-     * Whether this member is the server owner or not
+     * Whether the member is the server owner
      */
     val isOwner: Boolean
         get() = server.owner == this
 
     /**
-     * Whether this member is the server owner or not
+     * Whether the member is the server owner
      */
     val isAdmin: Boolean
         get() = Permission.ADMINISTRATOR in permissions
 
     /**
-     * The permissions this member has
+     * The permissions the member has
      */
     val permissions
         get() = roles.map { it.permissions }.flatten().toSet()
 
     /**
-     * Checks if this member has the permissions or not
+     * Checks if the member has the permissions
      */
     fun hasPermission(perm: Permission) = isAdmin || perm in permissions
 
     /**
-     * Checks if this member can manage (ban, kick, etc) the member or not
+     * Checks if the member can manage (ban, kick, etc) the member
      */
     fun canManage(member: Member) =
             member != this && !member.isOwner
                     && member.roles.maxBy { it.position }!!.position < roles.maxBy { it.position }!!.position
 
     /**
-     * Checks if this member can manage the role or not
+     * Checks if the member can manage the role
      */
     fun canManage(role: Role) = role.position < roles.maxBy { it.position }!!.position
 
     /**
-     * Checks if this member can manage the channel or not
+     * Checks if the member can manage the channel
      */
     fun canManage(channel: ServerChannel): Boolean {
+        if (!canAccess(channel)) {
+            return false
+        }
+
+        var result = true
+        channel.rolePermissionOverwrites
+                .filter { it.role in roles }
+                .sortedBy { it.role.position }
+                .plus(channel.userPermissionOverwrites.filter { it.user == this })
+                .forEach {
+                    if (Permission.MANAGE_CHANNELS in it.deny) {
+                        result = false
+                    } else if (Permission.MANAGE_CHANNELS in it.allow) {
+                        result = true
+                    }
+                }
+
+        return result
+    }
+
+    /**
+     * Checks if the member can access to the channel
+     */
+    fun canAccess(channel: ServerChannel): Boolean {
         var result = true
 
         channel.rolePermissionOverwrites
@@ -85,20 +109,6 @@ interface Member : User {
                         result = true
                     }
                 }
-
-        if (result) {
-            channel.rolePermissionOverwrites
-                    .filter { it.role in roles }
-                    .sortedBy { it.role.position }
-                    .plus(channel.userPermissionOverwrites.filter { it.user == this })
-                    .forEach {
-                        if (Permission.MANAGE_CHANNELS in it.deny) {
-                            result = false
-                        } else if (Permission.MANAGE_CHANNELS in it.allow) {
-                            result = true
-                        }
-                    }
-        }
 
         return result
     }

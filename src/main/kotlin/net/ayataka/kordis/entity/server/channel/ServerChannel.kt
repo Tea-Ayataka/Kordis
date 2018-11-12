@@ -7,10 +7,24 @@ import net.ayataka.kordis.entity.server.permission.overwrite.RolePermissionOverw
 import net.ayataka.kordis.entity.server.permission.overwrite.UserPermissionOverwrite
 
 interface ServerChannel : Nameable, Entity {
+    /**
+     * The parent server of the channel
+     */
     val server: Server
+
+    /**
+     * The position of the channel
+     */
     val position: Int
 
+    /**
+     * The permission overwrites for users
+     */
     val userPermissionOverwrites: Collection<UserPermissionOverwrite>
+
+    /**
+     * The permission overwrites for roles
+     */
     val rolePermissionOverwrites: Collection<RolePermissionOverwrite>
 
     /**

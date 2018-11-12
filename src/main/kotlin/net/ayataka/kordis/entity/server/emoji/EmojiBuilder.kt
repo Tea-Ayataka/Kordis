@@ -1,5 +1,6 @@
 package net.ayataka.kordis.entity.server.emoji
 
 class EmojiBuilder {
-    // TODO: Implement Emoji
+    var name: String? = null
+    var image: ByteArray? = null
 }

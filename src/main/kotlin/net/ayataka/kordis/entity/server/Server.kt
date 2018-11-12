@@ -3,7 +3,7 @@ package net.ayataka.kordis.entity.server
 import net.ayataka.kordis.entity.Entity
 import net.ayataka.kordis.entity.Nameable
 import net.ayataka.kordis.entity.collection.NameableEntitySet
-import net.ayataka.kordis.entity.image.Icon
+import net.ayataka.kordis.entity.image.Image
 import net.ayataka.kordis.entity.server.ban.Ban
 import net.ayataka.kordis.entity.server.channel.ServerChannelBuilder
 import net.ayataka.kordis.entity.server.channel.category.ChannelCategory
@@ -21,33 +21,33 @@ import net.ayataka.kordis.entity.user.User
 
 interface Server : Nameable, Entity {
     /**
-     * Whether the server is ready or not
+     * Whether the server is ready
      */
     val ready: Boolean
 
     /**
      * The url of the server icon
      */
-    val icon: Icon?
+    val icon: Image?
 
     /**
      * The url of the server splash
      */
-    val splash: Icon?
+    val splash: Image?
 
     /**
-     * The owner of this server
+     * The owner of the server
      * Possibly null if the user isn't cached during reconnect
      */
     val owner: User?
 
     /**
-     * the voice region of this server
+     * the voice region of the server
      */
     val region: Region
 
     /**
-     * the AFK channel of this server
+     * the AFK channel of the server
      */
     val afkChannel: ServerTextChannel?
 
@@ -57,52 +57,52 @@ interface Server : Nameable, Entity {
     val afkTimeout: Int
 
     /**
-     * The verification level of this server
+     * The verification level of the server
      */
     val verificationLevel: VerificationLevel
 
     /**
-     * The default message notification level of this server
+     * The default message notification level of the server
      */
     val defaultMessageNotificationLevel: MessageNotificationLevel
 
     /**
-     * The explicit content filter level of this server
+     * The explicit content filter level of the server
      */
     val explicitContentFilterLevel: ExplicitContentFilterLevel
 
     /**
-     * The Multi-Factor-Authorization level of this server
+     * The Multi-Factor-Authorization level of the server
      */
     val mfaLevel: MfaLevel
 
     /**
-     * The members in this server
+     * The members in the server
      */
     val members: NameableEntitySet<Member>
 
     /**
-     * The roles on this server
+     * The roles on the server
      */
     val roles: NameableEntitySet<Role>
 
     /**
-     * The emojis on this server
+     * The emojis on the server
      */
     val emojis: NameableEntitySet<Emoji>
 
     /**
-     * The text channels on this server
+     * The text channels on the server
      */
     val textChannels: NameableEntitySet<ServerTextChannel>
 
     /**
-     * The voice channels on this server
+     * The voice channels on the server
      */
     val voiceChannels: NameableEntitySet<ServerVoiceChannel>
 
     /**
-     * The channel channelCategories on this server
+     * The channel channelCategories on the server
      */
     val channelCategories: NameableEntitySet<ChannelCategory>
 
@@ -112,22 +112,22 @@ interface Server : Nameable, Entity {
     suspend fun bans(): Collection<Ban>
 
     /**
-     * Kick a member from this server
+     * Kick a member from the server
      */
     suspend fun kick(member: Member)
 
     /**
-     * Ban a user from this server
+     * Ban a user from the server
      */
     suspend fun ban(user: User, deleteMessageDays: Int = 0, reason: String? = null)
 
     /**
-     * Unban a user from this server
+     * Unban a user from the server
      */
     suspend fun unban(user: User)
 
     /**
-     * Edit this server
+     * Edit the server
      */
     suspend fun edit(block: ServerBuilder.() -> Unit)
 

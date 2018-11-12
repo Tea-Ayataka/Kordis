@@ -25,7 +25,7 @@ enum class Endpoint(val method: HttpMethod, val path: String) {
     CREATE_MESSAGE(HttpMethod.POST, "/channels/{channel.id}/messages"),
     EDIT_MESSAGE(HttpMethod.PATCH, "/channels/{channel.id}/messages/{message.id}"),
     DELETE_MESSAGE(HttpMethod.DELETE, "/channels/{channel.id}/messages/{message.id}"),
-    BULK_DELETE_MESSAGES(HttpMethod.DELETE, "/channels/{channel.id}/messages/{message.id}"),
+    BULK_DELETE_MESSAGES(HttpMethod.POST, "/channels/{channel.id}/messages/bulk-delete"),
 
     GET_REACTIONS(HttpMethod.GET, "/channels/{channel.id}/messages/{message.id}/reactions/{emoji}"),
     CREATE_REACTION(HttpMethod.PUT, "/channels/{channel.id}/messages/{message.id}/reactions/{emoji}/@me"),

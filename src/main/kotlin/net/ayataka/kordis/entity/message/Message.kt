@@ -1,6 +1,7 @@
 package net.ayataka.kordis.entity.message
 
 import net.ayataka.kordis.entity.Entity
+import net.ayataka.kordis.entity.channel.PrivateTextChannel
 import net.ayataka.kordis.entity.channel.TextChannel
 import net.ayataka.kordis.entity.message.embed.Embed
 import net.ayataka.kordis.entity.message.embed.EmbedBuilder
@@ -47,6 +48,12 @@ interface Message : Entity {
         get() = channel as? ServerTextChannel
 
     /**
+     * The private text channel the message was sent in
+     */
+    val privateChannel: PrivateTextChannel?
+        get() = channel as? PrivateTextChannel
+
+    /**
      * The text content of this message
      */
     val content: String
@@ -62,17 +69,17 @@ interface Message : Entity {
     val editedTimestamp: Instant?
 
     /**
-     * Whether this message contains '@everyone' or not
+     * Whether this message contains '@everyone'
      */
     val mentionsEveryone: Boolean
 
     /**
-     * Whether this message is pinned or not
+     * Whether this message is pinned
      */
     val pinned: Boolean
 
     /**
-     * Whether this message is a Text-to-Speech message or not
+     * Whether this message is a Text-to-Speech message
      */
     val tts: Boolean
 

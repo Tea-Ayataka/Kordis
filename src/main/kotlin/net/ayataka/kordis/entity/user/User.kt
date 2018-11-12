@@ -4,18 +4,18 @@ import net.ayataka.kordis.entity.Entity
 import net.ayataka.kordis.entity.Mentionable
 import net.ayataka.kordis.entity.Nameable
 import net.ayataka.kordis.entity.Permissionable
-import net.ayataka.kordis.entity.image.Icon
+import net.ayataka.kordis.entity.image.Image
 
 interface User : Mentionable, Nameable, Permissionable, Entity {
     /**
-     * Whether the user is bot or not
+     * Whether the user is bot
      */
     val bot: Boolean
 
     /**
      * The avatar image of the user
      */
-    val avatar: Icon?
+    val avatar: Image?
 
     /**
      * The discriminator of the user

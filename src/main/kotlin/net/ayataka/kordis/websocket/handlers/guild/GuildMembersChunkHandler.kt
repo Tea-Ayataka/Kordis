@@ -29,6 +29,8 @@ class GuildMembersChunkHandler : GatewayHandler {
             }
         }
 
+        server.applyTemporaryPresences()
+
         if (!server.ready) {
             server.ready = true
             client.eventManager.fire(ServerReadyEvent(server))

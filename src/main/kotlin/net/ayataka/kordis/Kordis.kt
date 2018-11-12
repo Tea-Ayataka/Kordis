@@ -11,7 +11,7 @@ val LOGGER = LogManager.getLogger()!!
 
 object Kordis {
     init {
-        LOGGER.debug("$NAME v$VERSION ($URL)")
+        LOGGER.info("$NAME v$VERSION ($URL)")
     }
 
     suspend fun create(block: DiscordClientBuilder.() -> Unit): DiscordClient {
