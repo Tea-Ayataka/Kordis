@@ -70,6 +70,14 @@ class EmbedBuilder {
         fields.add(Field(name, value, inline))
     }
 
+    fun inlineField(name: String, value: String) {
+        field(name, value, true)
+    }
+
+    fun inlineField(name: String, value: Number) {
+        field(name, value, true)
+    }
+
     fun build(): Embed {
         return EmbedImpl(title, description, url, color, timestamp, imageUrl, thumbnailUrl, footer, author, fields)
     }
