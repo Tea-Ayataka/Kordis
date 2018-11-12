@@ -11,7 +11,6 @@ import net.ayataka.kordis.entity.server.enums.UserStatus
 import net.ayataka.kordis.utils.AdvancedQueue
 import net.ayataka.kordis.utils.RateLimiter
 import net.ayataka.kordis.utils.start
-import net.ayataka.kordis.utils.timer
 import net.ayataka.kordis.websocket.handlers.channel.ChannelCreateHandler
 import net.ayataka.kordis.websocket.handlers.channel.ChannelDeleteHandler
 import net.ayataka.kordis.websocket.handlers.channel.ChannelUpdateHandler
@@ -25,6 +24,7 @@ import net.ayataka.kordis.websocket.handlers.voice.VoiceStateUpdateHandler
 import org.java_websocket.client.WebSocketClient
 import org.java_websocket.handshake.ServerHandshake
 import java.net.URI
+import java.util.*
 import java.util.concurrent.LinkedBlockingQueue
 
 @Suppress("EXPERIMENTAL_API_USAGE")
@@ -39,7 +39,7 @@ class GatewayClient(
     @Volatile private var sessionId: String? = null
     @Volatile private var lastSequence = -1
     @Volatile private var heartbeatAckReceived = false
-    @Volatile private var heartbeatTask: Job? = null
+    @Volatile private var heartbeatTask: Timer? = null
     @Volatile private var activity: JsonObject? = null
 
     private val sendQueue = LinkedBlockingQueue<String>()
@@ -162,7 +162,8 @@ class GatewayClient(
                 val period = data!!["heartbeat_interval"].long
                 heartbeatAckReceived = true
 
-                heartbeatTask = timer(period, context = newSingleThreadContext("Heartbeat Dispatcher")) {
+                heartbeatTask?.cancel()
+                heartbeatTask = kotlin.concurrent.timer(name = "Heartbeat Dispatcher", period = period) {
                     if (heartbeatAckReceived) {
                         heartbeatAckReceived = false
                         queue(Opcode.HEARTBEAT, json { if (lastSequence > 0) "d" to lastSequence })
