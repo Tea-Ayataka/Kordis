@@ -1,13 +1,12 @@
 package net.ayataka.kordis.test
 
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import net.ayataka.kordis.Kordis
 import net.ayataka.kordis.addHandler
 import net.ayataka.kordis.entity.server.channel.text.deleteMessages
 import net.ayataka.kordis.entity.server.permission.Permission
 import net.ayataka.kordis.entity.server.permission.permissions
-import net.ayataka.kordis.event.EventListener
+import net.ayataka.kordis.event.EventHandler
 import net.ayataka.kordis.event.events.message.MessageEditEvent
 import net.ayataka.kordis.event.events.message.MessageReceiveEvent
 import net.ayataka.kordis.event.events.server.ServerReadyEvent
@@ -44,11 +43,9 @@ class TestBot {
         }
 
         client.users.find(-1)
-
-        delay(99999999999999)
     }
 
-    @EventListener
+    @EventHandler
     suspend fun onMessageReceive(event: MessageReceiveEvent) {
         if (event.message.author?.bot == false && event.message.content == "Hello World Ya!") {
             event.message.channel.send("Hello Ya!")
@@ -163,7 +160,7 @@ class TestBot {
         }
     }
 
-    @EventListener
+    @EventHandler
     suspend fun onServerReady(event: ServerReadyEvent) {
         println("Server Ready! ${event.server.name}")
         println("Members:")

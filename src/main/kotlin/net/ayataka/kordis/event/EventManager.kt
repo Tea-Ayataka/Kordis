@@ -22,7 +22,7 @@ class EventManager {
 
     private fun getAnnotatedFunctions(instance: Any): List<KFunction<*>> {
         return instance::class.functions // Get functions
-                .filter { it.annotations.any { it is EventListener } }  // Annotation check
+                .filter { it.annotations.any { it is EventHandler } }  // Annotation check
                 .filter { it.parameters.size == 2 && (it.parameters[1].type.classifier as KClass<*>).isSubclassOf(Event::class) } // Parameter check
     }
 
@@ -37,7 +37,7 @@ class EventManager {
         getAnnotatedFunctions(handler).forEach {
             @Suppress("UNCHECKED_CAST")
             val param: KClass<out Event> = it.parameters[1].type.classifier as KClass<out Event>
-            val annotation = it.annotations.find { it is EventListener } as EventListener
+            val annotation = it.annotations.find { it is EventHandler } as EventHandler
 
             mutex.withLock {
                 handlers.getOrPut(param) { mutableListOf() }.add(Triple(handler, it, annotation.priority))
