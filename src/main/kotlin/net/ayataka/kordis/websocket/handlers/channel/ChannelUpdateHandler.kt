@@ -4,7 +4,7 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.int
 import kotlinx.serialization.json.long
 import net.ayataka.kordis.DiscordClientImpl
-import net.ayataka.kordis.LOGGER
+import net.ayataka.kordis.Kordis.LOGGER
 import net.ayataka.kordis.entity.server.ServerImpl
 import net.ayataka.kordis.entity.server.enums.ChannelType
 import net.ayataka.kordis.websocket.handlers.GatewayHandler

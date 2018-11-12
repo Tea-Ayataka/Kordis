@@ -1,6 +1,5 @@
 package net.ayataka.kordis
 
-import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.content
 import net.ayataka.kordis.entity.channel.PrivateTextChannel
 import net.ayataka.kordis.entity.collection.EntitySetImpl
@@ -12,11 +11,11 @@ import net.ayataka.kordis.rest.Endpoint
 import net.ayataka.kordis.rest.RestClient
 import net.ayataka.kordis.websocket.GatewayClient
 
+@Suppress("OVERRIDE_BY_INLINE")
 class DiscordClientImpl(
         val token: String,
         val shard: Int,
-        val maxShards: Int,
-        listeners: Collection<Any>
+        val maxShards: Int
 ) : DiscordClient {
     override var status = ConnectionStatus.DISCONNECTED
     override lateinit var botUser: User
@@ -30,12 +29,6 @@ class DiscordClientImpl(
     override val servers = NameableEntitySetImpl<Server>()
     override val users = NameableEntitySetImpl<User>()
     override val privateChannels = EntitySetImpl<PrivateTextChannel>()
-
-    init {
-        runBlocking {
-            listeners.forEach { eventManager.register(it) }
-        }
-    }
 
     suspend fun connect() {
         if (status != ConnectionStatus.DISCONNECTED) {

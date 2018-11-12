@@ -1,7 +1,7 @@
 package net.ayataka.kordis.utils
 
 import kotlinx.coroutines.*
-import net.ayataka.kordis.LOGGER
+import net.ayataka.kordis.Kordis.LOGGER
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.system.measureTimeMillis

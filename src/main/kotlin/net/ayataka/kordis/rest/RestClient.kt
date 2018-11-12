@@ -3,7 +3,7 @@ package net.ayataka.kordis.rest
 import kotlinx.coroutines.delay
 import kotlinx.serialization.json.*
 import net.ayataka.kordis.DiscordClientImpl
-import net.ayataka.kordis.LOGGER
+import net.ayataka.kordis.Kordis.LOGGER
 import net.ayataka.kordis.exception.DiscordException
 import net.ayataka.kordis.exception.NotFoundException
 import net.ayataka.kordis.exception.RateLimitedException

@@ -3,11 +3,12 @@ package net.ayataka.kordis.test
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import net.ayataka.kordis.Kordis
-import net.ayataka.kordis.addListener
+import net.ayataka.kordis.addHandler
 import net.ayataka.kordis.entity.server.channel.text.deleteMessages
 import net.ayataka.kordis.entity.server.permission.Permission
 import net.ayataka.kordis.entity.server.permission.permissions
 import net.ayataka.kordis.event.EventListener
+import net.ayataka.kordis.event.events.message.MessageEditEvent
 import net.ayataka.kordis.event.events.message.MessageReceiveEvent
 import net.ayataka.kordis.event.events.server.ServerReadyEvent
 import net.ayataka.kordis.utils.formatAsDate
@@ -24,7 +25,16 @@ class TestBot {
     suspend fun start(token: String) {
         val client = Kordis.create {
             this.token = token
+            shard = 0
+            maxShard = 1
             addListener(this@TestBot)
+            addHandler<MessageReceiveEvent> {
+                println(it.message.content.reversed())
+            }
+        }
+
+        client.addHandler<MessageEditEvent> {
+            println("Edited!")
         }
 
         client.servers.findByName("TestServer")

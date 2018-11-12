@@ -3,7 +3,7 @@ package net.ayataka.kordis.rest
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import net.ayataka.kordis.LOGGER
+import net.ayataka.kordis.Kordis.LOGGER
 import java.util.concurrent.ConcurrentHashMap
 
 class InternalRateLimiter {

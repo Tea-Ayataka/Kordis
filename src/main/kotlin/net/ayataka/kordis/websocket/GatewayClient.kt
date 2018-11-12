@@ -2,10 +2,10 @@ package net.ayataka.kordis.websocket
 
 import kotlinx.coroutines.*
 import kotlinx.serialization.json.*
-import net.ayataka.kordis.API_VERSION
 import net.ayataka.kordis.ConnectionStatus
 import net.ayataka.kordis.DiscordClientImpl
-import net.ayataka.kordis.LOGGER
+import net.ayataka.kordis.Kordis.API_VERSION
+import net.ayataka.kordis.Kordis.LOGGER
 import net.ayataka.kordis.utils.*
 import net.ayataka.kordis.websocket.handlers.channel.ChannelCreateHandler
 import net.ayataka.kordis.websocket.handlers.channel.ChannelDeleteHandler
