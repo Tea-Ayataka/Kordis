@@ -3,7 +3,6 @@ package net.ayataka.kordis.utils
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.util.*
@@ -50,9 +49,7 @@ class AdvancedQueue<T>(val amount: Int, val action: suspend (List<T>) -> Unit) {
         }
     }
 
-    fun clear() = runBlocking {
-        locker.withLock {
-            queue.clear()
-        }
+    suspend fun clear() = locker.withLock {
+        queue.clear()
     }
 }
