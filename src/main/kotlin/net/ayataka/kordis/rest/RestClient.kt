@@ -3,13 +3,13 @@ package net.ayataka.kordis.rest
 import kotlinx.coroutines.delay
 import kotlinx.serialization.json.*
 import net.ayataka.kordis.DiscordClientImpl
+import net.ayataka.kordis.Kordis.HTTP_CLIENT
 import net.ayataka.kordis.Kordis.LOGGER
 import net.ayataka.kordis.exception.DiscordException
 import net.ayataka.kordis.exception.NotFoundException
 import net.ayataka.kordis.exception.RateLimitedException
 import net.ayataka.kordis.utils.executeAsync
 import okhttp3.MediaType
-import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody
 
@@ -17,7 +17,6 @@ private val JSON_TYPE = MediaType.parse("application/json; charset=utf-8")!!
 
 class RestClient(private val discordClient: DiscordClientImpl) {
     private val rateLimiter = InternalRateLimiter()
-    private val httpClient = OkHttpClient()
 
     suspend fun request(endPoint: FormattedEndPoint, data: JsonObject? = null, rateLimitRetries: Int = 50): JsonElement {
         repeat(rateLimitRetries) {
@@ -44,7 +43,7 @@ class RestClient(private val discordClient: DiscordClientImpl) {
                     method(endPoint.method.name, RequestBody.create(JSON_TYPE, data.toString()))
                 }.build()
 
-                val response = httpClient.newCall(request).executeAsync()
+                val response = HTTP_CLIENT.newCall(request).executeAsync()
 
                 val json = if (response.headers()["Content-Type"] == "application/json") {
                     response.body()?.let { JsonTreeParser(it.string()).readFully() }

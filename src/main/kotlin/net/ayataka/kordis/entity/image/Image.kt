@@ -5,4 +5,9 @@ interface Image {
      * The url of the image
      */
     val url: String
+
+    /**
+     * Download the image
+     */
+    suspend fun bytes(): ByteArray
 }

@@ -1,5 +1,6 @@
 package net.ayataka.kordis
 
+import okhttp3.OkHttpClient
 import org.apache.logging.log4j.LogManager
 
 object Kordis {
@@ -8,6 +9,7 @@ object Kordis {
     const val URL = "https://github.com/Tea-Ayataka/Kordis"
     const val API_VERSION = 6
 
+    val HTTP_CLIENT = OkHttpClient()
     val LOGGER = LogManager.getLogger()!!
 
     init {

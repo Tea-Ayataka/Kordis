@@ -6,7 +6,10 @@ import net.ayataka.kordis.ConnectionStatus
 import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.Kordis.API_VERSION
 import net.ayataka.kordis.Kordis.LOGGER
-import net.ayataka.kordis.utils.*
+import net.ayataka.kordis.utils.AdvancedQueue
+import net.ayataka.kordis.utils.RateLimiter
+import net.ayataka.kordis.utils.start
+import net.ayataka.kordis.utils.timer
 import net.ayataka.kordis.websocket.handlers.channel.ChannelCreateHandler
 import net.ayataka.kordis.websocket.handlers.channel.ChannelDeleteHandler
 import net.ayataka.kordis.websocket.handlers.channel.ChannelUpdateHandler
@@ -37,7 +40,7 @@ class GatewayClient(
     @Volatile private var heartbeatTask: Job? = null
 
     private val sendQueue = LinkedBlockingQueue<String>()
-    private val rateLimiter = RateLimiter(60.seconds(), 100) // The actual limit is 120
+    private val rateLimiter = RateLimiter(60 * 1000, 100) // The actual limit is 120
 
     val memberChunkRequestQueue = AdvancedQueue<Long>(50) {
         queue(Opcode.REQUEST_GUILD_MEMBERS, json {
