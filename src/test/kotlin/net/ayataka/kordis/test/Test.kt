@@ -91,10 +91,6 @@ class TestBot {
                     field("Permission Overwrites (Role)", channel.rolePermissionOverwrites.size, true)
                 }
             }
-
-            event.server?.edit {
-                name = "VeryName"
-            }
         }
 
         if (text.startsWith("!roleinfo")) {
@@ -153,6 +149,12 @@ class TestBot {
                     appendLine("${it.tag} ${it.status}")
                 }
             }
+        }
+
+        if (text.startsWith("!userinfo")) {
+            val id = text.split(" ")[1].toLong()
+            val user = channel.client.getUser(id)
+            channel.send(user.toString())
         }
     }
 

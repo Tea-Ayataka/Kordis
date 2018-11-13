@@ -19,5 +19,13 @@ interface DiscordClient {
     suspend fun addListener(listener: Any)
     suspend fun removeListener(listener: Any)
 
+    /**
+     * Update the bot's activity
+     */
     fun updateStatus(status: UserStatus, type: ActivityType, name: String)
+
+    /**
+     * Get a user by its id
+     */
+    suspend fun getUser(id: Long): User?
 }

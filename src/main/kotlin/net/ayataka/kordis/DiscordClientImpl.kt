@@ -8,7 +8,9 @@ import net.ayataka.kordis.entity.server.Server
 import net.ayataka.kordis.entity.server.enums.ActivityType
 import net.ayataka.kordis.entity.server.enums.UserStatus
 import net.ayataka.kordis.entity.user.User
+import net.ayataka.kordis.entity.user.UserImpl
 import net.ayataka.kordis.event.EventManager
+import net.ayataka.kordis.exception.NotFoundException
 import net.ayataka.kordis.rest.Endpoint
 import net.ayataka.kordis.rest.RestClient
 import net.ayataka.kordis.websocket.GatewayClient
@@ -55,6 +57,18 @@ class DiscordClientImpl(
         eventManager.unregister(listener)
     }
 
-    override fun updateStatus(status: UserStatus, type: ActivityType, name: String) =
-            gateway.updateStatus(status, type, name)
+    override fun updateStatus(status: UserStatus, type: ActivityType, name: String) {
+        gateway.updateStatus(status, type, name)
+    }
+
+    override suspend fun getUser(id: Long): User? {
+        users.find(id)?.let { return it }
+
+        return try {
+            rest.request(Endpoint.GET_USER.format("user.id" to id))
+                    .let { users.updateOrPut(id, it.jsonObject) { UserImpl(this, it.jsonObject) } }
+        } catch (ex: NotFoundException) {
+            return null
+        }
+    }
 }
