@@ -8,6 +8,6 @@ class MessageUpdateHandler : GatewayHandler {
     override val eventType = "MESSAGE_UPDATE"
 
     override fun handle(client: DiscordClientImpl, data: JsonObject) {
-
+        TODO("not implemented")
     }
 }

@@ -12,7 +12,7 @@ suspend fun User.ban(server: Server, deleteMessageDays: Int = 0, reason: String?
     server.ban(this, deleteMessageDays, reason)
 }
 
-suspend fun Member.kick(server: Server) {
+suspend fun Member.kick() {
     server.kick(this)
 }
 
