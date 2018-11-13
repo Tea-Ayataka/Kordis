@@ -11,7 +11,9 @@ import net.ayataka.kordis.entity.message.MessageBuilder
 import net.ayataka.kordis.entity.message.MessageImpl
 import net.ayataka.kordis.entity.user.User
 import net.ayataka.kordis.entity.user.UserImpl
+import net.ayataka.kordis.exception.DiscordException
 import net.ayataka.kordis.exception.NotFoundException
+import net.ayataka.kordis.exception.PrivateMessageBlockedException
 import net.ayataka.kordis.rest.Endpoint
 
 class PrivateTextChannelImpl(
@@ -41,12 +43,21 @@ class PrivateTextChannelImpl(
     }
 
     override suspend fun send(block: MessageBuilder.() -> Unit): Message {
-        val response = client.rest.request(
-                Endpoint.CREATE_MESSAGE.format("channel.id" to id),
-                MessageBuilder().apply(block).build()
-        )
+        try {
+            val response = client.rest.request(
+                    Endpoint.CREATE_MESSAGE.format("channel.id" to id),
+                    MessageBuilder().apply(block).build()
+            )
 
-        return MessageImpl(client, response.jsonObject)
+            return MessageImpl(client, response.jsonObject)
+        } catch (ex: DiscordException) {
+            // FORBIDDEN
+            if (ex.code == 403) {
+                throw PrivateMessageBlockedException(this.toString())
+            }
+
+            throw ex
+        }
     }
 
     override suspend fun getMessage(messageId: Long): Message? {
@@ -78,5 +89,9 @@ class PrivateTextChannelImpl(
         client.rest.request(
                 Endpoint.DELETE_MESSAGE.format("channel.id" to id, "message.id" to messageId)
         )
+    }
+
+    override fun toString(): String {
+        return "PrivateTextChannel(owner=$owner, recipients=$recipients)"
     }
 }

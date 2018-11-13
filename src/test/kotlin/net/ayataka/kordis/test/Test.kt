@@ -3,11 +3,11 @@ package net.ayataka.kordis.test
 import kotlinx.coroutines.runBlocking
 import net.ayataka.kordis.Kordis
 import net.ayataka.kordis.addHandler
-import net.ayataka.kordis.entity.server.channel.text.deleteMessages
+import net.ayataka.kordis.entity.deleteAll
+import net.ayataka.kordis.entity.permissions
 import net.ayataka.kordis.entity.server.enums.ActivityType
 import net.ayataka.kordis.entity.server.enums.UserStatus
 import net.ayataka.kordis.entity.server.permission.Permission
-import net.ayataka.kordis.entity.server.permission.permissions
 import net.ayataka.kordis.event.EventHandler
 import net.ayataka.kordis.event.events.message.MessageEditEvent
 import net.ayataka.kordis.event.events.message.MessageReceiveEvent
@@ -37,7 +37,7 @@ class TestBot {
         client.updateStatus(UserStatus.ONLINE, ActivityType.PLAYING, "Kordis v0.0.1-SNAPSHOT")
 
         client.addHandler<MessageEditEvent> {
-            println("Edited!")
+            println("Edited! ${it.message}")
         }
 
         client.servers.findByName("TestServer")
@@ -111,7 +111,7 @@ class TestBot {
 
         if (text.startsWith("!clear")) {
             val amount = text.split(" ")[1].toInt()
-            channel.deleteMessages(channel.getMessages(amount))
+            channel.getMessages(amount).deleteAll()
             channel.send("Deleted $amount messages")
         }
 
@@ -155,6 +155,10 @@ class TestBot {
             val id = text.split(" ")[1].toLong()
             val user = channel.client.getUser(id)
             channel.send(user.toString())
+        }
+
+        if (text.startsWith("!dmme")) {
+            author.getPrivateChannel().send("Hey :3")
         }
     }
 

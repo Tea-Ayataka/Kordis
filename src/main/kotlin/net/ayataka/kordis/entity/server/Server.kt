@@ -155,4 +155,9 @@ interface Server : Nameable, Entity {
      * Create an emoji
      */
     suspend fun createEmoji(block: EmojiBuilder.() -> Unit): Emoji
+
+    /**
+     * Get the audit logs
+     */
+    // TODO: Not implemented
 }

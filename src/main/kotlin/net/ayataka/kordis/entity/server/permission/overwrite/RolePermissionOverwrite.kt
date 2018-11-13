@@ -5,8 +5,8 @@ import net.ayataka.kordis.entity.server.role.Role
 
 class RolePermissionOverwrite(
         val role: Role,
-        allow: PermissionSet,
-        deny: PermissionSet
+        allow: PermissionSet = PermissionSet(),
+        deny: PermissionSet = PermissionSet()
 ) : PermissionOverwrite(role, allow, deny) {
     override fun toString(): String {
         return "RolePermissionOverwrite(role=$role, allow=$allow, deny=$deny)"

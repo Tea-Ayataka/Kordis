@@ -92,7 +92,7 @@ class RestClient(private val discordClient: DiscordClientImpl) {
                 }
 
                 if (response.code() !in 200..299) {
-                    throw DiscordException("Discord API returned status code ${response.code()} with body ${json?.toString()}")
+                    throw DiscordException("Discord API returned status code ${response.code()} with body ${json?.toString()}", response.code())
                 }
 
                 if (response.headers()["X-RateLimit-Limit"] != null && response.headers()["X-RateLimit-Reset"] != null) {

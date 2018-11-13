@@ -13,7 +13,8 @@ class MessageDeleteBulkHandler : GatewayHandler {
         val messageIds = data["ids"].jsonArray.map { it.long }
 
         if (!data.containsKey("guild_id")) {
-            // TODO: Handle private channel messages
+            val channel = client.privateChannels.find(data["channel_id"].long) ?: return
+            client.eventManager.fire(MessageDeleteEvent(messageIds, channel, null))
             return
         }
 

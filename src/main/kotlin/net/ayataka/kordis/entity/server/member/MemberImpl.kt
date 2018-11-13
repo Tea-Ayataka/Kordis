@@ -1,18 +1,19 @@
 package net.ayataka.kordis.entity.server.member
 
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.content
-import kotlinx.serialization.json.contentOrNull
-import kotlinx.serialization.json.long
+import kotlinx.serialization.json.*
 import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.entity.DiscordEntity
 import net.ayataka.kordis.entity.Updatable
-import net.ayataka.kordis.entity.collection.everyone
+import net.ayataka.kordis.entity.channel.PrivateTextChannel
+import net.ayataka.kordis.entity.channel.PrivateTextChannelImpl
+import net.ayataka.kordis.entity.everyone
 import net.ayataka.kordis.entity.server.Server
+import net.ayataka.kordis.entity.server.enums.UserStatus
 import net.ayataka.kordis.entity.server.permission.Permission
 import net.ayataka.kordis.entity.server.role.Role
 import net.ayataka.kordis.entity.user.User
-import net.ayataka.kordis.entity.server.enums.UserStatus
+import net.ayataka.kordis.exception.DiscordException
+import net.ayataka.kordis.exception.PrivateMessageBlockedException
 import net.ayataka.kordis.rest.Endpoint
 import java.time.Instant
 import java.time.format.DateTimeFormatter
@@ -33,6 +34,8 @@ class MemberImpl(
     @Volatile override var status = UserStatus.OFFLINE
     @Volatile override var roles = mutableSetOf<Role>()
 
+    @Volatile private var privateChannelId = -1L
+
     init {
         update(json)
     }
@@ -52,10 +55,6 @@ class MemberImpl(
         }
 
         status = UserStatus[json["status"].content]
-    }
-
-    override fun toString(): String {
-        return "Member(id=${user.id}, server=$server, user=${user.tag}, joinedAt=$joinedAt, roles=${roles.joinToString()})"
     }
 
     override suspend fun addRole(role: Role) {
@@ -82,5 +81,48 @@ class MemberImpl(
                         "role.id" to role.id
                 )
         )
+    }
+
+    override suspend fun getPrivateChannel(): PrivateTextChannel {
+        client.privateChannels.find(privateChannelId)?.let { return it }
+
+        try {
+            val response = client.rest.request(
+                    Endpoint.CREATE_DM.format(),
+                    json { "recipient_id" to id }
+            ).jsonObject
+
+            privateChannelId = response["id"].long
+            return client.privateChannels.getOrPut(privateChannelId) { PrivateTextChannelImpl(client, response) }
+        } catch (ex: DiscordException) {
+            // FORBIDDEN
+            if (ex.code == 403) {
+                throw PrivateMessageBlockedException(this.toString())
+            }
+
+            throw ex
+        }
+    }
+
+    override fun toString(): String {
+        return "Member(id=${user.id}, server=$server, user=${user.tag}, joinedAt=$joinedAt, roles=${roles.joinToString()})"
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is MemberImpl) return false
+        if (!super.equals(other)) return false
+
+        if (server != other.server) return false
+        if (user != other.user) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = super.hashCode()
+        result = 31 * result + server.hashCode()
+        result = 31 * result + user.hashCode()
+        return result
     }
 }

@@ -4,9 +4,9 @@ import kotlinx.serialization.json.*
 import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.entity.DiscordEntity
 import net.ayataka.kordis.entity.Updatable
+import net.ayataka.kordis.entity.botUser
 import net.ayataka.kordis.entity.collection.NameableEntitySetImpl
-import net.ayataka.kordis.entity.collection.botUser
-import net.ayataka.kordis.entity.collection.find
+import net.ayataka.kordis.entity.find
 import net.ayataka.kordis.entity.image.Image
 import net.ayataka.kordis.entity.image.ImageImpl
 import net.ayataka.kordis.entity.server.ban.Ban

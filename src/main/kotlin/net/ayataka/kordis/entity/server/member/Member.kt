@@ -1,5 +1,6 @@
 package net.ayataka.kordis.entity.server.member
 
+import net.ayataka.kordis.entity.channel.PrivateTextChannel
 import net.ayataka.kordis.entity.server.Server
 import net.ayataka.kordis.entity.server.channel.ServerChannel
 import net.ayataka.kordis.entity.server.enums.UserStatus
@@ -123,4 +124,30 @@ interface Member : User {
      * Remove a role from the member
      */
     suspend fun removeRole(role: Role)
+
+    /**
+     * Kick the member from the server
+     */
+    suspend fun kick() {
+        server.kick(this)
+    }
+
+    /**
+     * Ban the member from the server
+     */
+    suspend fun ban(deleteMessageDays: Int = 0, reason: String? = null) {
+        server.ban(this, deleteMessageDays, reason)
+    }
+
+    /**
+     * Unban the member from the server
+     */
+    suspend fun unban() {
+        server.unban(this)
+    }
+
+    /**
+     * Get the private channel for the member
+     */
+    suspend fun getPrivateChannel(): PrivateTextChannel
 }

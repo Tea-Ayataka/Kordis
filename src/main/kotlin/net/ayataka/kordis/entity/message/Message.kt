@@ -87,4 +87,9 @@ interface Message : Entity {
      * Edit the message
      */
     suspend fun edit(text: String = "", embed: (EmbedBuilder.() -> Unit)? = null): Message
+
+    /**
+     * Delete the message
+     */
+    suspend fun Message.delete() = channel.deleteMessage(id)
 }

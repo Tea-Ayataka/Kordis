@@ -27,5 +27,3 @@ class PermissionSet(compiled: Int = 0) : MutableCollection<Permission> {
         return "PermissionSet(${perms.joinToString()})"
     }
 }
-
-fun permissions(vararg permission: Permission) = PermissionSet().apply { addAll(permission) }
