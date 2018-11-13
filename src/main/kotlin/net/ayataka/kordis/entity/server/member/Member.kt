@@ -2,10 +2,10 @@ package net.ayataka.kordis.entity.server.member
 
 import net.ayataka.kordis.entity.server.Server
 import net.ayataka.kordis.entity.server.channel.ServerChannel
+import net.ayataka.kordis.entity.server.enums.UserStatus
 import net.ayataka.kordis.entity.server.permission.Permission
 import net.ayataka.kordis.entity.server.role.Role
 import net.ayataka.kordis.entity.user.User
-import net.ayataka.kordis.entity.server.enums.UserStatus
 import java.time.Instant
 
 interface Member : User {
@@ -44,7 +44,7 @@ interface Member : User {
      * Whether the member is the server owner
      */
     val isAdmin: Boolean
-        get() = Permission.ADMINISTRATOR in permissions
+        get() = isOwner || Permission.ADMINISTRATOR in permissions
 
     /**
      * The permissions the member has
