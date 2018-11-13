@@ -2,7 +2,11 @@ package net.ayataka.kordis.entity
 
 import net.ayataka.kordis.entity.collection.NameableEntitySet
 import net.ayataka.kordis.entity.message.Message
+import net.ayataka.kordis.entity.server.channel.ServerChannel
+import net.ayataka.kordis.entity.server.channel.ServerChannelBuilder
+import net.ayataka.kordis.entity.server.channel.category.ChannelCategory
 import net.ayataka.kordis.entity.server.channel.text.ServerTextChannel
+import net.ayataka.kordis.entity.server.channel.voice.ServerVoiceChannel
 import net.ayataka.kordis.entity.server.member.Member
 import net.ayataka.kordis.entity.server.permission.Permission
 import net.ayataka.kordis.entity.server.permission.PermissionSet
@@ -21,6 +25,13 @@ suspend fun Collection<Message>.deleteAll() {
                 .filter { it.timestamp.isAfter(Instant.now().minus(14, ChronoUnit.DAYS)) }
                 .map { it.id })
     }
+}
+
+/**
+ * Edit the channel
+ */
+suspend fun ServerChannel.edit(block: ServerChannelBuilder.() -> Unit) {
+    (this as? ServerTextChannel)?.edit(block) ?: (this as? ServerVoiceChannel)?.edit(block) ?: (this as? ChannelCategory)?.edit(block)
 }
 
 /**
