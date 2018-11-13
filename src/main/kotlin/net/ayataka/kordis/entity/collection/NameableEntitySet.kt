@@ -4,4 +4,5 @@ import net.ayataka.kordis.entity.Nameable
 
 interface NameableEntitySet<T : Nameable> : IterableEntitySet<T> {
     fun findByName(text: String, ignoreCase: Boolean = false): T?
+    fun findByQuery(text: String): List<T>
 }

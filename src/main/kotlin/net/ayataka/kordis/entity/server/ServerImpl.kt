@@ -5,6 +5,7 @@ import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.entity.DiscordEntity
 import net.ayataka.kordis.entity.Updatable
 import net.ayataka.kordis.entity.botUser
+import net.ayataka.kordis.entity.channel.TextChannel
 import net.ayataka.kordis.entity.collection.NameableEntitySetImpl
 import net.ayataka.kordis.entity.find
 import net.ayataka.kordis.entity.image.Image
@@ -34,23 +35,34 @@ import net.ayataka.kordis.entity.server.role.RoleImpl
 import net.ayataka.kordis.entity.user.User
 import net.ayataka.kordis.entity.user.UserImpl
 import net.ayataka.kordis.rest.Endpoint
-import net.ayataka.kordis.utils.base64
-import net.ayataka.kordis.utils.uRgb
+import net.ayataka.kordis.utils.*
 import java.util.concurrent.ConcurrentHashMap
 
 class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, DiscordEntity(client, id) {
-    @Volatile override var ready = false
-    @Volatile override var name = ""
-    @Volatile override var icon: Image? = null
-    @Volatile override var splash: Image? = null
-    @Volatile override var owner: User? = null
-    @Volatile override var region = Region.UNKNOWN
-    @Volatile override var afkChannel: ServerTextChannel? = null
-    @Volatile override var afkTimeout = -1
-    @Volatile override var verificationLevel = VerificationLevel.NONE
-    @Volatile override var defaultMessageNotificationLevel = MessageNotificationLevel.ALL_MESSAGES
-    @Volatile override var explicitContentFilterLevel = ExplicitContentFilterLevel.DISABLED
-    @Volatile override var mfaLevel = MfaLevel.NONE
+    @Volatile
+    override var ready = false
+    @Volatile
+    override var name = ""
+    @Volatile
+    override var icon: Image? = null
+    @Volatile
+    override var splash: Image? = null
+    @Volatile
+    override var owner: User? = null
+    @Volatile
+    override var region = Region.UNKNOWN
+    @Volatile
+    override var afkChannel: ServerTextChannel? = null
+    @Volatile
+    override var afkTimeout = -1
+    @Volatile
+    override var verificationLevel = VerificationLevel.NONE
+    @Volatile
+    override var defaultMessageNotificationLevel = MessageNotificationLevel.ALL_MESSAGES
+    @Volatile
+    override var explicitContentFilterLevel = ExplicitContentFilterLevel.DISABLED
+    @Volatile
+    override var mfaLevel = MfaLevel.NONE
 
     override val roles = NameableEntitySetImpl<Role>()
     override val emojis = NameableEntitySetImpl<Emoji>()
@@ -405,5 +417,132 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
         ).jsonObject
 
         return emojis.getOrPut(response["id"].long) { EmojiImpl(this, client, response) }
+    }
+
+    override suspend fun findMembers(query: String): List<Member> {
+        val userMention = USER_MENTION.matcher(query)
+        val fullRefMatch = FULL_USER_REF.matcher(query)
+
+        if (userMention.matches()) {
+            val member = members.find(userMention.group(1).toLong())
+
+            if (member != null)
+                return listOf(member)
+        } else if (fullRefMatch.matches()) {
+            val lower = fullRefMatch.group(1).toLowerCase()
+            val discriminator = fullRefMatch.group(2)
+            val members = this.members
+                    .filter { it.name.toLowerCase() == lower && it.discriminator == discriminator }
+
+            if (members.isNotEmpty())
+                return members
+        } else if (DISCORD_ID.matcher(query).matches()) {
+            val member = members.find(query.toLong())
+            if (member != null)
+                return listOf(member)
+        }
+
+        return this.members.findByQuery(query)
+    }
+
+    override suspend fun findRoles(query: String): List<Role> {
+        val roleMention = ROLE_MENTION.matcher(query)
+
+        if (roleMention.matches()) {
+            val role = roles.find(roleMention.group(1).toLong())
+
+            if (role != null)
+                return listOf(role)
+        } else if (DISCORD_ID.matcher(query).matches()) {
+            val role = roles.find(query.toLong())
+            if (role != null)
+                return listOf(role)
+        }
+
+        return this.roles.findByQuery(query)
+    }
+
+    override suspend fun findBans(query: String): List<Ban> {
+        val userMention = USER_MENTION.matcher(query)
+        val fullRefMatch = FULL_USER_REF.matcher(query)
+
+        val bans = bans()
+        if (userMention.matches()) {
+
+            val user = bans.find { it.user.id == userMention.group(1).toLong() }
+
+            if (user != null)
+                return listOf(user)
+        } else if (fullRefMatch.matches()) {
+            val lower = fullRefMatch.group(1).toLowerCase()
+            val discriminator = fullRefMatch.group(2)
+            val users = bans
+                    .filter { it.user.name.toLowerCase() == lower && it.user.discriminator == discriminator }
+
+            if (users.isNotEmpty())
+                return users
+        } else if (DISCORD_ID.matcher(query).matches()) {
+            val user = bans.find { it.user.id == query.toLong() }
+            if (user != null)
+                return listOf(user)
+        }
+
+        val finds = bans.map { it.user }.findByQuery(query)
+
+        return bans.filter { finds.contains(it.user) }
+    }
+
+    override suspend fun findTextChannels(query: String): List<TextChannel> {
+        val channelMention = CHANNEL_MENTION.matcher(query)
+
+        if (channelMention.matches()) {
+            val channel = textChannels.find(channelMention.group(1).toLong())
+
+            if (channel != null)
+                return listOf(channel)
+        } else if (DISCORD_ID.matcher(query).matches()) {
+            val channel = textChannels.find(query.toLong())
+            if (channel != null)
+                return listOf(channel)
+        }
+
+        return this.textChannels.findByQuery(query)
+    }
+
+    override suspend fun findVoiceChannels(query: String): List<ServerVoiceChannel> {
+        if (DISCORD_ID.matcher(query).matches()) {
+            val channel = voiceChannels.find(query.toLong())
+            if (channel != null)
+                return listOf(channel)
+        }
+
+        return this.voiceChannels.findByQuery(query)
+    }
+
+    override suspend fun findCategories(query: String): List<ChannelCategory> {
+        if (DISCORD_ID.matcher(query).matches()) {
+            val channel = channelCategories.find(query.toLong())
+            if (channel != null)
+                return listOf(channel)
+        }
+
+        return this.channelCategories.findByQuery(query)
+    }
+
+    override suspend fun findEmojis(query: String): List<Emoji> {
+        val emojiMention = EMOJI_MENTION.matcher(query)
+
+        if (emojiMention.matches()) {
+            val emoji = emojis.find(emojiMention.group(1).toLong())
+
+            if (emoji != null)
+                return listOf(emoji)
+        } else if (DISCORD_ID.matcher(query).matches()) {
+            val emoji = emojis.find(query.toLong())
+            if (emoji != null)
+                return listOf(emoji)
+        }
+
+        return this.emojis.findByQuery(query)
     }
 }

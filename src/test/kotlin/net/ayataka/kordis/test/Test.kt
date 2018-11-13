@@ -164,6 +164,7 @@ class TestBot {
 
     @EventHandler
     suspend fun onServerReady(event: ServerReadyEvent) {
+
         println("Server Ready! ${event.server.name}")
         println("Members:")
         event.server.members.find(9999999)

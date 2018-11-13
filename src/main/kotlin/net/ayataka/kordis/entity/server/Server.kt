@@ -2,6 +2,7 @@ package net.ayataka.kordis.entity.server
 
 import net.ayataka.kordis.entity.Entity
 import net.ayataka.kordis.entity.Nameable
+import net.ayataka.kordis.entity.channel.TextChannel
 import net.ayataka.kordis.entity.collection.NameableEntitySet
 import net.ayataka.kordis.entity.image.Image
 import net.ayataka.kordis.entity.server.ban.Ban
@@ -160,4 +161,14 @@ interface Server : Nameable, Entity {
      * Get the audit logs
      */
     // TODO: Not implemented
+
+    //Find utilities
+    suspend fun findMembers(query: String): List<Member>
+
+    suspend fun findRoles(query: String): List<Role>
+    suspend fun findBans(query: String): List<Ban>
+    suspend fun findTextChannels(query: String): List<TextChannel>
+    suspend fun findVoiceChannels(query: String): List<ServerVoiceChannel>
+    suspend fun findCategories(query: String): List<ChannelCategory>
+    suspend fun findEmojis(query: String): List<Emoji>
 }

@@ -9,7 +9,7 @@ import net.ayataka.kordis.entity.server.Server
 
 interface User : Mentionable, Nameable, Permissionable, Entity {
     /**
-     * Whether the user is bot
+     * Whether the user is Server
      */
     val bot: Boolean
 

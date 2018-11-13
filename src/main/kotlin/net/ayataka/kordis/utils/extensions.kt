@@ -1,5 +1,6 @@
 package net.ayataka.kordis.utils
 
+import net.ayataka.kordis.entity.Nameable
 import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.Response
@@ -28,4 +29,31 @@ suspend fun Call.executeAsync() = suspendCoroutine<Response> {
             it.resumeWithException(e)
         }
     })
+}
+
+fun List<Nameable>.findByQuery(query: String): List<Nameable> {
+    val exact = mutableListOf<Nameable>()
+    val wrongcase = mutableListOf<Nameable>()
+    val startswith = mutableListOf<Nameable>()
+    val contains = mutableListOf<Nameable>()
+
+    val lowerQuery = query.toLowerCase()
+
+    this.sortedBy { it.name }.forEach {
+        val name = it.name
+
+        when {
+            name == query -> exact.add(it)
+            name.equals(query, true) && exact.isEmpty() -> wrongcase.add(it)
+            name.toLowerCase().startsWith(lowerQuery) && wrongcase.isEmpty() -> startswith.add(it)
+            name.toLowerCase().contains(lowerQuery) && startswith.isEmpty() -> contains.add(it)
+        }
+    }
+
+    return when {
+        exact.isNotEmpty() -> exact.toList()
+        wrongcase.isNotEmpty() -> wrongcase.toList()
+        startswith.isNotEmpty() -> startswith.toList()
+        else -> contains.toList()
+    }
 }

@@ -28,4 +28,13 @@ interface DiscordClient {
      * Get a user by its id
      */
     suspend fun getUser(id: Long): User?
+
+    suspend fun getServer(id: Long): Server?
+
+    /**
+     * Get a user by query
+     */
+    suspend fun findUsers(query: String): List<User>
+
+    suspend fun findServers(query: String): List<Server>
 }
