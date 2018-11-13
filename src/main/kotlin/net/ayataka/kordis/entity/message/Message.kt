@@ -13,36 +13,36 @@ import java.time.Instant
 
 interface Message : Entity {
     /**
-     * The type of this message
+     * The type of the message
      */
     val type: MessageType
 
     /**
-     * The author of this message
-     * This will return null if this message was sent by a webhook
+     * The author of the message
+     * This will return null if the message was sent by a webhook
      */
     val author: User?
 
     /**
      * Member instance of the author
-     * This will return null if this message was not sent in a server
+     * This will return null if the message was not sent in a server
      */
     val member: Member?
         get() = author?.let { server?.members?.find(it.id) }
 
     /**
-     * The server this message was sent in
-     * This will return null if this message was not sent in a server
+     * The server the message was sent in
+     * This will return null if the message was not sent in a server
      */
     val server: Server?
 
     /**
-     * The text channel this message was sent in
+     * The text channel the message was sent in
      */
     val channel: TextChannel
 
     /**
-     * The server text channel this message was sent in
+     * The server text channel the message was sent in
      */
     val serverChannel: ServerTextChannel?
         get() = channel as? ServerTextChannel
@@ -54,37 +54,37 @@ interface Message : Entity {
         get() = channel as? PrivateTextChannel
 
     /**
-     * The text content of this message
+     * The text content of the message
      */
     val content: String
 
     /**
-     * The embed contents of this message
+     * The embed contents of the message
      */
     val embeds: Collection<Embed>
 
     /**
-     * The edited timestamp of this message
+     * The edited timestamp of the message
      */
     val editedTimestamp: Instant?
 
     /**
-     * Whether this message contains '@everyone'
+     * Whether the message contains '@everyone'
      */
     val mentionsEveryone: Boolean
 
     /**
-     * Whether this message is pinned
+     * Whether the message is pinned
      */
     val pinned: Boolean
 
     /**
-     * Whether this message is a Text-to-Speech message
+     * Whether the message is a Text-to-Speech message
      */
     val tts: Boolean
 
     /**
-     * Edit this message
+     * Edit the message
      */
     suspend fun edit(text: String = "", embed: (EmbedBuilder.() -> Unit)? = null): Message
 }
