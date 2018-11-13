@@ -9,3 +9,4 @@ out
 *.iml
 *.log.gz
 *.bat
+*.sh
