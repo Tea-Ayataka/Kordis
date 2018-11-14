@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="off">
+    <Appenders>
+        <Console name="stdout" target="SYSTEM_OUT">
+            <PatternLayout pattern="%highlight{[%d{HH:mm:ss}] [%level]: %msg%n}{WARN=bright yellow, INFO=white}" />
+        </Console>
+    </Appenders>
+    <Loggers>
+        <Root level="debug">
+            <AppenderRef level="debug" ref="stdout"/>
+        </Root>
+    </Loggers>
+</Configuration>
