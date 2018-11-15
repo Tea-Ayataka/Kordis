@@ -5,12 +5,14 @@ import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.entity.DiscordEntity
 import net.ayataka.kordis.entity.Updatable
 import net.ayataka.kordis.entity.botUser
+import net.ayataka.kordis.entity.collection.NameableEntitySet
 import net.ayataka.kordis.entity.collection.NameableEntitySetImpl
 import net.ayataka.kordis.entity.find
 import net.ayataka.kordis.entity.image.Image
 import net.ayataka.kordis.entity.image.ImageImpl
 import net.ayataka.kordis.entity.server.ban.Ban
 import net.ayataka.kordis.entity.server.ban.BanImpl
+import net.ayataka.kordis.entity.server.channel.ServerChannel
 import net.ayataka.kordis.entity.server.channel.ServerChannelBuilder
 import net.ayataka.kordis.entity.server.channel.ServerChannelImpl
 import net.ayataka.kordis.entity.server.channel.category.ChannelCategory
@@ -60,6 +62,30 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
     override val members = NameableEntitySetImpl<Member>()
 
     private val temporallyUserPresences = ConcurrentHashMap<Long, JsonObject>()
+
+    override val channels = object : NameableEntitySet<ServerChannel> {
+        override val size: Int
+            get() = textChannels.size + voiceChannels.size + channelCategories.size
+
+        override fun findByName(text: String, ignoreCase: Boolean) =
+                textChannels.findByName(text, ignoreCase) ?: voiceChannels.findByName(text, ignoreCase)
+                ?: channelCategories.findByName(text, ignoreCase)
+
+        override fun find(id: Long) =
+                textChannels.find(id) ?: voiceChannels.find(id) ?: channelCategories.find(id)
+
+        override fun contains(element: ServerChannel) =
+                textChannels.contains(element) || voiceChannels.contains(element) || channelCategories.contains(element)
+
+        override fun containsAll(elements: Collection<ServerChannel>) =
+                textChannels.plus(voiceChannels).plus(channelCategories).containsAll(elements)
+
+        override fun isEmpty() =
+                textChannels.isEmpty() && voiceChannels.isEmpty() && channelCategories.isEmpty()
+
+        override fun iterator() =
+                textChannels.plus(voiceChannels).plus(channelCategories).iterator()
+    }
 
     override fun update(json: JsonObject) {
         name = json["name"].content

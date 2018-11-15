@@ -5,6 +5,7 @@ import net.ayataka.kordis.entity.Nameable
 import net.ayataka.kordis.entity.collection.NameableEntitySet
 import net.ayataka.kordis.entity.image.Image
 import net.ayataka.kordis.entity.server.ban.Ban
+import net.ayataka.kordis.entity.server.channel.ServerChannel
 import net.ayataka.kordis.entity.server.channel.ServerChannelBuilder
 import net.ayataka.kordis.entity.server.channel.category.ChannelCategory
 import net.ayataka.kordis.entity.server.channel.text.ServerTextChannel
@@ -102,9 +103,14 @@ interface Server : Nameable, Entity {
     val voiceChannels: NameableEntitySet<ServerVoiceChannel>
 
     /**
-     * The channel channelCategories on the server
+     * The channel categories on the server
      */
     val channelCategories: NameableEntitySet<ChannelCategory>
+
+    /**
+     * The all channels on the server
+     */
+    val channels: NameableEntitySet<ServerChannel>
 
     /**
      * Get server bans
