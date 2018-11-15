@@ -35,9 +35,14 @@ suspend fun ServerChannel.edit(block: ServerChannelBuilder.() -> Unit) {
 }
 
 /**
- * Create permission set
+ * Create a permission set
  */
 fun permissions(vararg permission: Permission) = PermissionSet().apply { addAll(permission) }
+
+/**
+ * Create a permission set from bitmask
+ */
+fun Int.toPermissions() = PermissionSet(this)
 
 /**
  * Get the member by a user
