@@ -45,7 +45,7 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
     @Volatile override var splash: Image? = null
     @Volatile override var owner: User? = null
     @Volatile override var region = Region.UNKNOWN
-    @Volatile override var afkChannel: ServerTextChannel? = null
+    @Volatile override var afkChannel: ServerVoiceChannel? = null
     @Volatile override var afkTimeout = -1
     @Volatile override var verificationLevel = VerificationLevel.NONE
     @Volatile override var defaultMessageNotificationLevel = MessageNotificationLevel.ALL_MESSAGES
@@ -139,7 +139,7 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
             }
         }
 
-        afkChannel = json["afk_channel_id"].longOrNull?.let { textChannels.find(it) }
+        afkChannel = json["afk_channel_id"].longOrNull?.let { voiceChannels.find(it) }
         owner = client.users.find(json["owner_id"].long)
     }
 
