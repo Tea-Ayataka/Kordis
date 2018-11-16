@@ -2,12 +2,9 @@ package net.ayataka.kordis.entity.server.member
 
 import kotlinx.serialization.json.*
 import net.ayataka.kordis.DiscordClientImpl
-import net.ayataka.kordis.entity.DiscordEntity
-import net.ayataka.kordis.entity.Updatable
-import net.ayataka.kordis.entity.botUser
+import net.ayataka.kordis.entity.*
 import net.ayataka.kordis.entity.channel.PrivateTextChannel
 import net.ayataka.kordis.entity.channel.PrivateTextChannelImpl
-import net.ayataka.kordis.entity.everyone
 import net.ayataka.kordis.entity.server.Server
 import net.ayataka.kordis.entity.server.enums.UserStatus
 import net.ayataka.kordis.entity.server.permission.Permission
@@ -127,6 +124,7 @@ class MemberImpl(
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
+        if (other is User && other !is Member) return (other as Entity).id == id
         if (other !is MemberImpl) return false
         if (!super.equals(other)) return false
 

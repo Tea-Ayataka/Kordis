@@ -8,6 +8,7 @@ import net.ayataka.kordis.entity.permissions
 import net.ayataka.kordis.entity.server.enums.ActivityType
 import net.ayataka.kordis.entity.server.enums.UserStatus
 import net.ayataka.kordis.entity.server.permission.Permission
+import net.ayataka.kordis.entity.user.User
 import net.ayataka.kordis.event.EventHandler
 import net.ayataka.kordis.event.events.message.MessageEditEvent
 import net.ayataka.kordis.event.events.message.MessageReceiveEvent
@@ -163,6 +164,24 @@ class TestBot {
 
         if (text.startsWith("!setnick")) {
             author.setNickname("Los!")
+        }
+
+        if (text.startsWith("!test")) {
+            val serverOne = server.client.servers.find(447988883293077507)!!
+            val serverTwo = server.client.servers.find(446923846562611203)!!
+
+            val memberOne = serverOne.members.find(371868794043236364)
+            val memberTwo = serverTwo.members.find(371868794043236364)
+
+            val user: User? = memberOne
+            val realUser = server.client.users.find(371868794043236364)!!
+
+            println("member(1) == fakeuser : ${memberOne == user}")
+            println("fake == member(1) : ${user == memberOne}")
+            println("member(1) == user : ${memberOne == realUser}")
+            println("user == member(1) : ${realUser == memberOne}")
+            println("member(1) == member(2) : ${memberOne == memberTwo}")
+            println("member(2) == member(1) : ${memberTwo == memberOne}")
         }
     }
 
