@@ -3,6 +3,7 @@ package net.ayataka.kordis.test
 import kotlinx.coroutines.runBlocking
 import net.ayataka.kordis.Kordis
 import net.ayataka.kordis.addHandler
+import net.ayataka.kordis.entity.botUser
 import net.ayataka.kordis.entity.deleteAll
 import net.ayataka.kordis.entity.permissions
 import net.ayataka.kordis.entity.server.enums.ActivityType
@@ -115,7 +116,7 @@ class TestBot {
             }
         }
 
-        if (text.startsWith("!clear")) {
+        if (text.startsWith("!purge")) {
             val amount = text.split(" ")[1].toInt()
             channel.getMessages(amount).deleteAll()
             channel.send("Deleted $amount messages")
@@ -168,7 +169,11 @@ class TestBot {
         }
 
         if (text.startsWith("!setnick")) {
-            author.setNickname("Los!")
+            server.members.botUser.setNickname("Hello World")
+        }
+
+        if (text.startsWith("!clearnick")) {
+            server.members.botUser.setNickname(null)
         }
 
         if (text.startsWith("!test")) {

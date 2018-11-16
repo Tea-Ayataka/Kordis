@@ -86,14 +86,21 @@ class MemberImpl(
     override suspend fun setNickname(name: String?) {
         if (this == server.members.botUser) {
             checkPermission(server, Permission.CHANGE_NICKNAME)
-        } else {
-            checkPermission(server, Permission.MANAGE_NICKNAMES)
-            checkManageable(this)
+
+            client.rest.request(
+                    Endpoint.MODIFY_CURRENT_USER_NICK.format("guild.id" to server.id),
+                    json { "nick" to (name ?: "") }
+            )
+
+            return
         }
+
+        checkPermission(server, Permission.MANAGE_NICKNAMES)
+        checkManageable(this)
 
         client.rest.request(
                 Endpoint.MODIFY_GUILD_MEMBER.format("guild.id" to server.id, "user.id" to id),
-                json { "nick" to name }
+                json { "nick" to (name ?: "") }
         )
     }
 
