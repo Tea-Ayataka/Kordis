@@ -147,6 +147,11 @@ interface Member : User {
     }
 
     /**
+     * Change the member's nickname
+     */
+    suspend fun setNickname(name: String)
+
+    /**
      * Get the private channel for the member
      */
     suspend fun getPrivateChannel(): PrivateTextChannel

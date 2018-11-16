@@ -4,6 +4,7 @@ import kotlinx.serialization.json.*
 import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.entity.DiscordEntity
 import net.ayataka.kordis.entity.Updatable
+import net.ayataka.kordis.entity.botUser
 import net.ayataka.kordis.entity.channel.PrivateTextChannel
 import net.ayataka.kordis.entity.channel.PrivateTextChannelImpl
 import net.ayataka.kordis.entity.everyone
@@ -46,7 +47,9 @@ class MemberImpl(
         roles = json["roles"].jsonArray.mapNotNull { server.roles.find(it.long) }.plus(server.roles.everyone).toMutableSet()
 
         // Update the user
-        client.users.update(json["user"].jsonObject["id"].long, json["user"].jsonObject)
+        json.getObjectOrNull("user")?.let {
+            client.users.update(it["id"].long, it)
+        }
     }
 
     fun updatePresence(json: JsonObject) {
@@ -80,6 +83,20 @@ class MemberImpl(
                         "user.id" to id,
                         "role.id" to role.id
                 )
+        )
+    }
+
+    override suspend fun setNickname(name: String) {
+        if (this == server.members.botUser) {
+            checkPermission(server, Permission.CHANGE_NICKNAME)
+        } else {
+            checkPermission(server, Permission.MANAGE_NICKNAMES)
+            checkManageable(this)
+        }
+
+        client.rest.request(
+                Endpoint.MODIFY_GUILD_MEMBER.format("guild.id" to server.id, "user.id" to id),
+                json { "nick" to name }
         )
     }
 
