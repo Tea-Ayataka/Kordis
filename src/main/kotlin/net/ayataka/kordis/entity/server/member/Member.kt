@@ -68,7 +68,7 @@ interface Member : User {
     /**
      * Checks if the member can manage the role
      */
-    fun canManage(role: Role) = role.position < roles.maxBy { it.position }!!.position
+    fun canManage(role: Role) = isOwner || role.position < roles.maxBy { it.position }!!.position
 
     /**
      * Checks if the member can manage the channel
