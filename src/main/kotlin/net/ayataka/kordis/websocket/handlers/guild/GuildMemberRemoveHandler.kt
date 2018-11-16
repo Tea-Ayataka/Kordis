@@ -4,7 +4,7 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.long
 import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.entity.server.ServerImpl
-import net.ayataka.kordis.event.events.server.user.UserJoinEvent
+import net.ayataka.kordis.event.events.server.user.UserLeaveEvent
 import net.ayataka.kordis.websocket.handlers.GatewayHandler
 
 class GuildMemberRemoveHandler : GatewayHandler {
@@ -14,6 +14,6 @@ class GuildMemberRemoveHandler : GatewayHandler {
         val member = server.members.find(data["user"].jsonObject["id"].long) ?: return
 
         server.members.remove(member.id)
-        client.eventManager.fire(UserJoinEvent(member))
+        client.eventManager.fire(UserLeaveEvent(member))
     }
 }
