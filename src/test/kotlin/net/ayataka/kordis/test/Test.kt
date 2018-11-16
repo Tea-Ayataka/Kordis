@@ -160,6 +160,10 @@ class TestBot {
         if (text.startsWith("!dmme")) {
             author.getPrivateChannel().send("Hey :3")
         }
+
+        if (text.startsWith("!setnick")) {
+            author.setNickname("Los!")
+        }
     }
 
     @EventHandler

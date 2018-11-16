@@ -148,8 +148,10 @@ interface Member : User {
 
     /**
      * Change the member's nickname
+     *
+     * @param name A new nickname to set. specify null to clear.
      */
-    suspend fun setNickname(name: String)
+    suspend fun setNickname(name: String?)
 
     /**
      * Get the private channel for the member

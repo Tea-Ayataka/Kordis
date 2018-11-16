@@ -86,7 +86,7 @@ class MemberImpl(
         )
     }
 
-    override suspend fun setNickname(name: String) {
+    override suspend fun setNickname(name: String?) {
         if (this == server.members.botUser) {
             checkPermission(server, Permission.CHANGE_NICKNAME)
         } else {
