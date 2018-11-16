@@ -320,7 +320,7 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
             }
 
             if (builder.rolePermissionOverwrites.isNotEmpty() || builder.userPermissionOverwrites.isNotEmpty()) {
-                "permission_overwrite" to ServerChannelImpl.permissionOverwritesToJson(builder)
+                "permission_overwrites" to ServerChannelImpl.permissionOverwritesToJson(builder)
             }
         }
 
@@ -355,7 +355,7 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
             }
 
             if (builder.rolePermissionOverwrites.isNotEmpty() || builder.userPermissionOverwrites.isNotEmpty()) {
-                "permission_overwrite" to ServerChannelImpl.permissionOverwritesToJson(builder)
+                "permission_overwrites" to ServerChannelImpl.permissionOverwritesToJson(builder)
             }
         }
 
@@ -390,7 +390,7 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
             }
 
             if (builder.rolePermissionOverwrites.isNotEmpty() || builder.userPermissionOverwrites.isNotEmpty()) {
-                "permission_overwrite" to ServerChannelImpl.permissionOverwritesToJson(builder)
+                "permission_overwrites" to ServerChannelImpl.permissionOverwritesToJson(builder)
             }
         }
 
