@@ -10,7 +10,7 @@ interface ServerTextChannel : ServerChannel, Mentionable, TextChannel {
     /**
      * The topic of the channel
      */
-    val topic: String
+    val topic: String?
 
     /**
      * Whether the channel is a nsfw channel

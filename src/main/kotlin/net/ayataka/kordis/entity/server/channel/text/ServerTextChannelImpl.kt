@@ -17,7 +17,7 @@ class ServerTextChannelImpl(
         client: DiscordClientImpl,
         json: JsonObject
 ) : ServerTextChannel, ServerChannelImpl(server, client, json["id"].long) {
-    @Volatile override var topic: String = ""
+    @Volatile override var topic: String? = null
     @Volatile override var nsfw = false
     @Volatile override var rateLimitPerUser = -1
     @Volatile override var category: ChannelCategory? = null
@@ -28,7 +28,7 @@ class ServerTextChannelImpl(
 
     override fun update(json: JsonObject) {
         name = json["name"].content
-        topic = json.getOrNull("topic")?.content ?: ""
+        topic = json.getOrNull("topic")?.contentOrNull
         nsfw = json.getOrNull("nsfw")?.boolean == true
         rateLimitPerUser = json.getOrNull("rate_limit_per_user")?.int ?: 0
         position = json["position"].int

@@ -94,7 +94,7 @@ class TestBot {
                     field("Channel created", channel.timestamp.formatAsDate(), true)
                     field("Position", channel.position, true)
                     field("ChannelCategory", channel.category?.name ?: "None", true)
-                    field("Topic", channel.topic.ifEmpty { "Empty" }, true)
+                    field("Topic", channel.topic ?: "real null", true)
                     field("NSFW", channel.nsfw.toString(), true)
                     field("Permission Overwrites (User)", channel.userPermissionOverwrites.size, true)
                     field("Permission Overwrites (Role)", channel.rolePermissionOverwrites.size, true)
