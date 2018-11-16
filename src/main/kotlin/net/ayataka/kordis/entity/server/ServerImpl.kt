@@ -36,6 +36,7 @@ import net.ayataka.kordis.entity.server.role.RoleImpl
 import net.ayataka.kordis.entity.user.User
 import net.ayataka.kordis.entity.user.UserImpl
 import net.ayataka.kordis.event.events.server.user.UserJoinEvent
+import net.ayataka.kordis.event.events.server.user.UserLeaveEvent
 import net.ayataka.kordis.rest.Endpoint
 import net.ayataka.kordis.utils.base64
 import net.ayataka.kordis.utils.uRgb
@@ -117,9 +118,19 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
         // Update members
         json.getOrNull("members")?.let {
             val objects = it.jsonArray.map { it.jsonObject }
-            val ids = objects.map { it["user"].jsonObject["id"].long }
 
-            members.removeIf { it.id !in ids }
+            if (json.getOrNull("large")?.boolean == false) {
+                val ids = objects.map { it["user"].jsonObject["id"].long }
+                members.removeIf {
+                    if (it.id !in ids) {
+                        client.eventManager.fire(UserLeaveEvent(it))
+                        true
+                    } else {
+                        false
+                    }
+                }
+            }
+
             objects.forEach {
                 val userObject = it["user"].jsonObject
                 val userId = userObject["id"].long
