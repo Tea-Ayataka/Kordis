@@ -57,8 +57,8 @@ abstract class ServerChannelImpl(
             builder.userPermissionOverwrites.forEach {
                 +json {
                     "id" to it.user.id
-                    "allow" to it.allow
-                    "deny" to it.deny
+                    "allow" to it.allow.compile()
+                    "deny" to it.deny.compile()
                     "type" to "user"
                 }
             }
@@ -66,8 +66,8 @@ abstract class ServerChannelImpl(
             builder.rolePermissionOverwrites.forEach {
                 +json {
                     "id" to it.role.id
-                    "allow" to it.allow
-                    "deny" to it.deny
+                    "allow" to it.allow.compile()
+                    "deny" to it.deny.compile()
                     "type" to "role"
                 }
             }
