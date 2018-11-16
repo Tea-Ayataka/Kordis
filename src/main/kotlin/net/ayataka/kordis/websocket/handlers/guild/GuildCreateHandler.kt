@@ -29,6 +29,10 @@ class GuildCreateHandler : GatewayHandler {
                 client.gateway.memberChunkRequestQueue.offer(id)
             } else {
                 it.ready = true
+
+                if (!it.initialized.getAndSet(true)) {
+                    client.eventManager.fire(ServerReadyEvent(it))
+                }
             }
             return
         }
@@ -42,7 +46,10 @@ class GuildCreateHandler : GatewayHandler {
             client.gateway.memberChunkRequestQueue.offer(id)
         } else {
             server.ready = true
-            client.eventManager.fire(ServerReadyEvent(server))
+
+            if (!server.initialized.getAndSet(true)) {
+                client.eventManager.fire(ServerReadyEvent(server))
+            }
         }
     }
 }

@@ -35,12 +35,16 @@ import net.ayataka.kordis.entity.server.role.RoleBuilder
 import net.ayataka.kordis.entity.server.role.RoleImpl
 import net.ayataka.kordis.entity.user.User
 import net.ayataka.kordis.entity.user.UserImpl
+import net.ayataka.kordis.event.events.server.user.UserJoinEvent
 import net.ayataka.kordis.rest.Endpoint
 import net.ayataka.kordis.utils.base64
 import net.ayataka.kordis.utils.uRgb
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicBoolean
 
 class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, DiscordEntity(client, id) {
+    @Volatile var initialized = AtomicBoolean()
+
     @Volatile override var ready = false
     @Volatile override var name = ""
     @Volatile override var icon: Image? = null
@@ -121,11 +125,17 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
                 val userId = userObject["id"].long
 
                 members.updateOrPut(userId, it) {
-                    MemberImpl(
+                    val member = MemberImpl(
                             client, it, this,
                             client.users.getOrPut(userId) {
                                 UserImpl(client, userObject)
                             })
+
+                    if (initialized.get()) {
+                        client.eventManager.fire(UserJoinEvent(member))
+                    }
+
+                    member
                 }
             }
         }

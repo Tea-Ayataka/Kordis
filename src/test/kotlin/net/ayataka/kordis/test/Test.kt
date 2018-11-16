@@ -13,6 +13,7 @@ import net.ayataka.kordis.event.EventHandler
 import net.ayataka.kordis.event.events.message.MessageEditEvent
 import net.ayataka.kordis.event.events.message.MessageReceiveEvent
 import net.ayataka.kordis.event.events.server.ServerReadyEvent
+import net.ayataka.kordis.event.events.server.user.UserJoinEvent
 import net.ayataka.kordis.utils.formatAsDate
 import java.awt.Color
 import java.io.File
@@ -32,6 +33,10 @@ class TestBot {
             addListener(this@TestBot)
             addHandler<MessageReceiveEvent> {
                 println(it.message.content.reversed())
+            }
+
+            addHandler<UserJoinEvent> {
+                println(it.member.name + " has joined")
             }
         }
 
