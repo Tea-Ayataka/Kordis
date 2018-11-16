@@ -96,7 +96,12 @@ class GatewayClient(
 
                 while (!rateLimiter.isLimited()) {
                     val json = sendQueue.take()
-                    send(json)
+                    try {
+                        send(json)
+                    } catch (ex: Exception) {
+                        LOGGER.error("WebSocket error", ex)
+                        continue
+                    }
                     rateLimiter.increment()
                     LOGGER.debug("Sent: $json")
                 }
