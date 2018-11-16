@@ -1,6 +1,7 @@
 package net.ayataka.kordis.rest
 
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.*
 import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.Kordis.HTTP_CLIENT
@@ -18,7 +19,7 @@ private val JSON_TYPE = MediaType.parse("application/json; charset=utf-8")!!
 class RestClient(private val discordClient: DiscordClientImpl) {
     private val rateLimiter = InternalRateLimiter()
 
-    suspend fun request(endPoint: FormattedEndPoint, data: JsonObject? = null, rateLimitRetries: Int = 50): JsonElement {
+    suspend fun request(endPoint: FormattedEndPoint, data: JsonObject? = null, rateLimitRetries: Int = 50): JsonElement = rateLimiter.getMutex(endPoint).withLock {
         repeat(rateLimitRetries) {
             rateLimiter.wait(endPoint)
 
@@ -70,16 +71,9 @@ class RestClient(private val discordClient: DiscordClientImpl) {
                         rateLimiter.setGlobalRateLimitEnds(delay)
                     } else {
                         rateLimiter.setRateLimitEnds(endPoint, System.currentTimeMillis() + delay)
-
-                        if (endPoint.endpoint != Endpoint.CREATE_GUILD_EMOJI
-                                && endPoint.endpoint != Endpoint.MODIFY_GUILD_EMOJI
-                                && endPoint.endpoint != Endpoint.DELETE_GUILD_EMOJI
-                        ) {
-                            LOGGER.warn("HIT ACTUAL RATE LIMIT! MAKE SURE YOUR COMPUTER'S CLOCK IS CORRECT! ($delay ms)")
-                        }
+                        rateLimiter.resetRateLimitRemaining(endPoint)
                     }
 
-                    delay(delay)
                     return@repeat
                 }
 

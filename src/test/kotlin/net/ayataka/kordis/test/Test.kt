@@ -1,5 +1,7 @@
 package net.ayataka.kordis.test
 
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import net.ayataka.kordis.Kordis
 import net.ayataka.kordis.addHandler
@@ -170,6 +172,15 @@ class TestBot {
 
         if (text.startsWith("!setnick")) {
             server.members.botUser.setNickname("Hello World")
+        }
+
+        if (text.startsWith("!spam")) {
+            channel.send("Huh?")
+            repeat(50) {
+                GlobalScope.launch {
+                    channel.send("Spam")
+                }
+            }
         }
 
         if (text.startsWith("!clearnick")) {
