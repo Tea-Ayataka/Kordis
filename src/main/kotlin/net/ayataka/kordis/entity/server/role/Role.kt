@@ -47,6 +47,12 @@ interface Role : Mentionable, Nameable, Permissionable, Entity {
     val mentionable: Boolean
 
     /**
+     * Whether ths role is the '@everyone' role
+     */
+    val isEveryone: Boolean
+        get() = position == 0 && name == "@everyone"
+
+    /**
      * The mention tag of the role
      */
     override val mention: String
