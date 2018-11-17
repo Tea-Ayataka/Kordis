@@ -370,23 +370,13 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
     override suspend fun createChannelCategory(block: ServerChannelBuilder.() -> Unit): ChannelCategory {
         checkPermission(this, Permission.MANAGE_CHANNELS)
 
-        val builder = ServerVoiceChannelBuilder().apply(block)
+        val builder = ServerChannelBuilder().apply(block)
         val json = json {
-            "type" to ChannelType.GUILD_VOICE.id
+            "type" to ChannelType.GUILD_CATEGORY.id
             "name" to (builder.name ?: throw IllegalArgumentException("channel name must be specified"))
-            "user_limit" to builder.userLimit
-
-            if (builder.bitrate != null) {
-                "bitrate" to builder.bitrate
-            }
 
             if (builder.position != null) {
                 "position" to builder.position
-            }
-
-            if (builder.category != null) {
-                checkManageable(builder.category!!)
-                "parent_id" to builder.category!!.id
             }
 
             if (builder.rolePermissionOverwrites.isNotEmpty() || builder.userPermissionOverwrites.isNotEmpty()) {
