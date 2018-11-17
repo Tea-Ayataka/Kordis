@@ -62,8 +62,8 @@ interface Member : User {
      * Checks if the member can manage (ban, kick, etc) the member
      */
     fun canManage(member: Member) =
-            member != this && !member.isOwner
-                    && member.roles.maxBy { it.position }!!.position < roles.maxBy { it.position }!!.position
+            isOwner || (member != this && !member.isOwner
+                    && member.roles.maxBy { it.position }!!.position < roles.maxBy { it.position }!!.position)
 
     /**
      * Checks if the member can manage the role
@@ -74,6 +74,10 @@ interface Member : User {
      * Checks if the member can manage the channel
      */
     fun canManage(channel: ServerChannel): Boolean {
+        if (isOwner) {
+            return true
+        }
+
         if (!canAccess(channel)) {
             return false
         }
@@ -98,6 +102,10 @@ interface Member : User {
      * Checks if the member can access to the channel
      */
     fun canAccess(channel: ServerChannel): Boolean {
+        if (isOwner) {
+            return true
+        }
+
         var result = true
 
         channel.rolePermissionOverwrites
