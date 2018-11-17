@@ -15,6 +15,7 @@ import okhttp3.Request
 import okhttp3.RequestBody
 
 private val JSON_TYPE = MediaType.parse("application/json; charset=utf-8")!!
+private val EMPTY_BODY = RequestBody.create(JSON_TYPE, "")
 
 class RestClient(private val discordClient: DiscordClientImpl) {
     private val rateLimiter = InternalRateLimiter()
@@ -32,7 +33,7 @@ class RestClient(private val discordClient: DiscordClientImpl) {
                     header("User-Agent", "DiscordBot (https://github.com/Tea-Ayataka/Kordis, development)")
 
                     if (data == null) {
-                        method(endPoint.method.name, null)
+                        method(endPoint.method.name, if (endPoint.method != HttpMethod.GET) EMPTY_BODY else null)
                         return@apply
                     }
 

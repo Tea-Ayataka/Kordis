@@ -204,6 +204,12 @@ class TestBot {
             println("member(1) == member(2) : ${memberOne == memberTwo}")
             println("member(2) == member(1) : ${memberTwo == memberOne}")
         }
+
+        if (text.startsWith("!addrole")) {
+            server.roles.findByName("Test")?.let {
+                author.addRole(it)
+            }
+        }
     }
 
     @EventHandler
