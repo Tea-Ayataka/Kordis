@@ -11,10 +11,18 @@ class GuildMemberRemoveHandler : GatewayHandler {
     override val eventType = "GUILD_MEMBER_REMOVE"
     override fun handle(client: DiscordClientImpl, data: JsonObject) {
         val server = client.servers.find(data["guild_id"].long) as? ServerImpl ?: return
-        val member = server.members.find(data["user"].jsonObject["id"].long) ?: return
+        val userId = data["user"].jsonObject["id"].long
+        val member = server.members.remove(userId)
 
-        server.members.remove(member.id)
         server.memberCount.decrementAndGet()
+
+        if (member == null) {
+            if (!server.initialized.get()) {
+                server.removedMembers.add(userId)
+            }
+            return
+        }
+
         client.eventManager.fire(UserLeaveEvent(member))
     }
 }

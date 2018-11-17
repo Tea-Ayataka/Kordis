@@ -30,7 +30,7 @@ class GuildCreateHandler : GatewayHandler {
 
             if (!isLarge) {
                 it.ready = true
-
+                it.applyTemporaryPresences()
                 if (!it.initialized.getAndSet(true)) {
                     client.eventManager.fire(ServerReadyEvent(it))
                 }
@@ -62,6 +62,9 @@ class GuildCreateHandler : GatewayHandler {
         GlobalScope.timer(1000, context = CoroutineName("Server Preparer")) {
             if (server.members.size >= server.memberCount.get() && !server.initialized.getAndSet(true)) {
                 server.ready = true
+                server.applyTemporaryPresences()
+                server.members.removeIf { it.id in server.removedMembers }
+                server.removedMembers.clear()
                 client.eventManager.fire(ServerReadyEvent(server))
                 cancel()
             }

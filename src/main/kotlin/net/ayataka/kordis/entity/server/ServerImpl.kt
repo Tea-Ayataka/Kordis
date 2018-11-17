@@ -66,9 +66,12 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
     override val channelCategories = NameableEntitySetImpl<ChannelCategory>()
     override val members = NameableEntitySetImpl<Member>()
 
+    // For setup
+    private val temporallyUserPresences = ConcurrentHashMap<Long, JsonObject>()
     @Volatile
     var memberCount = AtomicInteger()
-    private val temporallyUserPresences = ConcurrentHashMap<Long, JsonObject>()
+    @Volatile
+    var removedMembers = mutableListOf<Long>()
 
     override val channels = object : NameableEntitySet<ServerChannel> {
         override val size: Int
