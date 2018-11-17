@@ -20,34 +20,67 @@ abstract class DiscordEntity(
     }
 
     fun checkPermission(server: Server, permission: Permission) {
-        if (server.members.find(client.botUser)?.hasPermission(permission) != true) {
+        val myself = server.members.find(client.botUser) ?: throw IllegalStateException()
+
+        if (isNotInitialized(myself)) {
+            return
+        }
+
+        if (!myself.hasPermission(permission)) {
             throw MissingPermissionsException(server, "Permission: ${permission.desciption}")
         }
     }
 
     fun checkManageable(member: Member) {
-        if (member.server.members.find(client.botUser)?.canManage(member) != true) {
+        val myself = member.server.members.find(client.botUser) ?: throw IllegalStateException()
+
+        if (isNotInitialized(myself)) {
+            return
+        }
+
+        if (!myself.canManage(member)) {
             throw MissingPermissionsException(member.server, "User: ${member.tag} (${member.id})")
         }
     }
 
     fun checkManageable(role: Role) {
-        if (role.server.members.find(client.botUser)?.canManage(role) != true) {
+        val myself = role.server.members.find(client.botUser) ?: throw IllegalStateException()
+
+        if (isNotInitialized(myself)) {
+            return
+        }
+
+        if (!myself.canManage(role)) {
             throw MissingPermissionsException(role.server, "Role: ${role.name} (${role.id})")
         }
     }
 
     fun checkManageable(channel: ServerChannel) {
+        val myself = channel.server.members.find(client.botUser) ?: throw IllegalStateException()
+
+        if (isNotInitialized(myself)) {
+            return
+        }
+
         if (channel.server.members.find(client.botUser)?.canManage(channel) != true) {
             throw MissingPermissionsException(channel.server, "Channel: ${channel.name} (${channel.id})")
         }
     }
 
     fun checkAccess(channel: ServerChannel) {
+        val myself = channel.server.members.find(client.botUser) ?: throw IllegalStateException()
+
+        if (isNotInitialized(myself)) {
+            return
+        }
+
         if (channel.server.members.find(client.botUser)?.canAccess(channel) != true) {
             throw MissingPermissionsException(channel.server, "Channel: ${channel.name} (${channel.id})")
         }
     }
+
+    // Bot users can not have one or fewer roles. If so, this means the server roles are not initialized yet.
+    private fun isNotInitialized(myself: Member) = myself.roles.size < 2
 
     override fun hashCode() = id.hashCode()
     override fun toString() = "DiscordEntity (id: $id)"

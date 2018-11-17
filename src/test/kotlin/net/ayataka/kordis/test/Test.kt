@@ -146,6 +146,10 @@ class TestBot {
             }
         }
 
+        if (text.startsWith("!myrole")) {
+            channel.send(server.members.botUser.roles.joinToString { it.name })
+        }
+
         if (text.startsWith("!delete-emojis")) {
             server.emojis.forEach { it.delete() }
         }
