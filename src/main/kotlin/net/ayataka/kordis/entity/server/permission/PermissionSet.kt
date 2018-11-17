@@ -1,5 +1,6 @@
 package net.ayataka.kordis.entity.server.permission
 
+// TODO: Make this immutable object
 class PermissionSet(compiled: Int = 0) : MutableCollection<Permission> {
     private val perms = HashSet<Permission>(Permission.values().filter { (compiled and it.bitmask) != 0 })
 

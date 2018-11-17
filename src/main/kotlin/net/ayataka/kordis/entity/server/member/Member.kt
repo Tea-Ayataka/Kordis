@@ -74,7 +74,7 @@ interface Member : User {
      * Checks if the member can manage the channel
      */
     fun canManage(channel: ServerChannel): Boolean {
-        if (isOwner) {
+        if (isAdmin) {
             return true
         }
 
@@ -102,7 +102,7 @@ interface Member : User {
      * Checks if the member can access to the channel
      */
     fun canAccess(channel: ServerChannel): Boolean {
-        if (isOwner) {
+        if (isAdmin) {
             return true
         }
 
