@@ -13,7 +13,8 @@ class GuildRoleCreateHandler : GatewayHandler {
 
     override fun handle(client: DiscordClientImpl, data: JsonObject) {
         val server = client.servers.find(data["guild_id"].long) as? ServerImpl ?: return
-        val role = server.roles.updateOrPut(data["id"].long, data) { RoleImpl(server, client, data) }
+        val roleObject = data["role"].jsonObject
+        val role = server.roles.updateOrPut(roleObject["id"].long, data) { RoleImpl(server, client, roleObject) }
 
         client.eventManager.fire(RoleCreateEvent(role))
     }
