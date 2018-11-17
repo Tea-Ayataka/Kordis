@@ -231,53 +231,14 @@ class TestBot {
     }
 
     @EventHandler
-    suspend fun onServerReady(event: ServerReadyEvent) {
+    fun onServerReady(event: ServerReadyEvent) {
         println("Server Ready! ${event.server.name}")
         println("Members:")
-        event.server.members.find(9999999)
+
         event.server.members.forEach {
             println("Name: ${it.tag}, Roles: ${it.roles.joinToString()}}")
         }
-        println("Roles:")
-        event.server.roles.forEach {
-            println("Name: ${it.name}, Pos: ${it.position}")
-        }
-        println("Text Channels:")
-        event.server.textChannels.forEach {
-            println(it)
-        }
-        println("Bans:")
-        event.server.bans().forEach {
-            println(it)
-        }
 
-        val channel = event.server.textChannels.findByName("aaasaaaaa")
-
-        channel?.delete()
-        channel?.send {
-            embed {
-                title = "title ~~(did you know you can have markdown here too?)~~"
-                description = "this supports [named links](https://discordapp.com) on top of the previously shown subset of markdown. ```\\nyes, even code blocks```"
-                url = "https://discordapp.com"
-                color = Color(0x403FFF)
-                timestamp = Instant.now()
-                thumbnailUrl = "https://cdn.discordapp.com/embed/avatars/0.png"
-                imageUrl = "https://cdn.discordapp.com/embed/avatars/0.png"
-
-                footer("this is footer", "https://cdn.discordapp.com/embed/avatars/0.png")
-                author("author name", "https://discordapp.com", "https://cdn.discordapp.com/embed/avatars/0.png")
-
-                field("\uD83E\uDD14", "some of these properties have certain limits...")
-                field("\uD83E\uDD14", "try exceeding some of them!")
-                field("\uD83E\uDD14", "an informative error should show up, and this view will remain as-is until all issues are fixed")
-                field("\uD83E\uDD14", "these last two", true)
-                field("\uD83E\uDD14", "are inline fields", true)
-            }
-        }
-
-        event.server.roles.findByName("not found")?.edit {
-            color = Color(Random.nextInt(0xFFFFFF))
-            permissions = permissions(Permission.ADMINISTRATOR)
-        }
+        println(event.server.members.botUser)
     }
 }

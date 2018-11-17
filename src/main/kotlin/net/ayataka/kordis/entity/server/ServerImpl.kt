@@ -35,14 +35,13 @@ import net.ayataka.kordis.entity.server.role.RoleBuilder
 import net.ayataka.kordis.entity.server.role.RoleImpl
 import net.ayataka.kordis.entity.user.User
 import net.ayataka.kordis.entity.user.UserImpl
-import net.ayataka.kordis.event.events.server.user.UserJoinEvent
-import net.ayataka.kordis.event.events.server.user.UserLeaveEvent
 import net.ayataka.kordis.exception.NotFoundException
 import net.ayataka.kordis.rest.Endpoint
 import net.ayataka.kordis.utils.base64
 import net.ayataka.kordis.utils.uRgb
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 
 class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, DiscordEntity(client, id) {
     @Volatile var initialized = AtomicBoolean()
@@ -67,6 +66,8 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
     override val channelCategories = NameableEntitySetImpl<ChannelCategory>()
     override val members = NameableEntitySetImpl<Member>()
 
+    @Volatile
+    var memberCount = AtomicInteger()
     private val temporallyUserPresences = ConcurrentHashMap<Long, JsonObject>()
 
     override val channels = object : NameableEntitySet<ServerChannel> {
@@ -116,38 +117,22 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
             roles.updateOrPut(it["id"].long, it) { RoleImpl(this, client, it) }
         }
 
+        json.getOrNull("member_count")?.let {
+            memberCount.set(it.int)
+        }
+
         // Update members
         json.getOrNull("members")?.let {
-            val objects = it.jsonArray.map { it.jsonObject }
-
-            if (json.getOrNull("large")?.boolean == false) {
-                val ids = objects.map { it["user"].jsonObject["id"].long }
-                members.removeIf {
-                    if (it.id !in ids) {
-                        client.eventManager.fire(UserLeaveEvent(it))
-                        true
-                    } else {
-                        false
-                    }
-                }
-            }
-
-            objects.forEach {
+            it.jsonArray.map { it.jsonObject }.forEach {
                 val userObject = it["user"].jsonObject
                 val userId = userObject["id"].long
 
                 members.updateOrPut(userId, it) {
-                    val member = MemberImpl(
+                    MemberImpl(
                             client, it, this,
                             client.users.getOrPut(userId) {
                                 UserImpl(client, userObject)
                             })
-
-                    if (initialized.get()) {
-                        client.eventManager.fire(UserJoinEvent(member))
-                    }
-
-                    member
                 }
             }
         }

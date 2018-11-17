@@ -14,6 +14,7 @@ class GuildMemberRemoveHandler : GatewayHandler {
         val member = server.members.find(data["user"].jsonObject["id"].long) ?: return
 
         server.members.remove(member.id)
+        server.memberCount.decrementAndGet()
         client.eventManager.fire(UserLeaveEvent(member))
     }
 }

@@ -17,6 +17,7 @@ class GuildMemberAddHandler : GatewayHandler {
         val user = client.users.getOrPut(data["user"].jsonObject["id"].long) { UserImpl(client, data["user"].jsonObject) }
         val member = server.members.updateOrPut(user.id, data) { MemberImpl(client, data, server, user) }
 
+        server.memberCount.incrementAndGet()
         client.eventManager.fire(UserJoinEvent(member))
     }
 }
