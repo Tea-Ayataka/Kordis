@@ -4,6 +4,8 @@ import kotlinx.serialization.json.*
 import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.entity.DiscordEntity
 import net.ayataka.kordis.entity.channel.TextChannel
+import net.ayataka.kordis.entity.message.attachment.Attachment
+import net.ayataka.kordis.entity.message.attachment.AttachmentImpl
 import net.ayataka.kordis.entity.message.embed.Embed
 import net.ayataka.kordis.entity.message.embed.EmbedBuilder
 import net.ayataka.kordis.entity.message.embed.EmbedImpl
@@ -24,6 +26,7 @@ class MessageImpl(client: DiscordClientImpl, json: JsonObject, _server: Server? 
     override val channel: TextChannel
     override val content: String
     override val embeds: List<Embed>
+    override val attachments: List<Attachment>
     override val tts: Boolean
     override val timestamp: Instant
     override val editedTimestamp: Instant?
@@ -34,7 +37,8 @@ class MessageImpl(client: DiscordClientImpl, json: JsonObject, _server: Server? 
         pinned = json["pinned"].boolean
         content = json["content"].content
         tts = json["tts"].boolean
-        embeds = json.getArrayOrNull("embed")?.map { EmbedImpl(it.jsonObject) } ?: emptyList()
+        embeds = json.getArrayOrNull("embeds")?.map { EmbedImpl(it.jsonObject) } ?: emptyList()
+        attachments = json.getArrayOrNull("attachments")?.map { AttachmentImpl(client, it.jsonObject) } ?: emptyList()
         timestamp = Instant.from(DateTimeFormatter.ISO_DATE_TIME.parse(json["timestamp"].content))
         editedTimestamp = json.getOrNull("edited_timestamp")?.contentOrNull
                 ?.let { Instant.from(DateTimeFormatter.ISO_DATE_TIME.parse(it)) }

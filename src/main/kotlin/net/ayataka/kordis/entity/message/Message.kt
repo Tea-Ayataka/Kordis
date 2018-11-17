@@ -3,6 +3,7 @@ package net.ayataka.kordis.entity.message
 import net.ayataka.kordis.entity.Entity
 import net.ayataka.kordis.entity.channel.PrivateTextChannel
 import net.ayataka.kordis.entity.channel.TextChannel
+import net.ayataka.kordis.entity.message.attachment.Attachment
 import net.ayataka.kordis.entity.message.embed.Embed
 import net.ayataka.kordis.entity.message.embed.EmbedBuilder
 import net.ayataka.kordis.entity.server.Server
@@ -64,9 +65,9 @@ interface Message : Entity {
     val embeds: Collection<Embed>
 
     /**
-     * Get the attachments of the message
+     * The attachments of the message
      */
-    // TODO: not implemented
+    val attachments: Collection<Attachment>
 
     /**
      * The edited timestamp of the message

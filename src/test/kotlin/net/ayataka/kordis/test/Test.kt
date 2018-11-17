@@ -210,6 +210,15 @@ class TestBot {
                 author.addRole(it)
             }
         }
+
+        if (event.message.attachments.isNotEmpty()) {
+            channel.send {
+                appendLine("Attachments:")
+                event.message.attachments.forEach {
+                    appendLine(it.toString())
+                }
+            }
+        }
     }
 
     @EventHandler
