@@ -32,4 +32,10 @@ interface Attachment : Entity {
      * The width of the file (if it's image)
      */
     val width: Int?
+
+    /**
+     * Whether the file is image
+     */
+    val isImage: Boolean
+        get() = height != null || width != null
 }
