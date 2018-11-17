@@ -253,7 +253,7 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
                 "icon" to "data:image/png;base64,${updater.icon!!.base64()}"
             }
             if (updater.region != region) {
-                "region" to region.name
+                "region" to region.id
             }
             if (updater.afkChannel != afkChannel) {
                 "afk_channel_id" to updater.afkChannel?.id
