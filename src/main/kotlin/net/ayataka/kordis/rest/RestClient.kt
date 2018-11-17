@@ -46,9 +46,11 @@ class RestClient(private val discordClient: DiscordClientImpl) {
                 }.build()
 
                 val response = HTTP_CLIENT.newCall(request).executeAsync()
+                val body = response.body()?.string()
+                response.body()?.close()
 
                 val json = if (response.headers()["Content-Type"] == "application/json") {
-                    response.body()?.let { JsonTreeParser(it.string()).readFully() }
+                    body?.let { JsonTreeParser(body).readFully() }
                 } else {
                     null
                 }
