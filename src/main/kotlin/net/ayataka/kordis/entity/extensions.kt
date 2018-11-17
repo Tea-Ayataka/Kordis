@@ -19,9 +19,9 @@ import java.time.temporal.ChronoUnit
  * Bulk delete messages
  */
 suspend fun Collection<Message>.deleteAll() {
-    mapNotNull { it.channel as? ServerTextChannel }.distinctBy { it }.forEach {
-        it.deleteMessages(this
-                .filter { it.channel == it }
+    mapNotNull { it.channel as? ServerTextChannel }.distinctBy { it }.forEach { channel ->
+        channel.deleteMessages(this
+                .filter { it.channel == channel }
                 .filter { it.timestamp.isAfter(Instant.now().minus(14, ChronoUnit.DAYS)) }
                 .map { it.id })
     }
@@ -31,7 +31,8 @@ suspend fun Collection<Message>.deleteAll() {
  * Edit the channel
  */
 suspend fun ServerChannel.edit(block: ServerChannelBuilder.() -> Unit) {
-    (this as? ServerTextChannel)?.edit(block) ?: (this as? ServerVoiceChannel)?.edit(block) ?: (this as? ChannelCategory)?.edit(block)
+    (this as? ServerTextChannel)?.edit(block) ?: (this as? ServerVoiceChannel)?.edit(block)
+    ?: (this as? ChannelCategory)?.edit(block)
 }
 
 /**
