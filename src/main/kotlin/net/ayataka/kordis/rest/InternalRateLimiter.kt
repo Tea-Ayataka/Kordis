@@ -41,8 +41,8 @@ class InternalRateLimiter {
         rateLimitRemaining[endPoint.majorHash()] = (rateLimitRemaining[endPoint.majorHash()] ?: return) + 1
     }
 
-    suspend fun resetRateLimitRemaining(endPoint: FormattedEndPoint) = mutex.withLock {
-        rateLimitRemaining[endPoint.majorHash()] = 0
+    suspend fun setRateLimitRemaining(endPoint: FormattedEndPoint, value: Int) = mutex.withLock {
+        rateLimitRemaining[endPoint.majorHash()] = value
     }
 
     suspend fun wait(endPoint: FormattedEndPoint) {
@@ -67,9 +67,6 @@ class InternalRateLimiter {
                 // Reset
                 rateLimitRemaining[endPoint.majorHash()] = rateLimits[endPoint.majorHash()]!!
             }
-
-            // Decrement
-            rateLimitRemaining[endPoint.majorHash()] = (rateLimitRemaining[endPoint.majorHash()] ?: return) - 1
         }
     }
 }

@@ -72,7 +72,7 @@ class RestClient(private val discordClient: DiscordClientImpl) {
                         rateLimiter.setGlobalRateLimitEnds(delay)
                     } else {
                         rateLimiter.setRateLimitEnds(endPoint, System.currentTimeMillis() + delay)
-                        rateLimiter.resetRateLimitRemaining(endPoint)
+                        rateLimiter.setRateLimitRemaining(endPoint, 0)
                     }
 
                     return@repeat
@@ -92,8 +92,10 @@ class RestClient(private val discordClient: DiscordClientImpl) {
 
                 if (response.headers()["X-RateLimit-Limit"] != null && response.headers()["X-RateLimit-Reset"] != null) {
                     val rateLimit = response.headers()["X-RateLimit-Limit"]!!.toInt()
+                    val rateLimitRemaining = response.headers()["X-RateLimit-Remaining"]!!.toInt()
                     val rateLimitEnds = response.headers()["X-RateLimit-Reset"]!!.toLong() * 1000
                     rateLimiter.setRateLimit(endPoint, rateLimit)
+                    rateLimiter.setRateLimitRemaining(endPoint, rateLimitRemaining)
                     rateLimiter.setRateLimitEnds(endPoint, rateLimitEnds)
                     LOGGER.debug("RateLimit: $rateLimit, Remaining: ${response.headers()["X-RateLimit-Remaining"]}, Ends: $rateLimitEnds")
                 }
