@@ -10,6 +10,7 @@ import net.ayataka.kordis.entity.message.embed.Embed
 import net.ayataka.kordis.entity.message.embed.EmbedBuilder
 import net.ayataka.kordis.entity.message.embed.EmbedImpl
 import net.ayataka.kordis.entity.server.Server
+import net.ayataka.kordis.entity.server.ServerImpl
 import net.ayataka.kordis.entity.user.User
 import net.ayataka.kordis.entity.user.UserImpl
 import net.ayataka.kordis.rest.Endpoint
@@ -22,7 +23,7 @@ class MessageImpl(client: DiscordClientImpl, json: JsonObject, _server: Server? 
     override val server: Server?
     override val mentionsEveryone: Boolean
     override val pinned: Boolean
-    override var author: User? = null
+    override val author: User?
     override val channel: TextChannel
     override val content: String
     override val embeds: List<Embed>
@@ -48,11 +49,18 @@ class MessageImpl(client: DiscordClientImpl, json: JsonObject, _server: Server? 
                 ?: client.privateChannels.find(json["channel_id"].long)
                 ?: throw IllegalStateException("unknown channel id received $json")
 
-        if (!json.containsKey("webhook_id")) {
+        author = if (!json.containsKey("webhook_id")) {
             val authorData = json["author"].jsonObject
             val authorId = authorData["id"].long
 
-            author = client.users.updateOrPut(authorId, authorData) { UserImpl(client, authorData) }
+            client.users.updateOrPut(authorId, authorData) { UserImpl(client, authorData) }
+        } else null
+
+        // Update member
+        if (server != null && author != null) {
+            json.getObjectOrNull("member")?.let {
+                (server as ServerImpl).members.update(author.id, it)
+            }
         }
     }
 
