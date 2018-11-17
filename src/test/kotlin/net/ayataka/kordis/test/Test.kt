@@ -17,6 +17,7 @@ import net.ayataka.kordis.event.events.message.MessageEditEvent
 import net.ayataka.kordis.event.events.message.MessageReceiveEvent
 import net.ayataka.kordis.event.events.server.ServerReadyEvent
 import net.ayataka.kordis.event.events.server.user.UserJoinEvent
+import net.ayataka.kordis.event.events.server.user.UserUpdateEvent
 import net.ayataka.kordis.utils.formatAsDate
 import java.awt.Color
 import java.io.File
@@ -40,6 +41,10 @@ class TestBot {
 
             addHandler<UserJoinEvent> {
                 println(it.member.name + " has joined")
+            }
+
+            addHandler<UserUpdateEvent> {
+                println("Update: " + it.member.nickname)
             }
         }
 
