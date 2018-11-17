@@ -16,8 +16,9 @@ class MessageUpdateHandler : GatewayHandler {
                 ?: client.privateChannels.find(data["channel_id"].long)
                 ?: return
 
-        val message = if (data.containsKey("content")) MessageImpl(client, data) else null
-
-        client.eventManager.fire(MessageEditEvent(channel, data["id"].long, message))
+        if (data.containsKey("edited_timestamp")) {
+            val message = if (data.containsKey("content")) MessageImpl(client, data) else null
+            client.eventManager.fire(MessageEditEvent(channel, data["id"].long, message))
+        }
     }
 }
