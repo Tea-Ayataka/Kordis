@@ -6,6 +6,7 @@ import net.ayataka.kordis.entity.server.Server
 import net.ayataka.kordis.entity.server.channel.category.ChannelCategory
 import net.ayataka.kordis.entity.server.channel.ServerChannelImpl
 import net.ayataka.kordis.entity.server.permission.Permission
+import net.ayataka.kordis.exception.NotFoundException
 import net.ayataka.kordis.rest.Endpoint
 
 class ServerVoiceChannelImpl(
@@ -39,6 +40,7 @@ class ServerVoiceChannelImpl(
     }
 
     override suspend fun edit(block: ServerVoiceChannelBuilder.() -> Unit) {
+        checkExistence()
         checkPermission(server, Permission.MANAGE_CHANNELS)
         checkManageable(this)
         val updater = ServerVoiceChannelBuilder(this).apply(block)
@@ -75,6 +77,12 @@ class ServerVoiceChannelImpl(
                     Endpoint.MODIFY_CHANNEL_PATCH.format("channel.id" to id),
                     json
             )
+        }
+    }
+
+    private fun checkExistence() {
+        if (server.voiceChannels.find(id) == null) {
+            throw NotFoundException()
         }
     }
 }

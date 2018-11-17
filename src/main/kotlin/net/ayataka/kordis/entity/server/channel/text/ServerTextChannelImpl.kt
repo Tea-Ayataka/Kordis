@@ -49,6 +49,8 @@ class ServerTextChannelImpl(
     }
 
     override suspend fun send(block: MessageBuilder.() -> Unit): Message {
+        checkExistence()
+
         val response = client.rest.request(
                 Endpoint.CREATE_MESSAGE.format("channel.id" to id),
                 MessageBuilder().apply(block).build()
@@ -58,6 +60,7 @@ class ServerTextChannelImpl(
     }
 
     override suspend fun edit(block: ServerTextChannelBuilder.() -> Unit) {
+        checkExistence()
         checkPermission(server, Permission.MANAGE_CHANNELS)
         checkManageable(this)
 
@@ -103,6 +106,8 @@ class ServerTextChannelImpl(
     }
 
     override suspend fun getMessage(messageId: Long): Message? {
+        checkExistence()
+
         return try {
             val response = client.rest.request(
                     Endpoint.GET_CHANNEL_MESSAGE.format("channel.id" to id, "message.id" to messageId)
@@ -115,6 +120,7 @@ class ServerTextChannelImpl(
     }
 
     override suspend fun getMessages(limit: Int): Collection<Message> {
+        checkExistence()
         checkPermission(server, Permission.READ_MESSAGE_HISTORY)
         checkAccess(this)
 
@@ -131,6 +137,7 @@ class ServerTextChannelImpl(
     }
 
     override suspend fun deleteMessage(messageId: Long) {
+        checkExistence()
         checkAccess(this)
 
         client.rest.request(
@@ -139,6 +146,7 @@ class ServerTextChannelImpl(
     }
 
     override suspend fun deleteMessages(messageIds: Collection<Long>) {
+        checkExistence()
         checkAccess(this)
 
         if (messageIds.isEmpty()) {
@@ -157,6 +165,12 @@ class ServerTextChannelImpl(
                         "messages" to jsonArray { it.forEach { +JsonPrimitive(it) } }
                     }
             )
+        }
+    }
+
+    private fun checkExistence() {
+        if (server.textChannels.find(id) == null) {
+            throw NotFoundException()
         }
     }
 }

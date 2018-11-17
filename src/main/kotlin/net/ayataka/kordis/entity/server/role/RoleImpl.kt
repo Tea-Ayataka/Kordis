@@ -7,6 +7,7 @@ import net.ayataka.kordis.entity.Updatable
 import net.ayataka.kordis.entity.server.Server
 import net.ayataka.kordis.entity.server.permission.Permission
 import net.ayataka.kordis.entity.server.permission.PermissionSet
+import net.ayataka.kordis.exception.NotFoundException
 import net.ayataka.kordis.rest.Endpoint
 import net.ayataka.kordis.utils.uRgb
 import java.awt.Color
@@ -39,6 +40,7 @@ class RoleImpl(override val server: Server, client: DiscordClientImpl, json: Jso
     }
 
     override suspend fun edit(block: RoleBuilder.() -> Unit) {
+        checkExistence()
         checkPermission(server, Permission.MANAGE_ROLES)
         checkManageable(this)
 
@@ -85,9 +87,16 @@ class RoleImpl(override val server: Server, client: DiscordClientImpl, json: Jso
     }
 
     override suspend fun delete() {
+        checkExistence()
         checkPermission(server, Permission.MANAGE_ROLES)
         checkManageable(this)
 
         client.rest.request(Endpoint.DELETE_GUILD_ROLE.format("guild.id" to server.id, "role.id" to id))
+    }
+
+    private fun checkExistence() {
+        if (server.roles.find(id) == null) {
+            throw NotFoundException()
+        }
     }
 }

@@ -6,6 +6,7 @@ import net.ayataka.kordis.entity.server.Server
 import net.ayataka.kordis.entity.server.channel.ServerChannelBuilder
 import net.ayataka.kordis.entity.server.channel.ServerChannelImpl
 import net.ayataka.kordis.entity.server.permission.Permission
+import net.ayataka.kordis.exception.NotFoundException
 import net.ayataka.kordis.rest.Endpoint
 
 class ChannelCategoryImpl(
@@ -24,6 +25,7 @@ class ChannelCategoryImpl(
     }
 
     override suspend fun edit(block: ServerChannelBuilder.() -> Unit) {
+        checkExistence()
         checkPermission(server, Permission.MANAGE_CHANNELS)
         checkManageable(this)
 
@@ -49,6 +51,12 @@ class ChannelCategoryImpl(
                     Endpoint.MODIFY_CHANNEL_PATCH.format("channel.id" to id),
                     json
             )
+        }
+    }
+
+    private fun checkExistence() {
+        if (server.channelCategories.find(id) == null) {
+            throw NotFoundException()
         }
     }
 }

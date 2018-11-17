@@ -83,7 +83,7 @@ class RestClient(private val discordClient: DiscordClientImpl) {
                 }
 
                 if (response.code() == 404) {
-                    throw NotFoundException()
+                    throw NotFoundException(true)
                 }
 
                 if (response.code() !in 200..299) {

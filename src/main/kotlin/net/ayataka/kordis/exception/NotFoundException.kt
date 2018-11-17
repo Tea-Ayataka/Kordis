@@ -1,3 +1,3 @@
 package net.ayataka.kordis.exception
 
-open class NotFoundException : Exception()
+open class NotFoundException(remote: Boolean = false) : Exception("remote: $remote")

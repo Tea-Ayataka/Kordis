@@ -11,6 +11,7 @@ import net.ayataka.kordis.entity.server.permission.Permission
 import net.ayataka.kordis.entity.server.role.Role
 import net.ayataka.kordis.entity.user.User
 import net.ayataka.kordis.exception.DiscordException
+import net.ayataka.kordis.exception.NotFoundException
 import net.ayataka.kordis.exception.PrivateMessageBlockedException
 import net.ayataka.kordis.rest.Endpoint
 import java.time.Instant
@@ -58,6 +59,7 @@ class MemberImpl(
     }
 
     override suspend fun addRole(role: Role) {
+        checkExistence()
         checkPermission(server, Permission.MANAGE_ROLES)
         checkManageable(role)
 
@@ -71,6 +73,7 @@ class MemberImpl(
     }
 
     override suspend fun removeRole(role: Role) {
+        checkExistence()
         checkPermission(server, Permission.MANAGE_ROLES)
         checkManageable(role)
 
@@ -84,6 +87,8 @@ class MemberImpl(
     }
 
     override suspend fun setNickname(name: String?) {
+        checkExistence()
+
         if (this == server.members.botUser) {
             checkPermission(server, Permission.CHANGE_NICKNAME)
 
@@ -105,6 +110,8 @@ class MemberImpl(
     }
 
     override suspend fun getPrivateChannel(): PrivateTextChannel {
+        checkExistence()
+
         client.privateChannels.find(privateChannelId)?.let { return it }
 
         try {
@@ -146,5 +153,11 @@ class MemberImpl(
         result = 31 * result + server.hashCode()
         result = 31 * result + user.hashCode()
         return result
+    }
+
+    private fun checkExistence() {
+        if (server.members.find(id) == null) {
+            throw NotFoundException()
+        }
     }
 }

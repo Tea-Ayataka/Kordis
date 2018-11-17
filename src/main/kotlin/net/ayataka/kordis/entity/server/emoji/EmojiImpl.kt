@@ -12,6 +12,7 @@ import net.ayataka.kordis.entity.server.Server
 import net.ayataka.kordis.entity.server.permission.Permission
 import net.ayataka.kordis.entity.user.User
 import net.ayataka.kordis.entity.user.UserImpl
+import net.ayataka.kordis.exception.NotFoundException
 import net.ayataka.kordis.rest.Endpoint
 
 class EmojiImpl(
@@ -31,6 +32,7 @@ class EmojiImpl(
     }
 
     override suspend fun delete() {
+        checkExistence()
         checkPermission(server, Permission.MANAGE_EMOJIS)
 
         client.rest.request(
@@ -39,11 +41,18 @@ class EmojiImpl(
     }
 
     override suspend fun edit(name: String) {
+        checkExistence()
         checkPermission(server, Permission.MANAGE_EMOJIS)
 
         client.rest.request(
                 Endpoint.MODIFY_GUILD_EMOJI.format("guild.id" to server.id, "emoji.id" to id),
                 json { "name" to name }
         )
+    }
+
+    private fun checkExistence() {
+        if (server.emojis.find(id) == null) {
+            throw NotFoundException()
+        }
     }
 }

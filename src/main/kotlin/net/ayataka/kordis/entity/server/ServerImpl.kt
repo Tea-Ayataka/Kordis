@@ -37,6 +37,7 @@ import net.ayataka.kordis.entity.user.User
 import net.ayataka.kordis.entity.user.UserImpl
 import net.ayataka.kordis.event.events.server.user.UserJoinEvent
 import net.ayataka.kordis.event.events.server.user.UserLeaveEvent
+import net.ayataka.kordis.exception.NotFoundException
 import net.ayataka.kordis.rest.Endpoint
 import net.ayataka.kordis.utils.base64
 import net.ayataka.kordis.utils.uRgb
@@ -209,6 +210,7 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
     }
 
     override suspend fun kick(member: Member) {
+        checkExistence()
         checkPermission(this, Permission.KICK_MEMBERS)
         checkManageable(member)
 
@@ -218,6 +220,7 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
     }
 
     override suspend fun ban(user: User, deleteMessageDays: Int, reason: String?) {
+        checkExistence()
         checkPermission(this, Permission.BAN_MEMBERS)
         members.find(user)?.let { checkManageable(it) }
 
@@ -233,6 +236,7 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
     }
 
     override suspend fun unban(user: User) {
+        checkExistence()
         checkPermission(this, Permission.KICK_MEMBERS)
 
         client.rest.request(
@@ -241,6 +245,7 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
     }
 
     override suspend fun edit(block: ServerBuilder.() -> Unit) {
+        checkExistence()
         checkPermission(this, Permission.MANAGE_GUILD)
 
         val updater = ServerBuilder(this).apply(block)
@@ -284,6 +289,8 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
     }
 
     override suspend fun bans(): Collection<Ban> {
+        checkExistence()
+
         val response = client.rest.request(Endpoint.GET_GUILD_BANS.format("guild.id" to id)).jsonArray
 
         return response.map {
@@ -297,6 +304,7 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
     }
 
     override suspend fun createTextChannel(block: ServerTextChannelBuilder.() -> Unit): ServerTextChannel {
+        checkExistence()
         checkPermission(this, Permission.MANAGE_CHANNELS)
 
         val builder = ServerTextChannelBuilder().apply(block)
@@ -333,6 +341,7 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
     }
 
     override suspend fun createVoiceChannel(block: ServerVoiceChannelBuilder.() -> Unit): ServerVoiceChannel {
+        checkExistence()
         checkPermission(this, Permission.MANAGE_CHANNELS)
 
         val builder = ServerVoiceChannelBuilder().apply(block)
@@ -368,6 +377,7 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
     }
 
     override suspend fun createChannelCategory(block: ServerChannelBuilder.() -> Unit): ChannelCategory {
+        checkExistence()
         checkPermission(this, Permission.MANAGE_CHANNELS)
 
         val builder = ServerChannelBuilder().apply(block)
@@ -393,6 +403,7 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
     }
 
     override suspend fun createRole(block: RoleBuilder.() -> Unit): Role {
+        checkExistence()
         checkPermission(this, Permission.MANAGE_ROLES)
 
         val builder = RoleBuilder().apply(block)
@@ -428,6 +439,7 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
     }
 
     override suspend fun createEmoji(block: EmojiBuilder.() -> Unit): Emoji {
+        checkExistence()
         checkPermission(this, Permission.MANAGE_EMOJIS)
 
         val builder = EmojiBuilder().apply(block)
@@ -442,5 +454,11 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
         ).jsonObject
 
         return emojis.getOrPut(response["id"].long) { EmojiImpl(this, client, response) }
+    }
+
+    private fun checkExistence() {
+        if (client.servers.find(id) == null) {
+            throw NotFoundException()
+        }
     }
 }
