@@ -7,10 +7,9 @@ import net.ayataka.kordis.Kordis
 import net.ayataka.kordis.addHandler
 import net.ayataka.kordis.entity.botUser
 import net.ayataka.kordis.entity.deleteAll
-import net.ayataka.kordis.entity.permissions
+import net.ayataka.kordis.entity.server.ServerImpl
 import net.ayataka.kordis.entity.server.enums.ActivityType
 import net.ayataka.kordis.entity.server.enums.UserStatus
-import net.ayataka.kordis.entity.server.permission.Permission
 import net.ayataka.kordis.entity.user.User
 import net.ayataka.kordis.event.EventHandler
 import net.ayataka.kordis.event.events.message.MessageEditEvent
@@ -19,10 +18,7 @@ import net.ayataka.kordis.event.events.server.ServerReadyEvent
 import net.ayataka.kordis.event.events.server.user.UserJoinEvent
 import net.ayataka.kordis.event.events.server.user.UserUpdateEvent
 import net.ayataka.kordis.utils.formatAsDate
-import java.awt.Color
 import java.io.File
-import java.time.Instant
-import kotlin.random.Random
 
 fun main(args: Array<String>) = runBlocking {
     TestBot().start(args[0])
@@ -127,6 +123,10 @@ class TestBot {
             val amount = text.split(" ")[1].toInt()
             channel.getMessages(amount).deleteAll()
             channel.send("Deleted $amount messages")
+        }
+
+        if (text.startsWith("!members")) {
+            channel.send(server.members.size.toString() + " : " + (server as ServerImpl).memberCount.get())
         }
 
         if (text.startsWith("!ping")) {

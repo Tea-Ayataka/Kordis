@@ -60,7 +60,7 @@ class GuildCreateHandler : GatewayHandler {
         client.gateway.memberChunkRequestQueue.offer(server.id)
 
         GlobalScope.timer(1000, context = CoroutineName("Server Preparer")) {
-            if (server.members.size == server.memberCount.get() && !server.initialized.getAndSet(true)) {
+            if (server.members.size >= server.memberCount.get() && !server.initialized.getAndSet(true)) {
                 server.ready = true
                 client.eventManager.fire(ServerReadyEvent(server))
                 cancel()
