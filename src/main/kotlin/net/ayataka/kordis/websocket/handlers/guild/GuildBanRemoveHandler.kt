@@ -13,7 +13,8 @@ class GuildBanRemoveHandler : GatewayHandler {
 
     override fun handle(client: DiscordClientImpl, data: JsonObject) {
         val server = client.servers.find(data["guild_id"].long) as? ServerImpl ?: return
-        val user = client.users.getOrPut(data["user"].long) { UserImpl(client, data["user"].jsonObject) }
+        val userObject = data["user"].jsonObject
+        val user = client.users.updateOrPut(userObject["id"].long, userObject) { UserImpl(client, userObject) }
 
         client.eventManager.fire(UserUnbanEvent(server, user))
     }
