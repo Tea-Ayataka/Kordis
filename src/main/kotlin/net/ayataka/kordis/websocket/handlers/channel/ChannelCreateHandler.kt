@@ -24,7 +24,7 @@ class ChannelCreateHandler : GatewayHandler {
         }
 
         val server = client.servers.find(data["guild_id"].long) as? ServerImpl
-                ?: throw IllegalStateException("unknown server id received $data")
+                ?: throw IllegalStateException("unknown server id received")
 
         val channel = when (data["type"].int) {
             ChannelType.GUILD_TEXT.id -> {
@@ -37,7 +37,7 @@ class ChannelCreateHandler : GatewayHandler {
                 server.channelCategories.updateOrPut(id, data) { ChannelCategoryImpl(server, client, data) }
             }
             else -> {
-                throw IllegalStateException("unknown channel type received $data")
+                throw IllegalStateException("unknown channel type received")
             }
         }
 

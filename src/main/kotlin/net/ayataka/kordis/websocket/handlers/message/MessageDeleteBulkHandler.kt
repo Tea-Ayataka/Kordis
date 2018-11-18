@@ -19,10 +19,10 @@ class MessageDeleteBulkHandler : GatewayHandler {
         }
 
         val server = client.servers.find(data["guild_id"].long)
-                ?: throw IllegalStateException("unknown server id received $data")
+                ?: throw IllegalStateException("unknown server id received")
 
         val channel = server.textChannels.find(data["channel_id"].long)
-                ?: throw IllegalStateException("unknown channel id received $data")
+                ?: throw IllegalStateException("unknown channel id received")
 
         client.eventManager.fire(MessageDeleteEvent(messageIds, channel, server))
     }

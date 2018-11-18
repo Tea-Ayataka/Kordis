@@ -47,7 +47,7 @@ class MessageImpl(client: DiscordClientImpl, json: JsonObject, _server: Server? 
         server = _server ?: json.getOrNull("guild_id")?.let { client.servers.find(it.long) }
         channel = server?.textChannels?.find(json["channel_id"].long)
                 ?: client.privateChannels.find(json["channel_id"].long)
-                ?: throw IllegalStateException("unknown channel id received $json")
+                ?: throw IllegalStateException("unknown channel id received")
 
         author = if (!json.containsKey("webhook_id")) {
             val authorData = json["author"].jsonObject

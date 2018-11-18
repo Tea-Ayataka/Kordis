@@ -27,7 +27,7 @@ class ChannelUpdateHandler : GatewayHandler {
                 server?.channelCategories?.update(id, data)
             }
             else -> {
-                throw IllegalStateException("unknown channel type received $data")
+                throw IllegalStateException("unknown channel type received")
             }
         }
 

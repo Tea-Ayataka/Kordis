@@ -204,7 +204,7 @@ class GatewayClient(
                 try {
                     handlers.find { it.eventType == eventType }?.handle(client, data!!)
                 } catch (ex: Exception) {
-                    LOGGER.error("Failed to handle the event! (type: $eventType, error: ${ex.message})")
+                    LOGGER.error("Failed to handle the event! (type: $eventType, json: $data)", ex)
                     LOGGER.debug("packet handle error", ex)
                 }
             }

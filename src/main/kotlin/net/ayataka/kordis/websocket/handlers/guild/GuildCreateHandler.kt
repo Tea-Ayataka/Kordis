@@ -4,7 +4,6 @@ import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.GlobalScope
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.boolean
-import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.long
 import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.entity.server.ServerImpl
@@ -21,7 +20,7 @@ class GuildCreateHandler : GatewayHandler {
         }
 
         val id = data["id"].long
-        val isLarge = data["large"].booleanOrNull == true
+        val isLarge = data.getOrNull("large")?.boolean == true
 
         // Update server after reconnection
         client.servers.find(id)?.let {
