@@ -43,8 +43,6 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 
 class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, DiscordEntity(client, id) {
-    @Volatile var initialized = AtomicBoolean()
-
     @Volatile override var ready = false
     @Volatile override var name = ""
     @Volatile override var icon: Image? = null
@@ -66,11 +64,11 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
     override val members = NameableEntitySetImpl<Member>()
 
     // For setup
+    @Volatile var initialized = AtomicBoolean()
+    @Volatile var ownerId: Long = -1
+    @Volatile var memberCount = AtomicInteger()
+    val removedMembers = mutableListOf<Long>()
     private val temporallyUserPresences = ConcurrentHashMap<Long, JsonObject>()
-    @Volatile
-    var memberCount = AtomicInteger()
-    @Volatile
-    var removedMembers = mutableListOf<Long>()
 
     override val channels = object : NameableEntitySet<ServerChannel> {
         override val size: Int
@@ -175,7 +173,8 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
         }
 
         afkChannel = json["afk_channel_id"].asLongOrNull?.let { voiceChannels.find(it) }
-        owner = client.users.find(json["owner_id"].asLong)
+        ownerId = json["owner_id"].asLong
+        owner = client.users.find(ownerId)
     }
 
     fun updateEmojis(json: JsonObject) {
@@ -188,12 +187,27 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
         }
     }
 
-    fun applyTemporaryPresences() {
-        temporallyUserPresences.forEach {
-            (members.find(it.key) as? MemberImpl)?.updatePresence(it.value)
+    fun ready() {
+        ready = true
+
+        // Apply presences
+        if (temporallyUserPresences.isNotEmpty()) {
+            temporallyUserPresences.forEach {
+                (members.find(it.key) as? MemberImpl)?.updatePresence(it.value)
+            }
+            temporallyUserPresences.clear()
         }
 
-        temporallyUserPresences.clear()
+        // Remove left members
+        if (removedMembers.isNotEmpty()) {
+            members.removeIf { it.id in removedMembers }
+            removedMembers.clear()
+        }
+
+        // Set owner
+        if (owner == null) {
+            owner = client.users.find(ownerId)
+        }
     }
 
     override suspend fun kick(member: Member) {
