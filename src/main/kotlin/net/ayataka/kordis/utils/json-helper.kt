@@ -26,7 +26,7 @@ val JsonElement.asStringOrNull
     get() = if (isJsonPrimitive && asJsonPrimitive.isString) asString else null
 
 val JsonElement.asLongOrNull
-    get() = if (isJsonPrimitive && asJsonPrimitive.isNumber) asLong else null
+    get() = if (isJsonPrimitive) asLong else null
 
 fun JsonObject.isNotEmpty() = size() > 0
 

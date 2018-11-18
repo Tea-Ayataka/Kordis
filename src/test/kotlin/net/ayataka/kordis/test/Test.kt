@@ -133,6 +133,10 @@ class TestBot {
             channel.send("Owner: ${server.owner}, Are you owner: ${author.isOwner}")
         }
 
+        if (text.startsWith("!categogies")) {
+            channel.send(server.channelCategories.joinToString { it.name }.ifEmpty { "None" })
+        }
+
         if (text.startsWith("!purge")) {
             val amount = text.split(" ")[1].toInt()
             channel.getMessages(amount).deleteAll()
