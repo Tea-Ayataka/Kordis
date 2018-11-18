@@ -53,13 +53,19 @@ class GuildCreateHandler : GatewayHandler {
 
     private fun prepare(client: DiscordClientImpl, server: ServerImpl) {
         // Request additional members
+        server.ready = false
         server.members.clear()
+        server.removedMembers.clear()
         client.gateway.memberChunkRequestQueue.offer(server.id)
 
         GlobalScope.timer(1000, context = CoroutineName("Server Preparer")) {
-            if (server.members.size >= server.memberCount.get() && !server.initialized.getAndSet(true)) {
+            if (server.members.size >= server.memberCount.get() && !server.ready) {
                 server.ready()
-                client.eventManager.fire(ServerReadyEvent(server))
+
+                if (!server.initialized.getAndSet(true)) {
+                    client.eventManager.fire(ServerReadyEvent(server))
+                }
+
                 cancel()
             }
         }
