@@ -174,13 +174,13 @@ class GatewayClient(
                         heartbeatAckReceived = false
                         queue(Opcode.HEARTBEAT, json { if (lastSequence > 0) "d" to lastSequence })
                     } else {
-                        close(2000, "Heartbeat ACK wasn't received")
+                        close(4000, "Heartbeat ACK wasn't received")
                     }
                 }
             }
             Opcode.RECONNECT -> {
                 LOGGER.info("Received reconnect request")
-                close(2001, "Received Reconnect Request")
+                close(4001, "Received Reconnect Request")
             }
             Opcode.INVALID_SESSION -> {
                 LOGGER.info("The session id is invalid")
