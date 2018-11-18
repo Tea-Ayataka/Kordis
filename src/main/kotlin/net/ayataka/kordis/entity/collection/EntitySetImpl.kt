@@ -1,6 +1,6 @@
 package net.ayataka.kordis.entity.collection
 
-import kotlinx.serialization.json.JsonObject
+import com.google.gson.JsonObject
 import net.ayataka.kordis.entity.Entity
 import net.ayataka.kordis.entity.Updatable
 import java.util.concurrent.ConcurrentHashMap

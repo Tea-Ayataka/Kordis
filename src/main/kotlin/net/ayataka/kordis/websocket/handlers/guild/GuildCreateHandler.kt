@@ -1,13 +1,12 @@
 package net.ayataka.kordis.websocket.handlers.guild
 
+import com.google.gson.JsonObject
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.GlobalScope
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.boolean
-import kotlinx.serialization.json.long
 import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.entity.server.ServerImpl
 import net.ayataka.kordis.event.events.server.ServerReadyEvent
+import net.ayataka.kordis.utils.getOrNull
 import net.ayataka.kordis.utils.timer
 import net.ayataka.kordis.websocket.handlers.GatewayHandler
 
@@ -15,12 +14,12 @@ class GuildCreateHandler : GatewayHandler {
     override val eventType = "GUILD_CREATE"
 
     override fun handle(client: DiscordClientImpl, data: JsonObject) {
-        if (data.getOrNull("unavailable")?.boolean == true) {
+        if (data.getOrNull("unavailable")?.asBoolean == true) {
             return
         }
 
-        val id = data["id"].long
-        val isLarge = data.getOrNull("large")?.boolean == true
+        val id = data["id"].asLong
+        val isLarge = data.getOrNull("large")?.asBoolean == true
 
         // Update server after reconnection
         client.servers.find(id)?.let {
@@ -39,7 +38,7 @@ class GuildCreateHandler : GatewayHandler {
         }
 
         val server = client.servers.updateOrPut(id, data) {
-            ServerImpl(client, data["id"].long).apply { update(data) }
+            ServerImpl(client, data["id"].asLong).apply { update(data) }
         } as ServerImpl
 
         if (!isLarge) {

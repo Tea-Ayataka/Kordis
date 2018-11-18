@@ -1,6 +1,6 @@
 package net.ayataka.kordis.entity.message.embed
 
-import kotlinx.serialization.json.JsonObject
+import com.google.gson.JsonObject
 import java.awt.Color
 import java.time.Instant
 

@@ -1,6 +1,7 @@
 package net.ayataka.kordis.entity.server.channel.text
 
-import kotlinx.serialization.json.*
+import com.google.gson.JsonObject
+import com.google.gson.JsonPrimitive
 import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.entity.message.Message
 import net.ayataka.kordis.entity.message.MessageBuilder
@@ -11,12 +12,13 @@ import net.ayataka.kordis.entity.server.channel.category.ChannelCategory
 import net.ayataka.kordis.entity.server.permission.Permission
 import net.ayataka.kordis.exception.NotFoundException
 import net.ayataka.kordis.rest.Endpoint
+import net.ayataka.kordis.utils.*
 
 class ServerTextChannelImpl(
         server: Server,
         client: DiscordClientImpl,
         json: JsonObject
-) : ServerTextChannel, ServerChannelImpl(server, client, json["id"].long) {
+) : ServerTextChannel, ServerChannelImpl(server, client, json["id"].asLong) {
     @Volatile override var topic: String? = null
     @Volatile override var nsfw = false
     @Volatile override var rateLimitPerUser = -1
@@ -27,13 +29,13 @@ class ServerTextChannelImpl(
     }
 
     override fun update(json: JsonObject) {
-        name = json["name"].content
-        topic = json.getOrNull("topic")?.contentOrNull
-        nsfw = json.getOrNull("nsfw")?.boolean == true
-        rateLimitPerUser = json.getOrNull("rate_limit_per_user")?.int ?: 0
-        position = json["position"].int
+        name = json["name"].asString
+        topic = json.getOrNull("topic")?.asStringOrNull
+        nsfw = json.getOrNull("nsfw")?.asBoolean == true
+        rateLimitPerUser = json.getOrNull("rate_limit_per_user")?.asInt ?: 0
+        position = json["position"].asInt
 
-        json.getOrNull("parent_id")?.longOrNull?.let {
+        json.getOrNull("parent_id")?.asLongOrNull?.let {
             category = server.channelCategories.find(it)
         }
 
@@ -56,7 +58,7 @@ class ServerTextChannelImpl(
                 MessageBuilder().apply(block).build()
         )
 
-        return MessageImpl(client, response.jsonObject, server)
+        return MessageImpl(client, response.asJsonObject, server)
     }
 
     override suspend fun edit(block: ServerTextChannelBuilder.() -> Unit) {
@@ -113,7 +115,7 @@ class ServerTextChannelImpl(
                     Endpoint.GET_CHANNEL_MESSAGE.format("channel.id" to id, "message.id" to messageId)
             )
 
-            MessageImpl(client, response.jsonObject, server)
+            MessageImpl(client, response.asJsonObject, server)
         } catch (ex: NotFoundException) {
             null
         }
@@ -133,7 +135,7 @@ class ServerTextChannelImpl(
                 json { "limit" to limit }
         )
 
-        return response.jsonArray.map { MessageImpl(client, it.jsonObject, server) }
+        return response.asJsonArray.map { MessageImpl(client, it.asJsonObject, server) }
     }
 
     override suspend fun deleteMessage(messageId: Long) {

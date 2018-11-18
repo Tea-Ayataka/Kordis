@@ -1,7 +1,7 @@
 package net.ayataka.kordis.entity.message.embed
 
-import kotlinx.serialization.json.*
-import net.ayataka.kordis.utils.uRgb
+import com.google.gson.JsonObject
+import net.ayataka.kordis.utils.*
 import java.awt.Color
 import java.time.Instant
 import java.time.ZoneOffset
@@ -20,32 +20,32 @@ class EmbedImpl(
         override val fields: Collection<Field>
 ) : Embed {
     constructor(json: JsonObject) : this(
-            title = json.getOrNull("title")?.content,
-            description = json.getOrNull("description")?.content,
-            url = json.getOrNull("url")?.content,
-            color = json.getOrNull("color")?.int?.let { Color(it) },
-            timestamp = json.getOrNull("timestamp")?.content
+            title = json.getOrNull("title")?.asString,
+            description = json.getOrNull("description")?.asString,
+            url = json.getOrNull("url")?.asString,
+            color = json.getOrNull("color")?.asInt?.let { Color(it) },
+            timestamp = json.getOrNull("timestamp")?.asString
                     ?.let { Instant.from(DateTimeFormatter.ISO_DATE_TIME.parse(it)) },
-            imageUrl = json.getOrNull("image")?.jsonObject?.getOrNull("url")?.content,
-            thumbnailUrl = json.getOrNull("thumbnail")?.jsonObject?.getOrNull("url")?.content,
-            footer = json.getOrNull("footer")?.jsonObject?.run {
+            imageUrl = json.getOrNull("image")?.asJsonObject?.getOrNull("url")?.asString,
+            thumbnailUrl = json.getOrNull("thumbnail")?.asJsonObject?.getOrNull("url")?.asString,
+            footer = json.getOrNull("footer")?.asJsonObject?.run {
                 Footer(
-                        getOrNull("icon_url")?.content,
-                        getOrNull("text")?.content
+                        getOrNull("icon_url")?.asString,
+                        getOrNull("text")?.asString
                 )
             },
-            author = json.getOrNull("author")?.jsonObject?.run {
+            author = json.getOrNull("author")?.asJsonObject?.run {
                 Author(
-                        getOrNull("name")?.content,
-                        getOrNull("url")?.content,
-                        getOrNull("icon_url")?.content
+                        getOrNull("name")?.asString,
+                        getOrNull("url")?.asString,
+                        getOrNull("icon_url")?.asString
                 )
             },
             fields = json.getArrayOrNull("fields")?.map {
                 Field(
-                        it.jsonObject["name"].content,
-                        it.jsonObject["value"].content,
-                        it.jsonObject.getOrNull("inline")?.boolean == true
+                        it.asJsonObject["name"].asString,
+                        it.asJsonObject["value"].asString,
+                        it.asJsonObject.getOrNull("inline")?.asBoolean == true
                 )
             } ?: emptyList()
     )

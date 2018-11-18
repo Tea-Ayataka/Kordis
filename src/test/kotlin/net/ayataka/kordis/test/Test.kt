@@ -99,6 +99,16 @@ class TestBot {
                     field("NSFW", channel.nsfw.toString(), true)
                     field("Permission Overwrites (User)", channel.userPermissionOverwrites.size, true)
                     field("Permission Overwrites (Role)", channel.rolePermissionOverwrites.size, true)
+
+                    println("User permission overwrites: ")
+                    channel.userPermissionOverwrites.forEach {
+                        println(it)
+                    }
+
+                    println("Role permission overwrites: ")
+                    channel.rolePermissionOverwrites.forEach {
+                        println(it)
+                    }
                 }
             }
         }

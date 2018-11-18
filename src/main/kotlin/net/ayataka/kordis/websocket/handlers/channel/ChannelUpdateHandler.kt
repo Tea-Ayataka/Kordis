@@ -1,22 +1,21 @@
 package net.ayataka.kordis.websocket.handlers.channel
 
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.int
-import kotlinx.serialization.json.long
+import com.google.gson.JsonObject
 import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.entity.server.ServerImpl
 import net.ayataka.kordis.entity.server.enums.ChannelType
 import net.ayataka.kordis.event.events.server.channel.ChannelUpdateEvent
+import net.ayataka.kordis.utils.getOrNull
 import net.ayataka.kordis.websocket.handlers.GatewayHandler
 
 class ChannelUpdateHandler : GatewayHandler {
     override val eventType = "CHANNEL_UPDATE"
 
     override fun handle(client: DiscordClientImpl, data: JsonObject) {
-        val server = data.getOrNull("guild_id")?.let { client.servers.find(it.long) } as? ServerImpl
-        val id = data["id"].long
+        val server = data.getOrNull("guild_id")?.let { client.servers.find(it.asLong) } as? ServerImpl
+        val id = data["id"].asLong
 
-        val channel = when (data["type"].int) {
+        val channel = when (data["type"].asInt) {
             ChannelType.GUILD_TEXT.id -> {
                 server?.textChannels?.update(id, data)
             }

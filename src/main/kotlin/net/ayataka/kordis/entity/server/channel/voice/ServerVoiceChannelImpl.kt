@@ -1,19 +1,23 @@
 package net.ayataka.kordis.entity.server.channel.voice
 
-import kotlinx.serialization.json.*
+import com.google.gson.JsonObject
 import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.entity.server.Server
-import net.ayataka.kordis.entity.server.channel.category.ChannelCategory
 import net.ayataka.kordis.entity.server.channel.ServerChannelImpl
+import net.ayataka.kordis.entity.server.channel.category.ChannelCategory
 import net.ayataka.kordis.entity.server.permission.Permission
 import net.ayataka.kordis.exception.NotFoundException
 import net.ayataka.kordis.rest.Endpoint
+import net.ayataka.kordis.utils.asLongOrNull
+import net.ayataka.kordis.utils.getOrNull
+import net.ayataka.kordis.utils.isNotEmpty
+import net.ayataka.kordis.utils.json
 
 class ServerVoiceChannelImpl(
         server: Server,
         client: DiscordClientImpl,
         json: JsonObject
-) : ServerVoiceChannel, ServerChannelImpl(server, client, json["id"].long) {
+) : ServerVoiceChannel, ServerChannelImpl(server, client, json["id"].asLong) {
     @Volatile override var bitrate: Int = -1
     @Volatile override var userLimit: Int = -1
     @Volatile override var category: ChannelCategory? = null
@@ -23,12 +27,12 @@ class ServerVoiceChannelImpl(
     }
 
     override fun update(json: JsonObject) {
-        name = json["name"].content
-        position = json["position"].int
-        bitrate = json["bitrate"].int
-        userLimit = json["user_limit"].int
+        name = json["name"].asString
+        position = json["position"].asInt
+        bitrate = json["bitrate"].asInt
+        userLimit = json["user_limit"].asInt
 
-        json.getOrNull("parent_id")?.longOrNull?.let {
+        json.getOrNull("parent_id")?.asLongOrNull?.let {
             category = server.channelCategories.find(it)
         }
 

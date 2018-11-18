@@ -1,8 +1,6 @@
 package net.ayataka.kordis.entity.channel
 
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.json
-import kotlinx.serialization.json.long
+import com.google.gson.JsonObject
 import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.entity.DiscordEntity
 import net.ayataka.kordis.entity.Updatable
@@ -15,11 +13,13 @@ import net.ayataka.kordis.exception.DiscordException
 import net.ayataka.kordis.exception.NotFoundException
 import net.ayataka.kordis.exception.PrivateMessageBlockedException
 import net.ayataka.kordis.rest.Endpoint
+import net.ayataka.kordis.utils.getOrNull
+import net.ayataka.kordis.utils.json
 
 class PrivateTextChannelImpl(
         client: DiscordClientImpl,
         json: JsonObject
-) : PrivateTextChannel, Updatable, DiscordEntity(client, json["id"].long) {
+) : PrivateTextChannel, Updatable, DiscordEntity(client, json["id"].asLong) {
     @Volatile override var owner: User? = null
     override val recipients = mutableSetOf<User>()
 
@@ -29,11 +29,11 @@ class PrivateTextChannelImpl(
 
     override fun update(json: JsonObject) {
         recipients.clear()
-        recipients.addAll(json["recipients"].jsonArray.map {
-            client.users.getOrPut(it.jsonObject["id"].long) { UserImpl(client, it.jsonObject) }
+        recipients.addAll(json["recipients"].asJsonArray.map {
+            client.users.getOrPut(it.asJsonObject["id"].asLong) { UserImpl(client, it.asJsonObject) }
         })
 
-        owner = json.getOrNull("owner_id")?.let { client.users.find(it.long) }
+        owner = json.getOrNull("owner_id")?.let { client.users.find(it.asLong) }
     }
 
     override suspend fun send(text: String): Message {
@@ -49,7 +49,7 @@ class PrivateTextChannelImpl(
                     MessageBuilder().apply(block).build()
             )
 
-            return MessageImpl(client, response.jsonObject)
+            return MessageImpl(client, response.asJsonObject)
         } catch (ex: DiscordException) {
             // FORBIDDEN
             if (ex.code == 403) {
@@ -66,7 +66,7 @@ class PrivateTextChannelImpl(
                     Endpoint.GET_CHANNEL_MESSAGE.format("channel.id" to id, "message.id" to messageId)
             )
 
-            MessageImpl(client, response.jsonObject)
+            MessageImpl(client, response.asJsonObject)
         } catch (ex: NotFoundException) {
             null
         }
@@ -82,7 +82,7 @@ class PrivateTextChannelImpl(
                 json { "limit" to limit }
         )
 
-        return response.jsonArray.map { MessageImpl(client, it.jsonObject) }
+        return response.asJsonArray.map { MessageImpl(client, it.asJsonObject) }
     }
 
     override suspend fun deleteMessage(messageId: Long) {

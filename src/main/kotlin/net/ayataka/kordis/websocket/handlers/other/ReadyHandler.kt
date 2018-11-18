@@ -1,7 +1,6 @@
 package net.ayataka.kordis.websocket.handlers.other
 
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.long
+import com.google.gson.JsonObject
 import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.entity.server.ServerImpl
 import net.ayataka.kordis.entity.user.UserImpl
@@ -13,10 +12,10 @@ class ReadyHandler : GatewayHandler {
 
     override fun handle(client: DiscordClientImpl, data: JsonObject) {
         // Set the bot user
-        client.botUser = client.users.getOrPut(data["user"].jsonObject["id"].long) { UserImpl(client, data["user"].jsonObject) }
+        client.botUser = client.users.getOrPut(data["user"].asJsonObject["id"].asLong) { UserImpl(client, data["user"].asJsonObject) }
 
         // Initialize servers
-        val serverIds = data["guilds"].jsonArray.map { it.jsonObject["id"].long }
+        val serverIds = data["guilds"].asJsonArray.map { it.asJsonObject["id"].asLong }
 
         serverIds.forEach {
             client.servers.getOrPut(it) { ServerImpl(client, it) }

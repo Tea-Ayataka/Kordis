@@ -1,6 +1,6 @@
 package net.ayataka.kordis.entity.server.channel.category
 
-import kotlinx.serialization.json.*
+import com.google.gson.JsonObject
 import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.entity.server.Server
 import net.ayataka.kordis.entity.server.channel.ServerChannelBuilder
@@ -8,19 +8,21 @@ import net.ayataka.kordis.entity.server.channel.ServerChannelImpl
 import net.ayataka.kordis.entity.server.permission.Permission
 import net.ayataka.kordis.exception.NotFoundException
 import net.ayataka.kordis.rest.Endpoint
+import net.ayataka.kordis.utils.isNotEmpty
+import net.ayataka.kordis.utils.json
 
 class ChannelCategoryImpl(
         server: Server,
         client: DiscordClientImpl,
         json: JsonObject
-) : ChannelCategory, ServerChannelImpl(server, client, json["id"].long) {
+) : ChannelCategory, ServerChannelImpl(server, client, json["id"].asLong) {
     init {
         update(json)
     }
 
     override fun update(json: JsonObject) {
-        name = json["name"].content
-        position = json["position"].int
+        name = json["name"].asString
+        position = json["position"].asInt
         loadPermissionOverwrites(json)
     }
 

@@ -1,8 +1,8 @@
 package net.ayataka.kordis.entity.message
 
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.json
+import com.google.gson.JsonObject
 import net.ayataka.kordis.entity.message.embed.EmbedBuilder
+import net.ayataka.kordis.utils.json
 
 class MessageBuilder {
     var content = ""

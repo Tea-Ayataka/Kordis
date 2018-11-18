@@ -1,16 +1,16 @@
 package net.ayataka.kordis.websocket
 
+import com.google.gson.Gson
+import com.google.gson.JsonObject
+import com.google.gson.JsonPrimitive
 import kotlinx.coroutines.*
-import kotlinx.serialization.json.*
 import net.ayataka.kordis.ConnectionStatus
 import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.Kordis.API_VERSION
 import net.ayataka.kordis.Kordis.LOGGER
 import net.ayataka.kordis.entity.server.enums.ActivityType
 import net.ayataka.kordis.entity.server.enums.UserStatus
-import net.ayataka.kordis.utils.AdvancedQueue
-import net.ayataka.kordis.utils.RateLimiter
-import net.ayataka.kordis.utils.start
+import net.ayataka.kordis.utils.*
 import net.ayataka.kordis.websocket.handlers.channel.ChannelCreateHandler
 import net.ayataka.kordis.websocket.handlers.channel.ChannelDeleteHandler
 import net.ayataka.kordis.websocket.handlers.channel.ChannelUpdateHandler
@@ -42,12 +42,13 @@ class GatewayClient(
     @Volatile private var heartbeatTask: Timer? = null
     @Volatile private var activity: JsonObject? = null
 
+    private val gson = Gson()
     private val sendQueue = LinkedBlockingQueue<String>()
     private val rateLimiter = RateLimiter(60 * 1000, 100) // The actual limit is 120
 
     val memberChunkRequestQueue = AdvancedQueue<Long>(50) {
         queue(Opcode.REQUEST_GUILD_MEMBERS, json {
-            "guild_id" to JsonArray(it.map { JsonPrimitive(it) })
+            "guild_id" to jsonArray { it.forEach { +JsonPrimitive(it) } }
             "query" to ""
             "limit" to 0
         })
@@ -111,7 +112,7 @@ class GatewayClient(
 
     fun updateStatus(status: UserStatus, type: ActivityType, name: String) {
         activity = json {
-            "since" to JsonNull
+            "since".toNull()
             "status" to status.id
             "afk" to false
             "game" to json {
@@ -155,8 +156,8 @@ class GatewayClient(
     }
 
     override fun onMessage(message: String) = start(CoroutineName("Gateway Handler")) {
-        val payloads = JsonTreeParser(message).readFully().jsonObject
-        val opcode = Opcode.values().find { it.code == payloads["op"].int }
+        val payloads = gson.fromJson(message, JsonObject::class.java)
+        val opcode = Opcode.values().find { it.code == payloads["op"].asInt }
         val data = payloads.getObjectOrNull("d")
         LOGGER.debug("Gateway payload received ($opcode) - $payloads")
 
@@ -164,7 +165,7 @@ class GatewayClient(
             Opcode.HELLO -> {
                 LOGGER.debug("Starting heartbeat task")
 
-                val period = data!!["heartbeat_interval"].long
+                val period = data!!["heartbeat_interval"].asLong
                 heartbeatAckReceived = true
 
                 heartbeatTask?.cancel()
@@ -190,14 +191,14 @@ class GatewayClient(
                 heartbeatAckReceived = true
             }
             Opcode.DISPATCH -> {
-                val eventType = payloads["t"].content
-                lastSequence = payloads["s"].content.toInt()
+                val eventType = payloads["t"].asString
+                lastSequence = payloads["s"].asString.toInt()
 
                 LOGGER.debug("Received an event ($eventType) $data")
 
                 when (eventType) {
                     "READY" -> {
-                        sessionId = data!!["session_id"].content
+                        sessionId = data!!["session_id"].asString
                     }
                 }
 
@@ -250,7 +251,7 @@ class GatewayClient(
         })
     }
 
-    private fun queue(opcode: Opcode, data: JsonObject = JsonObject(mapOf())) {
+    private fun queue(opcode: Opcode, data: JsonObject = JsonObject()) {
         val json = json {
             "op" to opcode.code
             "d" to data

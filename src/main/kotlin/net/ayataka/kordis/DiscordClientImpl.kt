@@ -1,6 +1,5 @@
 package net.ayataka.kordis
 
-import kotlinx.serialization.json.content
 import net.ayataka.kordis.entity.channel.PrivateTextChannel
 import net.ayataka.kordis.entity.collection.EntitySetImpl
 import net.ayataka.kordis.entity.collection.NameableEntitySetImpl
@@ -42,7 +41,7 @@ class DiscordClientImpl(
         status = ConnectionStatus.CONNECTING
 
         // Connect to the gateway
-        val endpoint = rest.request(Endpoint.GET_GATEWAY_BOT.format()).jsonObject["url"].content
+        val endpoint = rest.request(Endpoint.GET_GATEWAY_BOT.format()).asJsonObject["url"].asString
         gateway = GatewayClient(this, endpoint)
         gateway.connectBlocking()
 
@@ -66,7 +65,7 @@ class DiscordClientImpl(
 
         return try {
             rest.request(Endpoint.GET_USER.format("user.id" to id))
-                    .let { users.updateOrPut(id, it.jsonObject) { UserImpl(this, it.jsonObject) } }
+                    .let { users.updateOrPut(id, it.asJsonObject) { UserImpl(this, it.asJsonObject) } }
         } catch (ex: NotFoundException) {
             return null
         }

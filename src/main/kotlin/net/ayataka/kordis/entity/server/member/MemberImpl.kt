@@ -1,6 +1,6 @@
 package net.ayataka.kordis.entity.server.member
 
-import kotlinx.serialization.json.*
+import com.google.gson.JsonObject
 import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.entity.*
 import net.ayataka.kordis.entity.channel.PrivateTextChannel
@@ -14,6 +14,10 @@ import net.ayataka.kordis.exception.DiscordException
 import net.ayataka.kordis.exception.NotFoundException
 import net.ayataka.kordis.exception.PrivateMessageBlockedException
 import net.ayataka.kordis.rest.Endpoint
+import net.ayataka.kordis.utils.asStringOrNull
+import net.ayataka.kordis.utils.getObjectOrNull
+import net.ayataka.kordis.utils.getOrNull
+import net.ayataka.kordis.utils.json
 import java.time.Instant
 import java.time.format.DateTimeFormatter
 
@@ -40,22 +44,22 @@ class MemberImpl(
     }
 
     override fun update(json: JsonObject) {
-        json.getOrNull("nick")?.let { nickname = it.contentOrNull }
-        json.getOrNull("joined_at")?.let { joinedAt = Instant.from(DateTimeFormatter.ISO_DATE_TIME.parse(it.content)) }
-        roles = json["roles"].jsonArray.mapNotNull { server.roles.find(it.long) }.plus(server.roles.everyone).toMutableSet()
+        json.getOrNull("nick")?.let { nickname = it.asStringOrNull }
+        json.getOrNull("joined_at")?.let { joinedAt = Instant.from(DateTimeFormatter.ISO_DATE_TIME.parse(it.asString)) }
+        roles = json["roles"].asJsonArray.mapNotNull { server.roles.find(it.asLong) }.plus(server.roles.everyone).toMutableSet()
 
         // Update the user
         json.getObjectOrNull("user")?.let {
-            client.users.update(it["id"].long, it)
+            client.users.update(it["id"].asLong, it)
         }
     }
 
     fun updatePresence(json: JsonObject) {
         json.getOrNull("roles")?.let {
-            roles = it.jsonArray.mapNotNull { server.roles.find(it.long) }.plus(server.roles.everyone).toMutableSet()
+            roles = it.asJsonArray.mapNotNull { server.roles.find(it.asLong) }.plus(server.roles.everyone).toMutableSet()
         }
 
-        status = UserStatus[json["status"].content]
+        status = UserStatus[json["status"].asString]
     }
 
     override suspend fun addRole(role: Role) {
@@ -118,9 +122,9 @@ class MemberImpl(
             val response = client.rest.request(
                     Endpoint.CREATE_DM.format(),
                     json { "recipient_id" to id }
-            ).jsonObject
+            ).asJsonObject
 
-            privateChannelId = response["id"].long
+            privateChannelId = response["id"].asLong
             return client.privateChannels.getOrPut(privateChannelId) { PrivateTextChannelImpl(client, response) }
         } catch (ex: DiscordException) {
             // FORBIDDEN

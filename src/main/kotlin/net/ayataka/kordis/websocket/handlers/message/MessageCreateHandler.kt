@@ -1,7 +1,7 @@
 package net.ayataka.kordis.websocket.handlers.message
 
 
-import kotlinx.serialization.json.JsonObject
+import com.google.gson.JsonObject
 import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.entity.message.MessageImpl
 import net.ayataka.kordis.event.events.message.MessageReceiveEvent

@@ -1,8 +1,6 @@
 package net.ayataka.kordis.websocket.handlers.channel
 
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.int
-import kotlinx.serialization.json.long
+import com.google.gson.JsonObject
 import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.entity.channel.PrivateTextChannelImpl
 import net.ayataka.kordis.entity.server.ServerImpl
@@ -17,16 +15,16 @@ class ChannelCreateHandler : GatewayHandler {
     override val eventType = "CHANNEL_CREATE"
 
     override fun handle(client: DiscordClientImpl, data: JsonObject) {
-        val id = data["id"].long
-        if (!data.containsKey("guild_id")) {
+        val id = data["id"].asLong
+        if (!data.has("guild_id")) {
             client.privateChannels.updateOrPut(id, data) { PrivateTextChannelImpl(client, data) }
             return
         }
 
-        val server = client.servers.find(data["guild_id"].long) as? ServerImpl
+        val server = client.servers.find(data["guild_id"].asLong) as? ServerImpl
                 ?: throw IllegalStateException("unknown server id received")
 
-        val channel = when (data["type"].int) {
+        val channel = when (data["type"].asInt) {
             ChannelType.GUILD_TEXT.id -> {
                 server.textChannels.updateOrPut(id, data) { ServerTextChannelImpl(server, client, data) }
             }

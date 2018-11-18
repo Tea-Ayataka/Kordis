@@ -1,6 +1,6 @@
 package net.ayataka.kordis.entity.server.role
 
-import kotlinx.serialization.json.*
+import com.google.gson.JsonObject
 import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.entity.DiscordEntity
 import net.ayataka.kordis.entity.Updatable
@@ -9,10 +9,12 @@ import net.ayataka.kordis.entity.server.permission.Permission
 import net.ayataka.kordis.entity.server.permission.PermissionSet
 import net.ayataka.kordis.exception.NotFoundException
 import net.ayataka.kordis.rest.Endpoint
+import net.ayataka.kordis.utils.isNotEmpty
+import net.ayataka.kordis.utils.json
 import net.ayataka.kordis.utils.uRgb
 import java.awt.Color
 
-class RoleImpl(override val server: Server, client: DiscordClientImpl, json: JsonObject) : Role, Updatable, DiscordEntity(client, json["id"].long) {
+class RoleImpl(override val server: Server, client: DiscordClientImpl, json: JsonObject) : Role, Updatable, DiscordEntity(client, json["id"].asLong) {
     @Volatile override var name: String = ""
     @Volatile override var permissions: PermissionSet = PermissionSet(0)
     @Volatile override var color: Color = Color.BLACK
@@ -26,13 +28,13 @@ class RoleImpl(override val server: Server, client: DiscordClientImpl, json: Jso
     }
 
     override fun update(json: JsonObject) {
-        name = json["name"].content
-        permissions = PermissionSet(json["permissions"].int)
-        color = Color(json["color"].int)
-        position = json["position"].int
-        hoist = json["hoist"].boolean
-        managed = json["managed"].boolean
-        mentionable = json["mentionable"].boolean
+        name = json["name"].asString
+        permissions = PermissionSet(json["permissions"].asInt)
+        color = Color(json["color"].asInt)
+        position = json["position"].asInt
+        hoist = json["hoist"].asBoolean
+        managed = json["managed"].asBoolean
+        mentionable = json["mentionable"].asBoolean
     }
 
     override fun toString(): String {

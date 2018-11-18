@@ -1,6 +1,6 @@
 package net.ayataka.kordis.entity.message
 
-import kotlinx.serialization.json.*
+import com.google.gson.JsonObject
 import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.entity.DiscordEntity
 import net.ayataka.kordis.entity.channel.TextChannel
@@ -14,11 +14,12 @@ import net.ayataka.kordis.entity.server.ServerImpl
 import net.ayataka.kordis.entity.user.User
 import net.ayataka.kordis.entity.user.UserImpl
 import net.ayataka.kordis.rest.Endpoint
+import net.ayataka.kordis.utils.*
 import java.time.Instant
 import java.time.format.DateTimeFormatter
 
 @Suppress("JoinDeclarationAndAssignment")
-class MessageImpl(client: DiscordClientImpl, json: JsonObject, _server: Server? = null) : Message, DiscordEntity(client, json["id"].long) {
+class MessageImpl(client: DiscordClientImpl, json: JsonObject, _server: Server? = null) : Message, DiscordEntity(client, json["id"].asLong) {
     override val type: MessageType
     override val server: Server?
     override val mentionsEveryone: Boolean
@@ -33,25 +34,25 @@ class MessageImpl(client: DiscordClientImpl, json: JsonObject, _server: Server? 
     override val editedTimestamp: Instant?
 
     init {
-        type = MessageType[json["type"].int]
-        mentionsEveryone = json["mention_everyone"].boolean
-        pinned = json["pinned"].boolean
-        content = json["content"].content
-        tts = json["tts"].boolean
-        embeds = json.getArrayOrNull("embeds")?.map { EmbedImpl(it.jsonObject) } ?: emptyList()
-        attachments = json.getArrayOrNull("attachments")?.map { AttachmentImpl(client, it.jsonObject) } ?: emptyList()
-        timestamp = Instant.from(DateTimeFormatter.ISO_DATE_TIME.parse(json["timestamp"].content))
-        editedTimestamp = json.getOrNull("edited_timestamp")?.contentOrNull
+        type = MessageType[json["type"].asInt]
+        mentionsEveryone = json["mention_everyone"].asBoolean
+        pinned = json["pinned"].asBoolean
+        content = json["content"].asString
+        tts = json["tts"].asBoolean
+        embeds = json.getArrayOrNull("embeds")?.map { EmbedImpl(it.asJsonObject) } ?: emptyList()
+        attachments = json.getArrayOrNull("attachments")?.map { AttachmentImpl(client, it.asJsonObject) } ?: emptyList()
+        timestamp = Instant.from(DateTimeFormatter.ISO_DATE_TIME.parse(json["timestamp"].asString))
+        editedTimestamp = json.getOrNull("edited_timestamp")?.asStringOrNull
                 ?.let { Instant.from(DateTimeFormatter.ISO_DATE_TIME.parse(it)) }
 
-        server = _server ?: json.getOrNull("guild_id")?.let { client.servers.find(it.long) }
-        channel = server?.textChannels?.find(json["channel_id"].long)
-                ?: client.privateChannels.find(json["channel_id"].long)
+        server = _server ?: json.getOrNull("guild_id")?.let { client.servers.find(it.asLong) }
+        channel = server?.textChannels?.find(json["channel_id"].asLong)
+                ?: client.privateChannels.find(json["channel_id"].asLong)
                 ?: throw IllegalStateException("unknown channel id received")
 
-        author = if (!json.containsKey("webhook_id")) {
-            val authorData = json["author"].jsonObject
-            val authorId = authorData["id"].long
+        author = if (!json.has("webhook_id")) {
+            val authorData = json["author"].asJsonObject
+            val authorId = authorData["id"].asLong
 
             client.users.updateOrPut(authorId, authorData) { UserImpl(client, authorData) }
         } else null
@@ -77,7 +78,7 @@ class MessageImpl(client: DiscordClientImpl, json: JsonObject, _server: Server? 
                 }
         )
 
-        return MessageImpl(client, response.jsonObject, server)
+        return MessageImpl(client, response.asJsonObject, server)
     }
 
     override fun toString(): String {

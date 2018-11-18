@@ -1,8 +1,10 @@
 package net.ayataka.kordis.rest
 
+import com.google.gson.Gson
+import com.google.gson.JsonElement
+import com.google.gson.JsonObject
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.withLock
-import kotlinx.serialization.json.*
 import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.Kordis.HTTP_CLIENT
 import net.ayataka.kordis.Kordis.LOGGER
@@ -18,6 +20,7 @@ private val JSON_TYPE = MediaType.parse("application/json; charset=utf-8")!!
 private val EMPTY_BODY = RequestBody.create(JSON_TYPE, "")
 
 class RestClient(private val discordClient: DiscordClientImpl) {
+    private val gson = Gson()
     private val rateLimiter = InternalRateLimiter()
 
     suspend fun request(endPoint: FormattedEndPoint, data: JsonObject? = null, rateLimitRetries: Int = 50): JsonElement = rateLimiter.getMutex(endPoint).withLock {
@@ -38,7 +41,7 @@ class RestClient(private val discordClient: DiscordClientImpl) {
                     }
 
                     if (endPoint.method == HttpMethod.GET) {
-                        url(endPoint.url + "?" + data.entries.joinToString("&") { "${it.key}=${it.value}" })
+                        url(endPoint.url + "?" + data.entrySet().joinToString("&") { "${it.key}=${it.value}" })
                         return@apply
                     }
 
@@ -50,7 +53,7 @@ class RestClient(private val discordClient: DiscordClientImpl) {
                 response.body()?.close()
 
                 val json = if (response.headers()["Content-Type"] == "application/json") {
-                    body?.let { JsonTreeParser(body).readFully() }
+                    body?.let { gson.fromJson(body, JsonElement::class.java) }
                 } else {
                     null
                 }
@@ -68,9 +71,9 @@ class RestClient(private val discordClient: DiscordClientImpl) {
                         throw RateLimitedException()
                     }
 
-                    val delay = json.jsonObject["retry_after"].long
+                    val delay = json.asJsonObject["retry_after"].asLong
 
-                    if (json.jsonObject["global"].boolean) {
+                    if (json.asJsonObject["global"].asBoolean) {
                         rateLimiter.setGlobalRateLimitEnds(delay)
                     } else {
                         rateLimiter.setRateLimitEnds(endPoint, System.currentTimeMillis() + delay)
@@ -102,7 +105,7 @@ class RestClient(private val discordClient: DiscordClientImpl) {
                     LOGGER.debug("RateLimit: $rateLimit, Remaining: ${response.headers()["X-RateLimit-Remaining"]}, Ends: $rateLimitEnds")
                 }
 
-                return json ?: JsonObject(emptyMap())
+                return json ?: JsonObject()
             } catch (ex: DiscordException) {
                 throw ex
             } catch (ex: RateLimitedException) {

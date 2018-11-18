@@ -1,16 +1,14 @@
 package net.ayataka.kordis.entity.user
 
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.boolean
-import kotlinx.serialization.json.content
-import kotlinx.serialization.json.long
+import com.google.gson.JsonObject
 import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.entity.DiscordEntity
 import net.ayataka.kordis.entity.Updatable
 import net.ayataka.kordis.entity.image.Image
 import net.ayataka.kordis.entity.image.ImageImpl
+import net.ayataka.kordis.utils.getOrNull
 
-class UserImpl(client: DiscordClientImpl, json: JsonObject) : User, Updatable, DiscordEntity(client, json["id"].long) {
+class UserImpl(client: DiscordClientImpl, json: JsonObject) : User, Updatable, DiscordEntity(client, json["id"].asLong) {
     @Volatile override var bot = false
     @Volatile override var avatar: Image? = null
     @Volatile override var name = ""
@@ -21,10 +19,10 @@ class UserImpl(client: DiscordClientImpl, json: JsonObject) : User, Updatable, D
     }
 
     override fun update(json: JsonObject) {
-        name = json["username"].content
-        discriminator = json["discriminator"].content
-        avatar = ImageImpl.avatar(id, json["avatar"].content)
-        json.getOrNull("bot")?.let { bot = it.boolean }
+        name = json["username"].asString
+        discriminator = json["discriminator"].asString
+        avatar = ImageImpl.avatar(id, json["avatar"].asString)
+        json.getOrNull("bot")?.let { bot = it.asBoolean }
     }
 
     override fun toString(): String {

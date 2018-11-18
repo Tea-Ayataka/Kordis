@@ -1,6 +1,6 @@
 package net.ayataka.kordis.entity.server.channel
 
-import kotlinx.serialization.json.*
+import com.google.gson.JsonObject
 import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.entity.DiscordEntity
 import net.ayataka.kordis.entity.Updatable
@@ -10,6 +10,8 @@ import net.ayataka.kordis.entity.server.permission.PermissionSet
 import net.ayataka.kordis.entity.server.permission.overwrite.RolePermissionOverwrite
 import net.ayataka.kordis.entity.server.permission.overwrite.UserPermissionOverwrite
 import net.ayataka.kordis.rest.Endpoint
+import net.ayataka.kordis.utils.json
+import net.ayataka.kordis.utils.jsonArray
 
 abstract class ServerChannelImpl(
         override val server: Server,
@@ -25,22 +27,29 @@ abstract class ServerChannelImpl(
         userPermissionOverwrites.clear()
         rolePermissionOverwrites.clear()
 
-        json["permission_overwrites"].jsonArray.forEach {
-            if (it.jsonObject["type"].content == "user") {
-                userPermissionOverwrites.add(UserPermissionOverwrite(
-                        client.users.find(it.jsonObject["id"].long)!!,
-                        PermissionSet(it.jsonObject["allow"].int),
-                        PermissionSet(it.jsonObject["deny"].int)
-                ))
+        json["permission_overwrites"].asJsonArray.map { it.asJsonObject }.forEach {
+            val type = it["type"].asString
+
+            if (type == "member") {
+                client.users.find(it["id"].asLong)?.let { user ->
+                    userPermissionOverwrites.add(UserPermissionOverwrite(
+                            user,
+                            PermissionSet(it["allow"].asInt),
+                            PermissionSet(it["deny"].asInt)
+                    ))
+                }
                 return@forEach
             }
 
-            if (it.jsonObject["type"].content == "role") {
-                rolePermissionOverwrites.add(RolePermissionOverwrite(
-                        server.roles.find(it.jsonObject["id"].long)!!,
-                        PermissionSet(it.jsonObject["allow"].int),
-                        PermissionSet(it.jsonObject["deny"].int)
-                ))
+            if (type == "role") {
+                server.roles.find(it["id"].asLong)?.let { role ->
+                    rolePermissionOverwrites.add(RolePermissionOverwrite(
+                            role,
+                            PermissionSet(it["allow"].asInt),
+                            PermissionSet(it["deny"].asInt)
+                    ))
+                }
+
                 return@forEach
             }
         }
@@ -51,7 +60,7 @@ abstract class ServerChannelImpl(
 
         client.rest.request(Endpoint.DELETE_CHANNEL.format("channel.id" to id))
     }
-    
+
     companion object {
         fun permissionOverwritesToJson(builder: ServerChannelBuilder) = jsonArray {
             builder.userPermissionOverwrites.forEach {

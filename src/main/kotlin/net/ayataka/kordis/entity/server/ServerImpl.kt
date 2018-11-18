@@ -1,6 +1,6 @@
 package net.ayataka.kordis.entity.server
 
-import kotlinx.serialization.json.*
+import com.google.gson.JsonObject
 import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.entity.DiscordEntity
 import net.ayataka.kordis.entity.Updatable
@@ -37,8 +37,7 @@ import net.ayataka.kordis.entity.user.User
 import net.ayataka.kordis.entity.user.UserImpl
 import net.ayataka.kordis.exception.NotFoundException
 import net.ayataka.kordis.rest.Endpoint
-import net.ayataka.kordis.utils.base64
-import net.ayataka.kordis.utils.uRgb
+import net.ayataka.kordis.utils.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
@@ -98,37 +97,37 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
     }
 
     override fun update(json: JsonObject) {
-        name = json["name"].content
-        icon = json["icon"].contentOrNull?.let { ImageImpl.server(id, it) }
-        splash = json["splash"].contentOrNull?.let { ImageImpl.splash(id, it) }
-        region = Region[json["region"].content]
-        afkTimeout = json["afk_timeout"].int
-        verificationLevel = VerificationLevel[json["verification_level"].int]
-        defaultMessageNotificationLevel = MessageNotificationLevel[json["default_message_notifications"].int]
-        explicitContentFilterLevel = ExplicitContentFilterLevel[json["explicit_content_filter"].int]
-        mfaLevel = MfaLevel[json["mfa_level"].int]
+        name = json["name"].asString
+        icon = json["icon"].asStringOrNull?.let { ImageImpl.server(id, it) }
+        splash = json["splash"].asStringOrNull?.let { ImageImpl.splash(id, it) }
+        region = Region[json["region"].asString]
+        afkTimeout = json["afk_timeout"].asInt
+        verificationLevel = VerificationLevel[json["verification_level"].asInt]
+        defaultMessageNotificationLevel = MessageNotificationLevel[json["default_message_notifications"].asInt]
+        explicitContentFilterLevel = ExplicitContentFilterLevel[json["explicit_content_filter"].asInt]
+        mfaLevel = MfaLevel[json["mfa_level"].asInt]
 
         // Update emojis
         updateEmojis(json)
 
         // Update roles
-        val roleObjects = json["roles"].jsonArray.map { it.jsonObject }
-        val roleIds = roleObjects.map { it["id"].long }
+        val roleObjects = json["roles"].asJsonArray.map { it.asJsonObject }
+        val roleIds = roleObjects.map { it["id"].asLong }
 
         roles.removeIf { it.id !in roleIds }
         roleObjects.forEach {
-            roles.updateOrPut(it["id"].long, it) { RoleImpl(this, client, it) }
+            roles.updateOrPut(it["id"].asLong, it) { RoleImpl(this, client, it) }
         }
 
         json.getOrNull("member_count")?.let {
-            memberCount.set(it.int)
+            memberCount.set(it.asInt)
         }
 
         // Update members
         json.getOrNull("members")?.let {
-            it.jsonArray.map { it.jsonObject }.forEach {
-                val userObject = it["user"].jsonObject
-                val userId = userObject["id"].long
+            it.asJsonArray.map { it.asJsonObject }.forEach {
+                val userObject = it["user"].asJsonObject
+                val userId = userObject["id"].asLong
 
                 members.updateOrPut(userId, it) {
                     MemberImpl(
@@ -142,8 +141,8 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
 
         // Update channels
         json.getOrNull("channels")?.let {
-            val objects = it.jsonArray.map { it.jsonObject }
-            val ids = objects.map { it["id"].long }
+            val objects = it.asJsonArray.map { it.asJsonObject }
+            val ids = objects.map { it["id"].asLong }
 
             // Clear deleted channels
             channelCategories.removeIf { it.id !in ids }
@@ -151,41 +150,41 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
             voiceChannels.removeIf { it.id !in ids }
 
             // Load channelCategories first
-            objects.filter { it["type"].int == ChannelType.GUILD_CATEGORY.id }.forEach {
-                channelCategories.updateOrPut(it["id"].long, it) { ChannelCategoryImpl(this, client, it) }
+            objects.filter { it["type"].asInt == ChannelType.GUILD_CATEGORY.id }.forEach {
+                channelCategories.updateOrPut(it["id"].asLong, it) { ChannelCategoryImpl(this, client, it) }
             }
 
             // Load text channels
-            objects.filter { it["type"].int == ChannelType.GUILD_TEXT.id }.forEach {
-                textChannels.updateOrPut(it["id"].long, it) { ServerTextChannelImpl(this, client, it) }
+            objects.filter { it["type"].asInt == ChannelType.GUILD_TEXT.id }.forEach {
+                textChannels.updateOrPut(it["id"].asLong, it) { ServerTextChannelImpl(this, client, it) }
             }
 
             // Load voice channels
-            objects.filter { it["type"].int == ChannelType.GUILD_VOICE.id }.forEach {
-                voiceChannels.updateOrPut(it["id"].long, it) { ServerVoiceChannelImpl(this, client, it) }
+            objects.filter { it["type"].asInt == ChannelType.GUILD_VOICE.id }.forEach {
+                voiceChannels.updateOrPut(it["id"].asLong, it) { ServerVoiceChannelImpl(this, client, it) }
             }
         }
 
         // Update after loading other entities
         // Update presences
         json.getOrNull("presences")?.let { objects ->
-            objects.jsonArray.map { it.jsonObject }.forEach {
-                val userId = it["user"].jsonObject["id"].long
+            objects.asJsonArray.map { it.asJsonObject }.forEach {
+                val userId = it["user"].asJsonObject["id"].asLong
                 (members.find(userId) as? MemberImpl)?.updatePresence(it) ?: temporallyUserPresences.put(userId, it)
             }
         }
 
-        afkChannel = json["afk_channel_id"].longOrNull?.let { voiceChannels.find(it) }
-        owner = client.users.find(json["owner_id"].long)
+        afkChannel = json["afk_channel_id"].asLongOrNull?.let { voiceChannels.find(it) }
+        owner = client.users.find(json["owner_id"].asLong)
     }
 
     fun updateEmojis(json: JsonObject) {
-        val objects = json["emojis"].jsonArray.map { it.jsonObject }
-        val ids = objects.map { it["id"].long }
+        val objects = json["emojis"].asJsonArray.map { it.asJsonObject }
+        val ids = objects.map { it["id"].asLong }
 
         emojis.removeIf { it.id !in ids }
         objects.forEach {
-            emojis.updateOrPut(it["id"].long, it) { EmojiImpl(this, client, it) }
+            emojis.updateOrPut(it["id"].asLong, it) { EmojiImpl(this, client, it) }
         }
     }
 
@@ -279,12 +278,12 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
     override suspend fun bans(): Collection<Ban> {
         checkExistence()
 
-        val response = client.rest.request(Endpoint.GET_GUILD_BANS.format("guild.id" to id)).jsonArray
+        val response = client.rest.request(Endpoint.GET_GUILD_BANS.format("guild.id" to id)).asJsonArray
 
         return response.map {
-            val reason = it.jsonObject["reason"].contentOrNull
-            val user = client.users.getOrPut(it.jsonObject["user"].jsonObject["id"].long) {
-                UserImpl(client, it.jsonObject["user"].jsonObject)
+            val reason = it.asJsonObject["reason"].asStringOrNull
+            val user = client.users.getOrPut(it.asJsonObject["user"].asJsonObject["id"].asLong) {
+                UserImpl(client, it.asJsonObject["user"].asJsonObject)
             }
 
             BanImpl(reason, user)
@@ -323,9 +322,9 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
         val response = client.rest.request(
                 Endpoint.CREATE_GUILD_CHANNEL.format("guild.id" to id),
                 json
-        ).jsonObject
+        ).asJsonObject
 
-        return textChannels.getOrPut(response["id"].long) { ServerTextChannelImpl(this, client, response) }
+        return textChannels.getOrPut(response["id"].asLong) { ServerTextChannelImpl(this, client, response) }
     }
 
     override suspend fun createVoiceChannel(block: ServerVoiceChannelBuilder.() -> Unit): ServerVoiceChannel {
@@ -359,9 +358,9 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
         val response = client.rest.request(
                 Endpoint.CREATE_GUILD_CHANNEL.format("guild.id" to id),
                 json
-        ).jsonObject
+        ).asJsonObject
 
-        return voiceChannels.getOrPut(response["id"].long) { ServerVoiceChannelImpl(this, client, response) }
+        return voiceChannels.getOrPut(response["id"].asLong) { ServerVoiceChannelImpl(this, client, response) }
     }
 
     override suspend fun createChannelCategory(block: ServerChannelBuilder.() -> Unit): ChannelCategory {
@@ -385,9 +384,9 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
         val response = client.rest.request(
                 Endpoint.CREATE_GUILD_CHANNEL.format("guild.id" to id),
                 json
-        ).jsonObject
+        ).asJsonObject
 
-        return channelCategories.getOrPut(response["id"].long) { ChannelCategoryImpl(this, client, response) }
+        return channelCategories.getOrPut(response["id"].asLong) { ChannelCategoryImpl(this, client, response) }
     }
 
     override suspend fun createRole(block: RoleBuilder.() -> Unit): Role {
@@ -421,9 +420,9 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
         val response = client.rest.request(
                 Endpoint.CREATE_GUILD_ROLE.format("guild.id" to id),
                 json
-        ).jsonObject
+        ).asJsonObject
 
-        return roles.getOrPut(response["id"].long) { RoleImpl(this, client, response) }
+        return roles.getOrPut(response["id"].asLong) { RoleImpl(this, client, response) }
     }
 
     override suspend fun createEmoji(block: EmojiBuilder.() -> Unit): Emoji {
@@ -439,9 +438,9 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
         val response = client.rest.request(
                 Endpoint.CREATE_GUILD_EMOJI.format("guild.id" to id),
                 json
-        ).jsonObject
+        ).asJsonObject
 
-        return emojis.getOrPut(response["id"].long) { EmojiImpl(this, client, response) }
+        return emojis.getOrPut(response["id"].asLong) { EmojiImpl(this, client, response) }
     }
 
     private fun checkExistence() {
