@@ -68,7 +68,7 @@ abstract class ServerChannelImpl(
                     "id" to it.user.id
                     "allow" to it.allow.compile()
                     "deny" to it.deny.compile()
-                    "type" to "user"
+                    "type" to "member"
                 }
             }
 
