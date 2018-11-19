@@ -37,7 +37,7 @@ class GatewayClient(
     override val coroutineContext = Dispatchers.Default + job + CoroutineName("WebSocket Handler")
 
     @Volatile private var sessionId: String? = null
-    @Volatile private var lastSequence = -1
+    @Volatile private var lastSequence: Int? = null
     @Volatile private var heartbeatAckReceived = false
     @Volatile private var heartbeatTask: Timer? = null
     @Volatile private var activity: JsonObject? = null
@@ -144,6 +144,7 @@ class GatewayClient(
             // Invalidate cache
             if (code == 4007 || (code == 1000 && !remote)) {
                 sessionId = null
+                lastSequence = null
 
                 memberChunkRequestQueue.clear()
                 client.users.clear()
@@ -172,7 +173,7 @@ class GatewayClient(
                 heartbeatTask = kotlin.concurrent.timer(name = "Heartbeat Dispatcher", period = period) {
                     if (heartbeatAckReceived) {
                         heartbeatAckReceived = false
-                        queue(Opcode.HEARTBEAT, json { if (lastSequence > 0) "d" to lastSequence })
+                        queue(Opcode.HEARTBEAT, json { lastSequence?.let { "d" to it } })
                     } else {
                         close(4000, "Heartbeat ACK wasn't received")
                     }
