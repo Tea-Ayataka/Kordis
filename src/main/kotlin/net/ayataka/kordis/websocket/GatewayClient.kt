@@ -24,7 +24,6 @@ import net.ayataka.kordis.websocket.handlers.voice.VoiceStateUpdateHandler
 import org.java_websocket.client.WebSocketClient
 import org.java_websocket.handshake.ServerHandshake
 import java.net.URI
-import java.util.*
 import java.util.concurrent.LinkedBlockingQueue
 
 @Suppress("EXPERIMENTAL_API_USAGE")
@@ -32,14 +31,12 @@ class GatewayClient(
         private val client: DiscordClientImpl,
         endpoint: String
 ) : CoroutineScope, WebSocketClient(URI("$endpoint/?v=$API_VERSION&encoding=json")) {
-
-    private val job = SupervisorJob()
-    override val coroutineContext = Dispatchers.Default + job + CoroutineName("WebSocket Handler")
+    override val coroutineContext = newSingleThreadContext("Gateway Packet Handler")
 
     @Volatile private var sessionId: String? = null
     @Volatile private var lastSequence: Int? = null
     @Volatile private var heartbeatAckReceived = false
-    @Volatile private var heartbeatTask: Timer? = null
+    @Volatile private var heartbeatTask: Job? = null
     @Volatile private var activity: JsonObject? = null
 
     private val gson = Gson()
@@ -107,7 +104,7 @@ class GatewayClient(
                     LOGGER.debug("Sent: $json")
                 }
             }
-        }, "WebSocket Packet Dispatcher").start()
+        }, "Gateway Packet Dispatcher").start()
     }
 
     fun updateStatus(status: UserStatus, type: ActivityType, name: String) {
@@ -156,7 +153,7 @@ class GatewayClient(
         }
     }
 
-    override fun onMessage(message: String) = start(CoroutineName("Gateway Handler")) {
+    override fun onMessage(message: String) = start {
         val payloads = gson.fromJson(message, JsonObject::class.java)
         val opcode = Opcode.values().find { it.code == payloads["op"].asInt }
         val data = payloads.getObjectOrNull("d")
@@ -170,7 +167,7 @@ class GatewayClient(
                 heartbeatAckReceived = true
 
                 heartbeatTask?.cancel()
-                heartbeatTask = kotlin.concurrent.timer(name = "Heartbeat Dispatcher", period = period) {
+                heartbeatTask = timer(period) {
                     if (heartbeatAckReceived) {
                         heartbeatAckReceived = false
                         queue(Opcode.HEARTBEAT, json { lastSequence?.let { "d" to it } })
