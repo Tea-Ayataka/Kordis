@@ -9,6 +9,7 @@ import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.Kordis.HTTP_CLIENT
 import net.ayataka.kordis.Kordis.LOGGER
 import net.ayataka.kordis.exception.DiscordException
+import net.ayataka.kordis.exception.MissingPermissionsException
 import net.ayataka.kordis.exception.NotFoundException
 import net.ayataka.kordis.exception.RateLimitedException
 import net.ayataka.kordis.utils.executeAsync
@@ -85,6 +86,10 @@ class RestClient(private val discordClient: DiscordClientImpl) {
 
                 if (response.code() in 500..599) {
                     throw Exception("Discord API returned internal server error (code: ${response.code()})") // Retry
+                }
+
+                if (response.code() == 403) {
+                    throw MissingPermissionsException("Request: ${endPoint.url}, Response: $response")
                 }
 
                 if (response.code() == 404) {

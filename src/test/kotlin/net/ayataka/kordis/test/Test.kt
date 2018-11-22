@@ -7,8 +7,10 @@ import net.ayataka.kordis.Kordis
 import net.ayataka.kordis.entity.server.Server
 import net.ayataka.kordis.entity.server.enums.Region
 import net.ayataka.kordis.entity.server.enums.VerificationLevel
+import net.ayataka.kordis.exception.MissingPermissionsException
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFails
 import kotlin.test.assertNotNull
 
 class Test {
@@ -49,5 +51,10 @@ class Test {
         assertEquals(client.botUser.name, user.name)
         assertEquals(client.botUser.discriminator, user.discriminator)
         assertEquals(client.botUser.tag, user.tag)
+
+        val role = server.roles.findByName("Administrator")
+        assertNotNull(role)
+
+        assert(assertFails { runBlocking { role.delete() } } is MissingPermissionsException)
     }
 }
