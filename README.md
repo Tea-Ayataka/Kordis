@@ -1,7 +1,7 @@
 # Kordis
 This is a lightweight Kotlin wrapper for the Discord API. You can create discord bots with this library.  
 
-# Installtion
+# Installation
 with Gradle
 ```
 repositories {
