@@ -29,3 +29,7 @@ dependencies {
     testCompile 'junit:junit:4.12'
     testCompile 'org.jetbrains.kotlin:kotlin-test-junit'
 }
+
+test {
+    systemProperty "token", project.hasProperty('tokenTest') ? project.testToken : System.getenv('tokenTest')
+}
