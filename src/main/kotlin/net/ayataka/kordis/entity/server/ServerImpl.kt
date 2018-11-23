@@ -238,7 +238,7 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
 
     override suspend fun unban(user: User) {
         checkExistence()
-        checkPermission(this, Permission.KICK_MEMBERS)
+        checkPermission(this, Permission.BAN_MEMBERS)
 
         client.rest.request(
                 Endpoint.REMOVE_GUILD_BAN.format("guild.id" to id, "user.id" to user.id)
