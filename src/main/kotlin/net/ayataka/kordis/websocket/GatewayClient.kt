@@ -101,7 +101,7 @@ class GatewayClient(
                         continue
                     }
                     rateLimiter.increment()
-                    LOGGER.debug("Sent: $json")
+                    LOGGER.trace("Sent: $json")
                 }
             }
         }, "Gateway Packet Dispatcher").start()
@@ -122,7 +122,7 @@ class GatewayClient(
     }
 
     override fun onOpen(handshakedata: ServerHandshake) {
-        LOGGER.info("Connected to the gateway with code ${handshakedata.httpStatus} (${handshakedata.httpStatusMessage})")
+        LOGGER.info("Connected to the gateway")
         client.status = ConnectionStatus.CONNECTED
 
         if (sessionId == null) {
@@ -133,7 +133,7 @@ class GatewayClient(
     }
 
     override fun onClose(code: Int, reason: String, remote: Boolean) {
-        LOGGER.warn("WebSocket closed with code: $code reason: $reason remote: $remote")
+        LOGGER.info("WebSocket closed with code: $code, remote: $remote, reason: '$reason'")
 
         heartbeatTask?.cancel()
 
@@ -157,7 +157,7 @@ class GatewayClient(
         val payloads = gson.fromJson(message, JsonObject::class.java)
         val opcode = Opcode.values().find { it.code == payloads["op"].asInt }
         val data = payloads.getObjectOrNull("d")
-        LOGGER.debug("Gateway payload received ($opcode) - $payloads")
+        LOGGER.trace("Receive: $payloads")
 
         when (opcode) {
             Opcode.HELLO -> {
@@ -192,8 +192,6 @@ class GatewayClient(
                 val eventType = payloads["t"].asString
                 lastSequence = payloads["s"].asString.toInt()
 
-                LOGGER.debug("Received an event ($eventType) $data")
-
                 when (eventType) {
                     "READY" -> {
                         sessionId = data!!["session_id"].asString
@@ -203,12 +201,12 @@ class GatewayClient(
                 try {
                     handlers.find { it.eventType == eventType }?.handle(client, data!!)
                 } catch (ex: Exception) {
-                    LOGGER.error("Failed to handle the event! (type: $eventType, json: $data)", ex)
+                    LOGGER.error("Failed to handle the event! (type: $eventType, json: $data)")
                     LOGGER.debug("packet handle error", ex)
                 }
             }
             else -> {
-                LOGGER.warn("Received an unknown packet (opcode: $opcode, data: $data)")
+                LOGGER.warn("Received a packet with unknown opcode: $data")
             }
         }
     }
