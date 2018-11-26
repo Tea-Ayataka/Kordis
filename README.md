@@ -8,11 +8,11 @@ Kordis is a lightweight Kotlin wrapper for the Discord API.
 with Gradle
 ```
 repositories {
-	maven { url 'https://jitpack.io' }
+    maven { url 'https://jitpack.io' }
 }
     
 dependencies {
-	implementation 'com.github.Tea-Ayataka:Kordis:0.1.1'
+    implementation 'com.github.Tea-Ayataka:Kordis:0.1.1'
 }
 ```
 with Maven
@@ -21,7 +21,7 @@ with Maven
     <repository>
         <id>jitpack.io</id>
         <url>https://jitpack.io</url>
-	</repository>
+    </repository>
 </repositories>
 
 <dependency>
