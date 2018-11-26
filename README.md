@@ -2,7 +2,7 @@
 [![CircleCI](https://circleci.com/gh/Tea-Ayataka/Kordis.svg?style=svg)](https://circleci.com/gh/Tea-Ayataka/Kordis)
 [![](https://jitpack.io/v/Tea-Ayataka/Kordis.svg)](https://jitpack.io/#Tea-Ayataka/Kordis)  
 
-Kordis is a lightweight Kotlin wrapper for the Discord API.
+Kordis is a lightweight Kotlin wrapper for the Discord API. Basically, *A discord bot library that doesn't suck*.
 
 # Installation
 with Gradle
