@@ -117,6 +117,8 @@ class RestClient(private val discordClient: DiscordClientImpl) {
                 throw ex
             } catch (ex: NotFoundException) {
                 throw ex
+            } catch (ex: MissingPermissionsException) {
+                throw ex
             } catch (ex: Exception) {
                 LOGGER.warn("An unexpected error has occurred! we will retry in a second", ex)
                 delay(1000)
