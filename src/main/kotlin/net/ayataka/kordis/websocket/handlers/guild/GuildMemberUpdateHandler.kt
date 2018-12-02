@@ -2,7 +2,10 @@ package net.ayataka.kordis.websocket.handlers.guild
 
 import com.google.gson.JsonObject
 import net.ayataka.kordis.DiscordClientImpl
+import net.ayataka.kordis.entity.everyone
 import net.ayataka.kordis.entity.server.ServerImpl
+import net.ayataka.kordis.entity.server.member.MemberImpl
+import net.ayataka.kordis.event.events.server.user.UserRoleUpdateEvent
 import net.ayataka.kordis.event.events.server.user.UserUpdateEvent
 import net.ayataka.kordis.websocket.handlers.GatewayHandler
 
@@ -15,6 +18,14 @@ class GuildMemberUpdateHandler : GatewayHandler {
 
         val member = server.members.update(userId, data) ?: return
 
+        val roleIdsBefore = member.roles.map { it.id }
+        val roleIdsAfter = data["roles"].asJsonArray.map { it.asLong }.plus(server.roles.everyone.id)
+
+        member.update(data)
         client.eventManager.fire(UserUpdateEvent(member))
+
+        if (roleIdsBefore.size != roleIdsAfter.size || !roleIdsBefore.containsAll(roleIdsAfter)) {
+            client.eventManager.fire(UserRoleUpdateEvent(member, roleIdsBefore.mapNotNull { server.roles.find(it) }))
+        }
     }
 }

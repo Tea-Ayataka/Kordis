@@ -6,8 +6,8 @@
         </Console>
     </Appenders>
     <Loggers>
-        <Root level="debug">
-            <AppenderRef level="debug" ref="stdout"/>
+        <Root level="trace">
+            <AppenderRef level="trace" ref="stdout"/>
         </Root>
     </Loggers>
 </Configuration>
