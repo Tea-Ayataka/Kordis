@@ -67,7 +67,7 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
     @Volatile var initialized = AtomicBoolean()
     @Volatile var ownerId: Long = -1
     @Volatile var memberCount = AtomicInteger()
-    val removedMembers = mutableListOf<Long>()
+    private val eventsToProcessLater = mutableListOf<Pair<String, JsonObject>>()
     private val temporallyUserPresences = ConcurrentHashMap<Long, JsonObject>()
 
     override val channels = object : NameableEntitySet<ServerChannel> {
@@ -187,6 +187,21 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
         }
     }
 
+    fun handleLater(eventType: String, data: JsonObject) {
+        if (ready) {
+            client.gateway.handleEvent(eventType, data)
+            return
+        }
+
+        synchronized(eventsToProcessLater) {
+            eventsToProcessLater.add(eventType to data)
+        }
+    }
+
+    fun clearHandleLaters() {
+        eventsToProcessLater.clear()
+    }
+
     fun ready() {
         ready = true
 
@@ -198,10 +213,15 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
             temporallyUserPresences.clear()
         }
 
-        // Remove left members
-        if (removedMembers.isNotEmpty()) {
-            members.removeIf { it.id in removedMembers }
-            removedMembers.clear()
+        // Process fired events during setup
+        synchronized(eventsToProcessLater) {
+            if (eventsToProcessLater.isNotEmpty()) {
+                eventsToProcessLater.forEach { (type, data) ->
+                    client.gateway.handleEvent(type, data)
+                }
+
+                eventsToProcessLater.clear()
+            }
         }
 
         // Set owner

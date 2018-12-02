@@ -17,7 +17,7 @@ class GuildMemberRemoveHandler : GatewayHandler {
 
         if (member == null) {
             if (!server.ready) {
-                server.removedMembers.add(userId)
+                server.handleLater(eventType, data)
             }
             return
         }

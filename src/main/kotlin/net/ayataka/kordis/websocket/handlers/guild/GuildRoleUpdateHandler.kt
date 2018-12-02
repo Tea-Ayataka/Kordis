@@ -12,7 +12,14 @@ class GuildRoleUpdateHandler : GatewayHandler {
         val server = client.servers.find(data["guild_id"].asLong) as? ServerImpl ?: return
 
         // Update role
-        val role = server.roles.update(data["role"].asJsonObject["id"].asLong, data["role"].asJsonObject) ?: return
+        val role = server.roles.update(data["role"].asJsonObject["id"].asLong, data["role"].asJsonObject)
+
+        if (role == null) {
+            if (!server.ready) {
+                server.handleLater(eventType, data)
+            }
+            return
+        }
 
         client.eventManager.fire(RoleUpdateEvent(role))
     }

@@ -53,7 +53,7 @@ class GatewayClient(
         delay(500)
     }
 
-    private val handlers = listOf(
+    val handlers = listOf(
             ChannelCreateHandler(),
             ChannelDeleteHandler(),
             ChannelUpdateHandler(),
@@ -198,16 +198,20 @@ class GatewayClient(
                     }
                 }
 
-                try {
-                    handlers.find { it.eventType == eventType }?.handle(client, data!!)
-                } catch (ex: Exception) {
-                    LOGGER.error("Failed to handle the event! (type: $eventType, json: $data)")
-                    LOGGER.debug("packet handle error", ex)
-                }
+                handleEvent(eventType, data!!)
             }
             else -> {
                 LOGGER.warn("Received a packet with unknown opcode: $data")
             }
+        }
+    }
+
+    fun handleEvent(eventType: String, data: JsonObject) {
+        try {
+            handlers.find { it.eventType == eventType }?.handle(client, data!!)
+        } catch (ex: Exception) {
+            LOGGER.error("Failed to handle the event! (type: $eventType, json: $data)")
+            LOGGER.debug("packet handle error", ex)
         }
     }
 

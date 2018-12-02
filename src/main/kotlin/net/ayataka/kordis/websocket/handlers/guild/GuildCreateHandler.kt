@@ -55,7 +55,7 @@ class GuildCreateHandler : GatewayHandler {
         // Request additional members
         server.ready = false
         server.members.clear()
-        server.removedMembers.clear()
+        server.clearHandleLaters()
         client.gateway.memberChunkRequestQueue.offer(server.id)
 
         GlobalScope.timer(1000, context = CoroutineName("Server Preparer")) {

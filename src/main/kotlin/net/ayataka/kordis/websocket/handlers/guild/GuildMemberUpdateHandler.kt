@@ -16,7 +16,14 @@ class GuildMemberUpdateHandler : GatewayHandler {
         val server = client.servers.find(data["guild_id"].asLong) as? ServerImpl ?: return
         val userId = data["user"].asJsonObject["id"].asLong
 
-        val member = server.members.update(userId, data) ?: return
+        val member = server.members.find(userId) as? MemberImpl
+
+        if (member == null) {
+            if (!server.ready) {
+                server.handleLater(eventType, data)
+            }
+            return
+        }
 
         val roleIdsBefore = member.roles.map { it.id }
         val roleIdsAfter = data["roles"].asJsonArray.map { it.asLong }.plus(server.roles.everyone.id)
