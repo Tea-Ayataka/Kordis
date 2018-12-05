@@ -1,6 +1,5 @@
 package net.ayataka.kordis.entity.server.member
 
-import net.ayataka.kordis.entity.channel.PrivateTextChannel
 import net.ayataka.kordis.entity.server.Server
 import net.ayataka.kordis.entity.server.channel.ServerChannel
 import net.ayataka.kordis.entity.server.enums.UserStatus
@@ -160,9 +159,4 @@ interface Member : User {
      * @param name A new nickname to set. specify null to clear.
      */
     suspend fun setNickname(name: String?)
-
-    /**
-     * Get the private channel for the member
-     */
-    suspend fun getPrivateChannel(): PrivateTextChannel
 }

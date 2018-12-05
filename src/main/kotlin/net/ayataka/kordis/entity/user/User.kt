@@ -4,6 +4,7 @@ import net.ayataka.kordis.entity.Entity
 import net.ayataka.kordis.entity.Mentionable
 import net.ayataka.kordis.entity.Nameable
 import net.ayataka.kordis.entity.Permissionable
+import net.ayataka.kordis.entity.channel.PrivateTextChannel
 import net.ayataka.kordis.entity.image.Image
 import net.ayataka.kordis.entity.server.Server
 
@@ -49,4 +50,9 @@ interface User : Mentionable, Nameable, Permissionable, Entity {
      * Get a member object by the user
      */
     fun toMember(server: Server) = server.members.find(id)
+
+    /**
+     * Get the private channel for the user
+     */
+    suspend fun getPrivateChannel(): PrivateTextChannel
 }

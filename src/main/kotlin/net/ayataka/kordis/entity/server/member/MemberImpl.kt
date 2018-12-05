@@ -3,16 +3,12 @@ package net.ayataka.kordis.entity.server.member
 import com.google.gson.JsonObject
 import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.entity.*
-import net.ayataka.kordis.entity.channel.PrivateTextChannel
-import net.ayataka.kordis.entity.channel.PrivateTextChannelImpl
 import net.ayataka.kordis.entity.server.Server
 import net.ayataka.kordis.entity.server.enums.UserStatus
 import net.ayataka.kordis.entity.server.permission.Permission
 import net.ayataka.kordis.entity.server.role.Role
 import net.ayataka.kordis.entity.user.User
-import net.ayataka.kordis.exception.DiscordException
 import net.ayataka.kordis.exception.NotFoundException
-import net.ayataka.kordis.exception.PrivateMessageBlockedException
 import net.ayataka.kordis.rest.Endpoint
 import net.ayataka.kordis.utils.asStringOrNull
 import net.ayataka.kordis.utils.getObjectOrNull
@@ -36,8 +32,6 @@ class MemberImpl(
     @Volatile override var joinedAt = Instant.MIN!!
     @Volatile override var status = UserStatus.OFFLINE
     @Volatile override var roles = mutableSetOf<Role>()
-
-    @Volatile private var privateChannelId = -1L
 
     init {
         update(json)
@@ -113,28 +107,7 @@ class MemberImpl(
         )
     }
 
-    override suspend fun getPrivateChannel(): PrivateTextChannel {
-        checkExistence()
-
-        client.privateChannels.find(privateChannelId)?.let { return it }
-
-        try {
-            val response = client.rest.request(
-                    Endpoint.CREATE_DM.format(),
-                    json { "recipient_id" to id }
-            ).asJsonObject
-
-            privateChannelId = response["id"].asLong
-            return client.privateChannels.getOrPut(privateChannelId) { PrivateTextChannelImpl(client, response) }
-        } catch (ex: DiscordException) {
-            // FORBIDDEN
-            if (ex.code == 403) {
-                throw PrivateMessageBlockedException(this.toString())
-            }
-
-            throw ex
-        }
-    }
+    override suspend fun getPrivateChannel() = user.getPrivateChannel()
 
     override fun toString(): String {
         return "Member(id=${user.id}, server=$server, user=${user.tag}, joinedAt=$joinedAt, roles=${roles.joinToString()})"
