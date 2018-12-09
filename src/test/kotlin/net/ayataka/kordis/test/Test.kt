@@ -90,5 +90,7 @@ class Test {
 
         assert(userRoleUpdateEvent!!.before.map { it.id }.containsAll(rolesBefore))
         assert(mutedRole in server.members.botUser.roles)
+
+        assertEquals("https://cdn.discordapp.com/embed/avatars/0.png", client.getUser(503844086512615425)?.avatar?.url)
     }
 }

@@ -6,7 +6,6 @@ import net.ayataka.kordis.entity.DiscordEntity
 import net.ayataka.kordis.entity.Updatable
 import net.ayataka.kordis.entity.channel.PrivateTextChannel
 import net.ayataka.kordis.entity.channel.PrivateTextChannelImpl
-import net.ayataka.kordis.entity.image.Image
 import net.ayataka.kordis.entity.image.ImageImpl
 import net.ayataka.kordis.exception.DiscordException
 import net.ayataka.kordis.exception.PrivateMessageBlockedException
@@ -17,7 +16,7 @@ import net.ayataka.kordis.utils.json
 
 class UserImpl(client: DiscordClientImpl, json: JsonObject) : User, Updatable, DiscordEntity(client, json["id"].asLong) {
     @Volatile override var bot = false
-    @Volatile override var avatar: Image? = null
+    @Volatile override var avatar = ImageImpl.defaultAvatar(0)
     @Volatile override var name = ""
     @Volatile override var discriminator = ""
 
@@ -30,7 +29,7 @@ class UserImpl(client: DiscordClientImpl, json: JsonObject) : User, Updatable, D
     override fun update(json: JsonObject) {
         name = json["username"].asString
         discriminator = json["discriminator"].asString
-        json["avatar"].asStringOrNull?.let { avatar = ImageImpl.avatar(id, it) }
+        avatar = json["avatar"].asStringOrNull?.let { ImageImpl.avatar(id, it) } ?: ImageImpl.defaultAvatar(discriminator.toInt())
         json.getOrNull("bot")?.let { bot = it.asBoolean }
     }
 

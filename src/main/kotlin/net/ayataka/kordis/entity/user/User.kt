@@ -17,7 +17,7 @@ interface User : Mentionable, Nameable, Permissionable, Entity {
     /**
      * The avatar image of the user
      */
-    val avatar: Image?
+    val avatar: Image
 
     /**
      * The discriminator of the user
