@@ -65,6 +65,17 @@ class RestClient(private val discordClient: DiscordClientImpl) {
                     rateLimiter.incrementRateLimitRemaining(endPoint)
                 }
 
+                // Update rate limits
+                if (response.headers()["X-RateLimit-Limit"] != null && response.headers()["X-RateLimit-Reset"] != null) {
+                    val rateLimit = response.headers()["X-RateLimit-Limit"]!!.toInt()
+                    val rateLimitRemaining = response.headers()["X-RateLimit-Remaining"]!!.toInt()
+                    val rateLimitEnds = response.headers()["X-RateLimit-Reset"]!!.toLong() * 1000
+                    rateLimiter.setRateLimit(endPoint, rateLimit)
+                    rateLimiter.setRateLimitRemaining(endPoint, rateLimitRemaining)
+                    rateLimiter.setRateLimitEnds(endPoint, rateLimitEnds)
+                    LOGGER.debug("RateLimit: $rateLimit, Remaining: ${response.headers()["X-RateLimit-Remaining"]}, Ends: $rateLimitEnds")
+                }
+
                 // Handle rate limits (429 Too Many Requests)
                 if (response.code() == 429) {
                     if (json == null) {
@@ -98,16 +109,6 @@ class RestClient(private val discordClient: DiscordClientImpl) {
 
                 if (response.code() !in 200..299) {
                     throw DiscordException("Discord API returned status code ${response.code()} with body ${json?.toString()}", response.code())
-                }
-
-                if (response.headers()["X-RateLimit-Limit"] != null && response.headers()["X-RateLimit-Reset"] != null) {
-                    val rateLimit = response.headers()["X-RateLimit-Limit"]!!.toInt()
-                    val rateLimitRemaining = response.headers()["X-RateLimit-Remaining"]!!.toInt()
-                    val rateLimitEnds = response.headers()["X-RateLimit-Reset"]!!.toLong() * 1000
-                    rateLimiter.setRateLimit(endPoint, rateLimit)
-                    rateLimiter.setRateLimitRemaining(endPoint, rateLimitRemaining)
-                    rateLimiter.setRateLimitEnds(endPoint, rateLimitEnds)
-                    LOGGER.debug("RateLimit: $rateLimit, Remaining: ${response.headers()["X-RateLimit-Remaining"]}, Ends: $rateLimitEnds")
                 }
 
                 return json ?: JsonObject()
