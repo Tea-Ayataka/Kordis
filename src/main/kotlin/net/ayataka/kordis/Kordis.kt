@@ -1,7 +1,7 @@
 package net.ayataka.kordis
 
-import okhttp3.OkHttpClient
 import org.slf4j.LoggerFactory
+import java.net.http.HttpClient
 
 object Kordis {
     const val NAME = "Kordis"
@@ -9,8 +9,8 @@ object Kordis {
     const val URL = "https://github.com/Tea-Ayataka/Kordis"
     const val API_VERSION = 6
 
-    val HTTP_CLIENT = OkHttpClient()
-    val LOGGER = LoggerFactory.getLogger(NAME)
+    val HTTP_CLIENT = HttpClient.newHttpClient()!!
+    val LOGGER = LoggerFactory.getLogger(NAME)!!
 
     init {
         LOGGER.info("$NAME v$VERSION ($URL)")

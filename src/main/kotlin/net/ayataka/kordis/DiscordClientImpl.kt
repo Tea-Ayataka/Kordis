@@ -43,7 +43,7 @@ class DiscordClientImpl(
         // Connect to the gateway
         val endpoint = rest.request(Endpoint.GET_GATEWAY_BOT.format()).asJsonObject["url"].asString
         gateway = GatewayClient(this, endpoint)
-        gateway.connectBlocking()
+        gateway.connect()
 
         status = ConnectionStatus.CONNECTED
     }

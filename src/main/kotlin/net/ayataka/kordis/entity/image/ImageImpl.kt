@@ -1,8 +1,10 @@
 package net.ayataka.kordis.entity.image
 
+import kotlinx.coroutines.future.await
 import net.ayataka.kordis.Kordis.HTTP_CLIENT
-import net.ayataka.kordis.utils.executeAsync
-import okhttp3.Request
+import java.net.URI
+import java.net.http.HttpRequest
+import java.net.http.HttpResponse
 
 class ImageImpl(override val url: String) : Image {
     companion object {
@@ -16,5 +18,5 @@ class ImageImpl(override val url: String) : Image {
     }
 
     override suspend fun bytes() =
-            HTTP_CLIENT.newCall(Request.Builder().url(url).build()).executeAsync().body()!!.bytes()!!
+            HTTP_CLIENT.sendAsync(HttpRequest.newBuilder(URI(url)).build(), HttpResponse.BodyHandlers.ofByteArray()).await().body()!!
 }
