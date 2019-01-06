@@ -103,7 +103,7 @@ class GatewayClient(
                     val json = sendQueue.take()
                     try {
                         webSocket?.sendText(json, true)?.get()
-                        webSocket?.request(Long.MAX_VALUE)
+                        webSocket?.request(1)
                     } catch (ex: Exception) {
                         LOGGER.error("WebSocket error", ex)
                         continue
@@ -179,17 +179,17 @@ class GatewayClient(
     }
 
     override fun onText(webSocket: WebSocket, raw: CharSequence, last: Boolean): CompletionStage<*>? {
-        buffer.append(raw)
-
-        val message: String?
-        if (last) {
-            message = buffer.toString()
-            buffer.setLength(0)
-        } else {
-            return null
-        }
-
         launch {
+            buffer.append(raw)
+            webSocket.request(1)
+
+            if (!last) {
+                return@launch
+            }
+
+            val message = buffer.toString()
+            buffer.setLength(0)
+
             val payloads = gson.fromJson(message, JsonObject::class.java)
             val opcode = Opcode.values().find { it.code == payloads["op"].asInt }
             val data = payloads.getObjectOrNull("d")
@@ -241,6 +241,7 @@ class GatewayClient(
                 }
             }
         }
+
         return null
     }
 
