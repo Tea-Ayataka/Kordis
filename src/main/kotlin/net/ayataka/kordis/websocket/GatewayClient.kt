@@ -145,22 +145,24 @@ class GatewayClient(
     }
 
     override fun onOpen(webSocket: WebSocket) {
-        LOGGER.info("Connected to the gateway")
-        client.status = ConnectionStatus.CONNECTED
+        launch {
+            LOGGER.info("Connected to the gateway")
+            client.status = ConnectionStatus.CONNECTED
 
-        if (sessionId == null) {
-            authenticate()
-        } else {
-            resume()
+            if (sessionId == null) {
+                authenticate()
+            } else {
+                resume()
+            }
         }
     }
 
     override fun onClose(webSocket: WebSocket, statusCode: Int, reason: String): CompletionStage<*>? {
-        LOGGER.info("WebSocket closed with code: $statusCode, reason: '$reason'")
-
-        heartbeatTask?.cancel()
-
         launch {
+            LOGGER.info("WebSocket closed with code: $statusCode, reason: '$reason'")
+
+            heartbeatTask?.cancel()
+
             // Invalidate cache
             if (statusCode == 4007 || statusCode == 4990 || statusCode == 4003) {
                 sessionId = null
@@ -255,7 +257,13 @@ class GatewayClient(
     }
 
     override fun onError(webSocket: WebSocket?, error: Throwable?) {
-        LOGGER.error("WebSocket exception", error)
+        launch {
+            LOGGER.error("WebSocket exception", error)
+
+            if (webSocket?.isOutputClosed == true || webSocket?.isInputClosed == true) {
+                onClose(webSocket, -1, "Error")
+            }
+        }
     }
 
     private fun authenticate() {
