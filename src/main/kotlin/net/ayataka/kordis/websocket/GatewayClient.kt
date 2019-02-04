@@ -162,7 +162,7 @@ class GatewayClient(
 
         launch {
             // Invalidate cache
-            if (statusCode == 4007 || statusCode == 4990) {
+            if (statusCode == 4007 || statusCode == 4990 || statusCode == 4003) {
                 sessionId = null
                 lastSequence = null
 
