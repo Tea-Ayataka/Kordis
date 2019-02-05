@@ -1,5 +1,5 @@
 plugins {
-    id 'org.jetbrains.kotlin.jvm' version '1.3.0'
+    id 'org.jetbrains.kotlin.jvm' version '1.3.20'
 }
 
 group 'net.ayataka'
@@ -19,8 +19,13 @@ repositories {
 dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
     compile "org.jetbrains.kotlin:kotlin-reflect"
-    compile 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.0.1'
-    compile 'org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.0.1'
+    compile 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.1.1'
+    compile 'org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.1.1'
+
+    // Http client by Ktor
+    compile 'io.ktor:ktor-client-core:1.1.2'
+    compile 'io.ktor:ktor-client-core-jvm:1.1.2'
+    compile 'io.ktor:ktor-client-okhttp:1.1.2'
 
     compile 'com.google.code.gson:gson:2.8.5'
 

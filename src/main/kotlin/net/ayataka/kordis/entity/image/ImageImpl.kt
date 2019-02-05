@@ -1,10 +1,7 @@
 package net.ayataka.kordis.entity.image
 
-import kotlinx.coroutines.future.await
+import io.ktor.client.request.get
 import net.ayataka.kordis.Kordis.HTTP_CLIENT
-import java.net.URI
-import java.net.http.HttpRequest
-import java.net.http.HttpResponse
 
 class ImageImpl(override val url: String) : Image {
     companion object {
@@ -17,6 +14,5 @@ class ImageImpl(override val url: String) : Image {
         fun emoji(id: Long) = ImageImpl("$IMAGE_BASE_URL/emojis/$id.png")
     }
 
-    override suspend fun bytes() =
-            HTTP_CLIENT.sendAsync(HttpRequest.newBuilder(URI(url)).build(), HttpResponse.BodyHandlers.ofByteArray()).await().body()!!
+    override suspend fun bytes() = HTTP_CLIENT.get<ByteArray>(url)
 }

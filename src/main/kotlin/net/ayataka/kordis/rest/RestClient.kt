@@ -3,8 +3,15 @@ package net.ayataka.kordis.rest
 import com.google.gson.Gson
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
+import io.ktor.client.call.call
+import io.ktor.client.request.header
+import io.ktor.client.request.url
+import io.ktor.client.response.readText
+import io.ktor.content.TextContent
+import io.ktor.http.ContentType
+import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpMethod
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.future.await
 import kotlinx.coroutines.sync.withLock
 import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.Kordis.HTTP_CLIENT
@@ -13,9 +20,6 @@ import net.ayataka.kordis.exception.DiscordException
 import net.ayataka.kordis.exception.MissingPermissionsException
 import net.ayataka.kordis.exception.NotFoundException
 import net.ayataka.kordis.exception.RateLimitedException
-import java.net.URI
-import java.net.http.HttpRequest
-import java.net.http.HttpResponse
 
 class RestClient(private val discordClient: DiscordClientImpl) {
     private val gson = Gson()
@@ -26,51 +30,42 @@ class RestClient(private val discordClient: DiscordClientImpl) {
             rateLimiter.wait(endPoint)
 
             try {
-                LOGGER.debug("Request: ${endPoint.url}, method: ${endPoint.method.name}, data: $data, retry: $it / $rateLimitRetries")
+                LOGGER.debug("Request: ${endPoint.url}, method: ${endPoint.method.value}, data: $data, retry: $it / $rateLimitRetries")
 
-                val request = HttpRequest.newBuilder().apply {
-                    uri(URI(endPoint.url))
-                    header("Accept", "application/json")
-                    header("Authorization", "Bot ${discordClient.token}")
-                    header("User-Agent", "DiscordBot (https://github.com/Tea-Ayataka/Kordis, development)")
+                val response = HTTP_CLIENT.call {
+                    method = endPoint.method
+                    url(endPoint.url)
+                    header(HttpHeaders.Accept, "application/json")
+                    header(HttpHeaders.Authorization, "Bot ${discordClient.token}")
+                    header(HttpHeaders.UserAgent, "DiscordBot (https://github.com/Tea-Ayataka/Kordis, development)")
 
-                    if (data == null) {
-                        if (endPoint.method == HttpMethod.GET) {
-                            return@apply
+                    if (endPoint.method == HttpMethod.Get) {
+                        if (data != null) {
+                            url(endPoint.url + "?" + data.entrySet().joinToString("&") { "${it.key}=${it.value}" })
                         }
-
-                        header("Content-Type", "application/json")
-                        method(endPoint.method.name, HttpRequest.BodyPublishers.ofString("{}"))
-                        return@apply
+                        return@call
                     }
 
-                    if (endPoint.method == HttpMethod.GET) {
-                        uri(URI.create(endPoint.url + "?" + data.entrySet().joinToString("&") { "${it.key}=${it.value}" }))
-                        return@apply
-                    }
+                    body = TextContent(data?.toString() ?: "{}", ContentType.Application.Json)
+                }.response
 
-                    header("Content-Type", "application/json")
-                    method(endPoint.method.name, HttpRequest.BodyPublishers.ofString(data.toString()))
-                }.build()
-
-                val response = HTTP_CLIENT.sendAsync(request, HttpResponse.BodyHandlers.ofString()).await()
-                val contentType = response.headers().firstValue("Content-Type").orElse(null)
-                val body = response.body()
+                val contentType = response.headers["Content-Type"]
+                val body = response.readText()
 
                 val json = if (contentType?.equals("application/json", true) == true) {
-                    body?.let { gson.fromJson(body, JsonElement::class.java) }
+                    gson.fromJson(body, JsonElement::class.java)
                 } else {
                     null
                 }
 
-                LOGGER.debug("Response: ${response.statusCode()}, body: $json")
+                LOGGER.debug("Response: ${response.status.value}, body: $json")
 
                 // Update rate limits
-                val rateLimit = response.headers().firstValue("X-RateLimit-Limit").orElse(null)?.toInt()
-                val rateLimitRemaining = response.headers().firstValue("X-RateLimit-Remaining").orElse(null)?.toInt()
-                val rateLimitEnds = response.headers().firstValue("X-RateLimit-Reset").orElse(null)?.toLong()
+                val rateLimit = response.headers["X-RateLimit-Limit"]?.toInt()
+                val rateLimitRemaining = response.headers["X-RateLimit-Remaining"]?.toInt()
+                val rateLimitEnds = response.headers["X-RateLimit-Reset"]?.toLong()
 
-                if (response.statusCode() !in 200..299) {
+                if (response.status.value !in 200..299) {
                     // When failed to request
                     rateLimiter.incrementRateLimitRemaining(endPoint)
                 }
@@ -83,7 +78,7 @@ class RestClient(private val discordClient: DiscordClientImpl) {
                 }
 
                 // Handle rate limits (429 Too Many Requests)
-                if (response.statusCode() == 429) {
+                if (response.status.value == 429) {
                     if (json == null) {
                         // When get rate limited without body
                         throw RateLimitedException()
@@ -101,20 +96,20 @@ class RestClient(private val discordClient: DiscordClientImpl) {
                     return@repeat
                 }
 
-                if (response.statusCode() in 500..599) {
-                    throw Exception("Discord API returned internal server error (code: ${response.statusCode()})") // Retry
+                if (response.status.value in 500..599) {
+                    throw Exception("Discord API returned internal server error (code: ${response.status.value})") // Retry
                 }
 
-                if (response.statusCode() == 403) {
+                if (response.status.value == 403) {
                     throw MissingPermissionsException("Request: ${endPoint.url}, Response: $response")
                 }
 
-                if (response.statusCode() == 404) {
+                if (response.status.value == 404) {
                     throw NotFoundException(true)
                 }
 
-                if (response.statusCode() !in 200..299) {
-                    throw DiscordException("Discord API returned status code ${response.statusCode()} with body ${json?.toString()}", response.statusCode())
+                if (response.status.value !in 200..299) {
+                    throw DiscordException("Discord API returned status code ${response.status.value} with body ${json?.toString()}", response.status.value)
                 }
 
                 return json ?: JsonObject()
