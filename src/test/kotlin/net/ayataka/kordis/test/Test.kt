@@ -47,6 +47,7 @@ class Test {
         assertEquals(515274879679987742, server.afkChannel?.id)
         assertEquals(300, server.afkTimeout)
         assertEquals(VerificationLevel.MEDIUM, server.verificationLevel)
+        assertEquals(371868794043236364, server.owner?.id)
 
         assertEquals(1, server.emojis.size)
         assertEquals(6, server.roles.size)

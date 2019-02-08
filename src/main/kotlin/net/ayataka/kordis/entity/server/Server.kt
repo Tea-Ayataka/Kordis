@@ -41,6 +41,7 @@ interface Server : Nameable, Entity {
      * Possibly null if the user isn't cached during reconnect
      */
     val owner: User?
+        get() = client.users.find((this as ServerImpl).ownerId)
 
     /**
      * the voice region of the server

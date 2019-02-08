@@ -47,7 +47,6 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
     @Volatile override var name = ""
     @Volatile override var icon: Image? = null
     @Volatile override var splash: Image? = null
-    @Volatile override var owner: User? = null
     @Volatile override var region = Region.UNKNOWN
     @Volatile override var afkChannel: ServerVoiceChannel? = null
     @Volatile override var afkTimeout = -1
@@ -174,7 +173,6 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
 
         afkChannel = json["afk_channel_id"].asLongOrNull?.let { voiceChannels.find(it) }
         ownerId = json["owner_id"].asLong
-        owner = client.users.find(ownerId)
     }
 
     fun updateEmojis(json: JsonObject) {
@@ -222,11 +220,6 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
 
                 eventsToProcessLater.clear()
             }
-        }
-
-        // Set owner
-        if (owner == null) {
-            owner = client.users.find(ownerId)
         }
     }
 
