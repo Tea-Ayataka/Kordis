@@ -90,6 +90,6 @@ class TestBot {
 ```
 
 # Dependencies
-* Kotlin 1.3.0 (JVM 11)
-* Kotlin Coroutines 1.0.1
+* Kotlin 1.3.20 (JVM 11)
+* Kotlin Coroutines 1.1.1
 * Gson 2.8.5
