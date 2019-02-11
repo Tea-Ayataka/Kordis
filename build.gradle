@@ -17,23 +17,22 @@ repositories {
 }
 
 dependencies {
-    compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
-    compile "org.jetbrains.kotlin:kotlin-reflect"
-    compile 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.1.1'
-    compile 'org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.1.1'
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.1.1'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.1.1'
 
     // Http client by Ktor
-    compile 'io.ktor:ktor-client-core:1.1.2'
-    compile 'io.ktor:ktor-client-core-jvm:1.1.2'
-    compile 'io.ktor:ktor-client-okhttp:1.1.2'
+    implementation 'io.ktor:ktor-client-core:1.1.2'
+    implementation 'io.ktor:ktor-client-core-jvm:1.1.2'
+    implementation 'io.ktor:ktor-client-okhttp:1.1.2'
 
-    compile 'com.google.code.gson:gson:2.8.5'
+    implementation 'com.google.code.gson:gson:2.8.5'
 
-    compile 'org.slf4j:slf4j-api:1.7.25'
+    api 'org.slf4j:slf4j-api:1.7.25'
 
-    testCompile 'org.apache.logging.log4j:log4j-slf4j-impl:2.11.0'
-    testCompile 'junit:junit:4.12'
-    testCompile 'org.jetbrains.kotlin:kotlin-test-junit'
+    testImplementation 'org.apache.logging.log4j:log4j-slf4j-impl:2.11.0'
+    testImplementation 'junit:junit:4.12'
+    testImplementation 'org.jetbrains.kotlin:kotlin-test-junit'
 }
 
 test {
