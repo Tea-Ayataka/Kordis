@@ -6,7 +6,7 @@ Kordis is a lightweight Kotlin wrapper for the Discord API. Basically, *A discor
 
 # Installation
 with Gradle
-```
+```groovy
 repositories {
     maven { url 'https://jitpack.io' }
 }
@@ -16,7 +16,7 @@ dependencies {
 }
 ```
 with Maven
-```
+```xml
 <repositories>
     <repository>
         <id>jitpack.io</id>
@@ -32,7 +32,7 @@ with Maven
 ```
 
 # Example
-```
+```kotlin
 fun main(args: Array<String>) = runBlocking {
     TestBot().start()
 }
@@ -90,6 +90,6 @@ class TestBot {
 ```
 
 # Dependencies
-* Kotlin 1.3.0 (JVM 11)
-* Kotlin Coroutines 1.0.1
+* Kotlin 1.3.20 (JVM 11)
+* Kotlin Coroutines 1.1.1
 * Gson 2.8.5
