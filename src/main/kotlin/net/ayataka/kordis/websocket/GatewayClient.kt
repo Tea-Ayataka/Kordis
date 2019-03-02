@@ -36,7 +36,7 @@ class GatewayClient(
 ) : CoroutineScope, WebSocketListener() {
     override val coroutineContext = newSingleThreadContext("Gateway Packet Handler")
 
-    @Volatile private var connected: Boolean = false
+    @Volatile private var ready: Boolean = false
     @Volatile private var webSocket: WebSocket? = null
     @Volatile private var sessionId: String? = null
     @Volatile private var lastSequence: Int? = null
@@ -95,11 +95,7 @@ class GatewayClient(
     init {
         Thread({
             while (true) {
-                if (webSocket == null || !connected) {
-                    continue
-                }
-
-                while (!rateLimiter.isLimited() && connected) {
+                while (webSocket != null && ready && !rateLimiter.isLimited()) {
                     val json = sendQueue.take()
                     try {
                         if (webSocket?.send(json) != true) {
@@ -114,6 +110,8 @@ class GatewayClient(
                     rateLimiter.increment()
                     LOGGER.trace("Sent: $json")
                 }
+
+                Thread.sleep(100)
             }
         }, "Gateway Packet Dispatcher").start()
     }
@@ -143,7 +141,6 @@ class GatewayClient(
     }
 
     override fun onOpen(webSocket: WebSocket, response: Response) = start {
-        connected = true
         LOGGER.info("Connected to the gateway")
         client.status = ConnectionStatus.CONNECTED
 
@@ -157,12 +154,13 @@ class GatewayClient(
     }
 
     override fun onClosing(webSocket: WebSocket, code: Int, reason: String) = start {
-        connected = false
+        ready = false
     }
 
     override fun onClosed(webSocket: WebSocket, code: Int, reason: String) = start {
         LOGGER.info("WebSocket closed with code: $code, reason: '$reason'")
 
+        sendQueue.clear()
         heartbeatTask?.cancel()
 
         // Invalidate cache
@@ -196,7 +194,7 @@ class GatewayClient(
                 heartbeatTask = timer(period) {
                     if (heartbeatAckReceived) {
                         heartbeatAckReceived = false
-                        queue(Opcode.HEARTBEAT, json { lastSequence?.let { "d" to it } })
+                        send(Opcode.HEARTBEAT, json { lastSequence?.let { "d" to it } })
                     } else {
                         webSocket.close(4000, "Heartbeat ACK wasn't received")
                     }
@@ -220,6 +218,7 @@ class GatewayClient(
 
                 when (eventType) {
                     "READY" -> {
+                        ready = true
                         sessionId = data!!["session_id"].asString
                     }
                 }
@@ -243,12 +242,13 @@ class GatewayClient(
 
     override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) = start {
         LOGGER.error("WebSocket exception", t)
+        onClosed(webSocket, -1, "Error")
     }
 
     private fun authenticate() {
         // https://discordapp.com/developers/docs/topics/gateway#identify-example-identify
 
-        queue(Opcode.IDENTIFY, json {
+        send(Opcode.IDENTIFY, json {
             "token" to client.token
 
             "properties" to json {
@@ -270,7 +270,7 @@ class GatewayClient(
 
     private fun resume() {
         val sessionId = sessionId ?: throw IllegalArgumentException("sessionId is null")
-        queue(Opcode.RESUME, json {
+        send(Opcode.RESUME, json {
             "session_id" to sessionId
             "token" to client.token
             "seq" to lastSequence
@@ -284,5 +284,16 @@ class GatewayClient(
         }.toString()
 
         sendQueue.offer(json)
+    }
+
+    private fun send(opcode: Opcode, data: JsonObject = JsonObject()) {
+        val json = json {
+            "op" to opcode.code
+            "d" to data
+        }.toString()
+
+        if (webSocket?.send(json) == true) {
+            rateLimiter.increment()
+        }
     }
 }

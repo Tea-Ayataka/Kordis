@@ -93,5 +93,7 @@ class Test {
         assert(mutedRole in server.members.botUser.roles)
 
         assertEquals("https://cdn.discordapp.com/embed/avatars/0.png", client.getUser(503844086512615425)?.avatar?.url)
+
+        delay(Long.MAX_VALUE)
     }
 }
