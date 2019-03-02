@@ -27,7 +27,8 @@ class GuildCreateHandler : GatewayHandler {
             it.update(data)
 
             if (!isLarge) {
-                it.ready()
+                it.ready = true
+
                 if (!it.initialized.getAndSet(true)) {
                     client.eventManager.fire(ServerReadyEvent(it))
                 }
