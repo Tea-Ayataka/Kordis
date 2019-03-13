@@ -16,8 +16,8 @@ interface DiscordClient {
     val users: EntitySet<User>
     val privateChannels: EntitySet<PrivateTextChannel>
 
-    suspend fun addListener(listener: Any)
-    suspend fun removeListener(listener: Any)
+    fun addListener(listener: Any)
+    fun removeListener(listener: Any)
 
     /**
      * Update the bot's activity

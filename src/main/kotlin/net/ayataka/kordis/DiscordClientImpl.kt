@@ -48,11 +48,11 @@ class DiscordClientImpl(
         status = ConnectionStatus.CONNECTED
     }
 
-    override suspend fun addListener(listener: Any) {
+    override fun addListener(listener: Any) {
         eventManager.register(listener)
     }
 
-    override suspend fun removeListener(listener: Any) {
+    override fun removeListener(listener: Any) {
         eventManager.unregister(listener)
     }
 

@@ -4,11 +4,9 @@ import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import net.ayataka.kordis.Kordis.LOGGER
-import net.ayataka.kordis.utils.start
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.LinkedBlockingQueue
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
 import kotlin.reflect.full.callSuspend
@@ -17,8 +15,16 @@ import kotlin.reflect.full.isSubclassOf
 
 class EventManager {
     private val dispatcher = CoroutineScope(Dispatchers.Default + CoroutineName("Event Dispatcher"))
+    private val queue = LinkedBlockingQueue<suspend CoroutineScope.() -> Unit>()
     private val handlers = ConcurrentHashMap<KClass<out Event>, MutableList<Pair<Any?, Any>>>()
-    private val mutex = Mutex()
+
+    init {
+        Thread({
+            while (true) {
+                dispatcher.launch(block = queue.take())
+            }
+        }, "Event Dispatcher").start()
+    }
 
     private fun getAnnotatedFunctions(instance: Any): List<KFunction<*>> {
         return instance::class.functions // Get functions
@@ -26,30 +32,23 @@ class EventManager {
                 .filter { it.parameters.size == 2 && (it.parameters[1].type.classifier as KClass<*>).isSubclassOf(Event::class) } // Parameter check
     }
 
-    suspend fun register(handler: Any) {
+    fun register(handler: Any) = synchronized(handlers) {
         if (handler is Listener<*>) {
-            mutex.withLock {
-                handlers.getOrPut(handler.event) { mutableListOf() }.add(Pair(null, handler))
-            }
+            handlers.getOrPut(handler.event) { mutableListOf() }.add(Pair(null, handler))
             return
         }
 
         getAnnotatedFunctions(handler).forEach {
             @Suppress("UNCHECKED_CAST")
             val param: KClass<out Event> = it.parameters[1].type.classifier as KClass<out Event>
-
-            mutex.withLock {
-                handlers.getOrPut(param) { mutableListOf() }.add(Pair(handler, it))
-            }
+            handlers.getOrPut(param) { mutableListOf() }.add(Pair(handler, it))
         }
     }
 
-    suspend fun unregister(handler: Any) {
+    fun unregister(handler: Any) = synchronized(handlers) {
         if (handler is Listener<*>) {
-            mutex.withLock {
-                handlers[handler.event]?.let {
-                    it.removeIf { it.second == handler }
-                }
+            handlers[handler.event]?.let {
+                it.removeIf { it.second == handler }
             }
             return
         }
@@ -59,27 +58,24 @@ class EventManager {
             val param: KClass<out Event> = it.parameters[1].type.classifier as KClass<out Event>
 
             handlers[param]?.let {
-                mutex.withLock { it.removeIf { it.first == handler } }
+                it.removeIf { it.first == handler }
             }
         }
     }
 
     /**
-     * Dispatch an event. This is non-blocking operation.
+     * Dispatch an event.
      */
-    fun fire(event: Event) = dispatcher.start {
-        handlers[event::class]?.let {
-            mutex.withLock {
-                for (item in it) {
-                    dispatcher.launch {
-                        try {
-                            @Suppress("UNCHECKED_CAST")
-                            (item.second as? Listener<Event>)?.action?.invoke(event)
-                                    ?: (item.second as? KFunction<*>)?.callSuspend(item.first, event)
-                        } catch (ex: Exception) {
-                            LOGGER.error("An exception occurred during invoking ${item.second}", ex.cause ?: ex)
-                        }
-                    }
+    fun fire(event: Event) {
+        val handlersOfTheEvent = synchronized(handlers) { handlers[event::class] } ?: return
+        for (item in handlersOfTheEvent) {
+            queue.put {
+                try {
+                    @Suppress("UNCHECKED_CAST")
+                    (item.second as? Listener<Event>)?.action?.invoke(event)
+                            ?: (item.second as? KFunction<*>)?.callSuspend(item.first, event)
+                } catch (ex: Exception) {
+                    LOGGER.error("An exception occurred during invoking ${item.second}", ex.cause ?: ex)
                 }
             }
         }
