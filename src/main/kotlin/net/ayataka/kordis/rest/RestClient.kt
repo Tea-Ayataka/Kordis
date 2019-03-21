@@ -47,7 +47,7 @@ class RestClient(private val discordClient: DiscordClientImpl) {
                     }
 
                     body = TextContent(data?.toString() ?: "{}", ContentType.Application.Json)
-                }.response
+                }.response.apply { close() }
 
                 val contentType = response.headers["Content-Type"]
                 val body = response.readText()
