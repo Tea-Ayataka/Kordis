@@ -5,7 +5,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import net.ayataka.kordis.Kordis.LOGGER
+import net.ayataka.kordis.event.events.message.MessageEvent
+import net.ayataka.kordis.event.events.server.ServerEvent
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.LinkedBlockingQueue
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
@@ -15,13 +18,33 @@ import kotlin.reflect.full.isSubclassOf
 
 class EventManager {
     private val dispatcher = CoroutineScope(Dispatchers.Default + CoroutineName("Event Dispatcher"))
-    private val queue = LinkedBlockingQueue<suspend CoroutineScope.() -> Unit>()
-    private val handlers = ConcurrentHashMap<KClass<out Event>, MutableList<Pair<Any?, Any>>>()
+    private val queue = LinkedBlockingQueue<Event>()
+    private val handlerMap = ConcurrentHashMap<KClass<out Event>, ConcurrentHashMap<Long, CopyOnWriteArrayList<Pair<Any?, Any>>>>()
 
     init {
         Thread({
             while (true) {
-                dispatcher.launch(block = queue.take())
+                val event = queue.take()
+                val handlers = mutableListOf<Pair<Any?, Any>>()
+
+                handlerMap[event::class]?.get(-1)?.let { handlers.addAll(it) }
+
+                when (event) {
+                    is ServerEvent -> handlerMap[event::class]?.get(event.server.id)?.let { handlers.addAll(it) }
+                    is MessageEvent -> event.server?.let { handlerMap[event::class]?.get(it.id)?.let { handlers.addAll(it) } }
+                }
+
+                handlers.forEach {
+                    dispatcher.launch {
+                        try {
+                            @Suppress("UNCHECKED_CAST")
+                            (it.second as? Listener<Event>)?.action?.invoke(event)
+                                    ?: (it.second as? KFunction<*>)?.callSuspend(it.first, event)
+                        } catch (ex: Exception) {
+                            LOGGER.error("An exception occurred during invoking ${it.second}", ex.cause ?: ex)
+                        }
+                    }
+                }
             }
         }, "Event Dispatcher").start()
     }
@@ -32,23 +55,23 @@ class EventManager {
                 .filter { it.parameters.size == 2 && (it.parameters[1].type.classifier as KClass<*>).isSubclassOf(Event::class) } // Parameter check
     }
 
-    fun register(handler: Any) = synchronized(handlers) {
+    fun register(handler: Any, serverId: Long?) {
         if (handler is Listener<*>) {
-            handlers.getOrPut(handler.event) { mutableListOf() }.add(Pair(null, handler))
+            handlerMap.getOrPut(handler.event) { ConcurrentHashMap() }.getOrPut(serverId ?: -1) { CopyOnWriteArrayList() }.add(Pair(null, handler))
             return
         }
 
         getAnnotatedFunctions(handler).forEach {
             @Suppress("UNCHECKED_CAST")
             val param: KClass<out Event> = it.parameters[1].type.classifier as KClass<out Event>
-            handlers.getOrPut(param) { mutableListOf() }.add(Pair(handler, it))
+            handlerMap.getOrPut(param) { ConcurrentHashMap() }.getOrPut(serverId ?: -1) { CopyOnWriteArrayList() }.add(Pair(handler, it))
         }
     }
 
-    fun unregister(handler: Any) = synchronized(handlers) {
+    fun unregister(handler: Any, serverId: Long?) {
         if (handler is Listener<*>) {
-            handlers[handler.event]?.let {
-                it.removeIf { it.second == handler }
+            handlerMap[handler.event]?.let {
+                it[serverId ?: -1]?.removeIf { it.second == handler }
             }
             return
         }
@@ -57,8 +80,8 @@ class EventManager {
             @Suppress("UNCHECKED_CAST")
             val param: KClass<out Event> = it.parameters[1].type.classifier as KClass<out Event>
 
-            handlers[param]?.let {
-                it.removeIf { it.first == handler }
+            handlerMap[param]?.let {
+                it[serverId ?: -1]?.removeIf { it.first == handler }
             }
         }
     }
@@ -67,17 +90,6 @@ class EventManager {
      * Dispatch an event.
      */
     fun fire(event: Event) {
-        val handlersOfTheEvent = synchronized(handlers) { handlers[event::class] } ?: return
-        for (item in handlersOfTheEvent) {
-            queue.put {
-                try {
-                    @Suppress("UNCHECKED_CAST")
-                    (item.second as? Listener<Event>)?.action?.invoke(event)
-                            ?: (item.second as? KFunction<*>)?.callSuspend(item.first, event)
-                } catch (ex: Exception) {
-                    LOGGER.error("An exception occurred during invoking ${item.second}", ex.cause ?: ex)
-                }
-            }
-        }
+        queue.add(event)
     }
 }
