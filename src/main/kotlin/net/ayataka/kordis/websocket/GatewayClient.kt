@@ -153,11 +153,9 @@ class GatewayClient(
         }
     }
 
-    override fun onClosing(webSocket: WebSocket, code: Int, reason: String) = start {
-        ready = false
-    }
-
     override fun onClosed(webSocket: WebSocket, code: Int, reason: String) = start {
+        ready = false
+
         LOGGER.info("WebSocket closed with code: $code, reason: '$reason'")
 
         sendQueue.clear()
