@@ -7,7 +7,10 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.util.*
 
-class AdvancedQueue<T>(val amount: Int, val action: suspend (List<T>) -> Unit) {
+class ChunkedQueue<T>(
+        private val amount: Int,
+        val action: suspend (List<T>) -> Unit
+) {
     private val queue = LinkedList<T>()
     private var job = Job()
     private val locker = Mutex()

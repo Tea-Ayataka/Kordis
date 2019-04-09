@@ -9,11 +9,29 @@ import net.ayataka.kordis.entity.server.enums.UserStatus
 import net.ayataka.kordis.entity.user.User
 
 interface DiscordClient {
+    /**
+     * The connection status to the gateway
+     */
     val status: ConnectionStatus
+
+    /**
+     * The user object of the bot
+     */
     val botUser: User
 
+    /**
+     * The servers the bot is on
+     */
     val servers: NameableEntitySet<Server>
+
+    /**
+     * The cache of discord users
+     */
     val users: EntitySet<User>
+
+    /**
+     * The cache of private channels
+     */
     val privateChannels: EntitySet<PrivateTextChannel>
 
     fun addListener(listener: Any, serverId: Long? = null)

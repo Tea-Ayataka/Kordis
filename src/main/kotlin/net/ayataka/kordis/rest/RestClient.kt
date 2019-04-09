@@ -25,6 +25,9 @@ class RestClient(private val discordClient: DiscordClientImpl) {
     private val gson = Gson()
     private val rateLimiter = InternalRateLimiter()
 
+    /**
+     * Sends a REST request to the Discord API.
+     */
     suspend fun request(endPoint: FormattedEndPoint, data: JsonObject? = null, rateLimitRetries: Int = 50): JsonElement = rateLimiter.getMutex(endPoint).withLock {
         repeat(rateLimitRetries) {
             rateLimiter.wait(endPoint)
@@ -101,7 +104,7 @@ class RestClient(private val discordClient: DiscordClientImpl) {
                 }
 
                 if (response.status.value == 403) {
-                    throw MissingPermissionsException("Request: ${endPoint.url}, Response: $response")
+                    throw MissingPermissionsException("Request: ${endPoint.url}, Response: $body")
                 }
 
                 if (response.status.value == 404) {

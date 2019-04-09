@@ -3,10 +3,9 @@ package net.ayataka.kordis.websocket
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import com.google.gson.JsonPrimitive
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.newSingleThreadContext
+import com.neovisionaries.ws.client.*
+import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import net.ayataka.kordis.ConnectionStatus
@@ -26,18 +25,16 @@ import net.ayataka.kordis.websocket.handlers.other.TypingStartHandler
 import net.ayataka.kordis.websocket.handlers.other.UserUpdateHandler
 import net.ayataka.kordis.websocket.handlers.voice.VoiceServerUpdateHandler
 import net.ayataka.kordis.websocket.handlers.voice.VoiceStateUpdateHandler
-import okhttp3.*
-import java.util.concurrent.LinkedBlockingDeque
 
 @Suppress("EXPERIMENTAL_API_USAGE")
 class GatewayClient(
         private val client: DiscordClientImpl,
         private val endpoint: String
-) : CoroutineScope, WebSocketListener() {
+) : CoroutineScope, WebSocketAdapter() {
     override val coroutineContext = newSingleThreadContext("Gateway Packet Handler")
 
     @Volatile private var ready: Boolean = false
-    @Volatile private var webSocket: WebSocket? = null
+    @Volatile private var websocket: WebSocket? = null
     @Volatile private var sessionId: String? = null
     @Volatile private var lastSequence: Int? = null
     @Volatile private var heartbeatAckReceived: Boolean = false
@@ -45,12 +42,11 @@ class GatewayClient(
     @Volatile private var activity: JsonObject? = null
 
     private val mutex = Mutex()
-    private val httpClient = OkHttpClient()
     private val gson = Gson()
-    private val sendQueue = LinkedBlockingDeque<String>()
+    private val sendChannel = Channel<String>(Channel.UNLIMITED)
     private val rateLimiter = RateLimiter(60 * 1000, 100) // The actual limit is 120
 
-    val memberChunkRequestQueue = AdvancedQueue<Long>(50) {
+    val memberChunkRequestQueue = ChunkedQueue<Long>(50) {
         queue(Opcode.REQUEST_GUILD_MEMBERS, json {
             "guild_id" to jsonArray { it.forEach { +JsonPrimitive(it) } }
             "query" to ""
@@ -93,40 +89,50 @@ class GatewayClient(
     )
 
     init {
-        Thread({
+        launch(newSingleThreadContext("Gateway Packet Dispatcher")) {
             while (true) {
-                while (webSocket != null && ready && !rateLimiter.isLimited()) {
-                    val json = sendQueue.take()
-                    try {
-                        if (webSocket?.send(json) != true) {
-                            sendQueue.offerFirst(json)
-                            break
-                        }
-                    } catch (ex: Exception) {
-                        LOGGER.error("WebSocket error", ex)
-                        sendQueue.offerFirst(json)
-                        break
-                    }
-                    rateLimiter.increment()
-                    LOGGER.trace("Sent: $json")
-                }
+                try {
+                    val packet = sendChannel.receive()
 
-                Thread.sleep(100)
+                    // Dispose the packet if the websocket is not opened
+                    if (websocket?.isOpen != true) {
+                        continue
+                    }
+
+                    // Wait for the 'cool-down' and the 'ready' state
+                    while (!ready || rateLimiter.isLimited()) {
+                        delay(10)
+                    }
+
+                    // Send it
+                    websocket?.sendText(packet)
+                    rateLimiter.increment()
+
+                    LOGGER.trace("Sent: $packet")
+                } catch (ex: Exception) {
+                    LOGGER.error("WebSocket Error", ex)
+                }
             }
-        }, "Gateway Packet Dispatcher").start()
+        }
     }
 
-    suspend fun connect() = mutex.withLock {
-        if (webSocket != null) {
-            webSocket?.close(1000, null)
-            webSocket = null
+    suspend fun connect(): Unit = mutex.withLock {
+        val state = websocket?.state
+        if (state == WebSocketState.CONNECTING || state == WebSocketState.OPEN) {
+            websocket?.disconnect()
         }
 
-        val request = Request.Builder().url("$endpoint/?v=${Kordis.API_VERSION}&encoding=json").build()
-        webSocket = httpClient.newWebSocket(request, this)
+        websocket = WebSocketFactory().createSocket("$endpoint/?v=${Kordis.API_VERSION}&encoding=json", 10000)
+        websocket!!.addListener(this)
+
+        try {
+            websocket!!.connect()
+        } catch (ex: Exception) {
+            throw IllegalStateException("Failed to connect the the gateway", ex)
+        }
     }
 
-    fun updateStatus(status: UserStatus, type: ActivityType, name: String) {
+    fun updateStatus(status: UserStatus, type: ActivityType, name: String) = start {
         activity = json {
             "since".toNull()
             "status" to status.id
@@ -140,7 +146,7 @@ class GatewayClient(
         activity?.let { queue(Opcode.STATUS_UPDATE, it) }
     }
 
-    override fun onOpen(webSocket: WebSocket, response: Response) = start {
+    override fun onConnected(websocket: WebSocket?, headers: MutableMap<String, MutableList<String>>?) = start {
         LOGGER.info("Connected to the gateway")
         client.status = ConnectionStatus.CONNECTED
 
@@ -153,12 +159,13 @@ class GatewayClient(
         }
     }
 
-    override fun onClosed(webSocket: WebSocket, code: Int, reason: String) = start {
+    override fun onDisconnected(websocket: WebSocket?, serverCloseFrame: WebSocketFrame?, clientCloseFrame: WebSocketFrame?, closedByServer: Boolean) = start {
+        val code = serverCloseFrame?.closeCode ?: clientCloseFrame?.closeCode ?: -1
+        val reason = serverCloseFrame?.closeReason ?: clientCloseFrame?.closeReason
+
+        LOGGER.info("WebSocket closed with code: $code, reason: '$reason', remote: $closedByServer")
+
         ready = false
-
-        LOGGER.info("WebSocket closed with code: $code, reason: '$reason'")
-
-        sendQueue.clear()
         heartbeatTask?.cancel()
 
         // Invalidate cache
@@ -175,7 +182,7 @@ class GatewayClient(
         connect()
     }
 
-    override fun onMessage(webSocket: WebSocket, text: String) = start {
+    override fun onTextMessage(websocket: WebSocket, text: String) = start {
         val payloads = gson.fromJson(text, JsonObject::class.java)
         val opcode = Opcode.values().find { it.code == payloads["op"].asInt }
         val data = payloads.getObjectOrNull("d")
@@ -194,17 +201,17 @@ class GatewayClient(
                         heartbeatAckReceived = false
                         send(Opcode.HEARTBEAT, json { lastSequence?.let { "d" to it } })
                     } else {
-                        webSocket.close(4000, "Heartbeat ACK wasn't received")
+                        websocket.sendClose(4000, "Heartbeat ACK wasn't received")
                     }
                 }
             }
             Opcode.RECONNECT -> {
                 LOGGER.info("Received reconnect request")
-                webSocket.close(4001, "Received Reconnect Request")
+                websocket.sendClose(4001, "Received Reconnect Request")
             }
             Opcode.INVALID_SESSION -> {
                 LOGGER.info("The session id is invalid")
-                webSocket.close(4990, "Invalid Session")
+                websocket.sendClose(4990, "Invalid Session")
             }
             Opcode.HEARTBEAT_ACK -> {
                 LOGGER.debug("Received heartbeat ACK")
@@ -237,9 +244,8 @@ class GatewayClient(
         }
     }
 
-    override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) = start {
-        LOGGER.error("WebSocket exception", t)
-        onClosed(webSocket, -1, "Error")
+    override fun onError(websocket: WebSocket, cause: WebSocketException) {
+        LOGGER.error("WebSocket Error", cause)
     }
 
     private fun authenticate() {
@@ -265,6 +271,15 @@ class GatewayClient(
         })
     }
 
+    private suspend fun queue(opcode: Opcode, data: JsonObject = JsonObject()) {
+        val json = json {
+            "op" to opcode.code
+            "d" to data
+        }.toString()
+
+        sendChannel.send(json)
+    }
+
     private fun resume() {
         val sessionId = sessionId ?: throw IllegalArgumentException("sessionId is null")
         send(Opcode.RESUME, json {
@@ -274,23 +289,13 @@ class GatewayClient(
         })
     }
 
-    private fun queue(opcode: Opcode, data: JsonObject = JsonObject()) {
-        val json = json {
-            "op" to opcode.code
-            "d" to data
-        }.toString()
-
-        sendQueue.offer(json)
-    }
-
     private fun send(opcode: Opcode, data: JsonObject = JsonObject()) {
         val json = json {
             "op" to opcode.code
             "d" to data
         }.toString()
 
-        if (webSocket?.send(json) == true) {
-            rateLimiter.increment()
-        }
+        websocket!!.sendText(json)
+        rateLimiter.increment()
     }
 }
