@@ -128,10 +128,16 @@ class GatewayClient(
 
         websocket!!.addListener(this)
 
-        try {
-            websocket!!.connect()
-        } catch (ex: Exception) {
-            throw IllegalStateException("Failed to connect the the gateway", ex)
+        while (true) {
+            try {
+                websocket!!.connect()
+                break
+            } catch (ex: Exception) {
+                LOGGER.warn("Couldn't connect to the the gateway. Retrying in 3 seconds.", ex)
+                websocket!!.disconnect()
+                websocket = websocket!!.recreate()
+                delay(3000)
+            }
         }
     }
 
