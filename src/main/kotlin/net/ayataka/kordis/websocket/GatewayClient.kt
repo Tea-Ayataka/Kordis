@@ -122,7 +122,10 @@ class GatewayClient(
             websocket?.disconnect()
         }
 
-        websocket = WebSocketFactory().createSocket("$endpoint/?v=${Kordis.API_VERSION}&encoding=json", 10000)
+        websocket = WebSocketFactory()
+                .setVerifyHostname(false)
+                .createSocket("$endpoint/?v=${Kordis.API_VERSION}&encoding=json", 10000)
+
         websocket!!.addListener(this)
 
         try {
