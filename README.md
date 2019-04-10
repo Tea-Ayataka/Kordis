@@ -2,7 +2,7 @@
 [![CircleCI](https://circleci.com/gh/Tea-Ayataka/Kordis.svg?style=svg)](https://circleci.com/gh/Tea-Ayataka/Kordis)
 [![](https://jitpack.io/v/Tea-Ayataka/Kordis.svg)](https://jitpack.io/#Tea-Ayataka/Kordis)  
 
-Kordis is a lightweight Kotlin wrapper for the Discord API. Basically, *A discord bot library that doesn't suck*.
+Kordis is a lightweight and stable Kotlin wrapper for the Discord API. It's still a work in progress, but production-ready. 
 
 # Installation
 with Gradle
@@ -12,7 +12,7 @@ repositories {
 }
     
 dependencies {
-    implementation 'com.github.Tea-Ayataka:Kordis:0.1.3'
+    implementation 'com.github.Tea-Ayataka:Kordis:0.2.0'
 }
 ```
 with Maven
@@ -27,7 +27,7 @@ with Maven
 <dependency>
     <groupId>com.github.Tea-Ayataka</groupId>
     <artifactId>Kordis</artifactId>
-    <version>0.1.3</version>
+    <version>0.2.0</version>
 </dependency>
 ```
 
@@ -93,3 +93,5 @@ class TestBot {
 * Kotlin 1.3.20 (JVM 11)
 * Kotlin Coroutines 1.1.1
 * Gson 2.8.5
+* Ktor Client 1.1.2 (OkHttp)
+* nv-websocket-client 2.8
