@@ -4,6 +4,7 @@ import com.google.gson.JsonObject
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.GlobalScope
 import net.ayataka.kordis.DiscordClientImpl
+import net.ayataka.kordis.Kordis.LOGGER
 import net.ayataka.kordis.entity.server.ServerImpl
 import net.ayataka.kordis.event.events.server.ServerReadyEvent
 import net.ayataka.kordis.utils.getOrNull
@@ -35,6 +36,7 @@ class GuildCreateHandler : GatewayHandler {
             } else {
                 prepare(client, it)
             }
+            return
         }
 
         val server = client.servers.updateOrPut(id, data) {
@@ -57,13 +59,14 @@ class GuildCreateHandler : GatewayHandler {
         server.ready = false
         server.members.clear()
         server.clearHandleLaters()
-        client.gateway.memberChunkRequestQueue.offer(server.id)
+        client.gateway.requestMembers(server.id)
 
         GlobalScope.timer(1000, context = CoroutineName("Server Preparer")) {
             if (server.members.size >= server.memberCount.get() && !server.ready) {
                 server.ready()
 
                 if (!server.initialized.getAndSet(true)) {
+                    LOGGER.trace("Server ready: ${server.name} (${server.id})")
                     client.eventManager.fire(ServerReadyEvent(server))
                 }
 

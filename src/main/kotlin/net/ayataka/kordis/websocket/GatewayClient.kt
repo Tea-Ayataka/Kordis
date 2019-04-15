@@ -44,17 +44,8 @@ class GatewayClient(
     private val mutex = Mutex()
     private val gson = Gson()
     private val sendChannel = Channel<String>(Channel.UNLIMITED)
+    private val memberRequestChannel = Channel<Long>(Channel.UNLIMITED)
     private val rateLimiter = RateLimiter(60 * 1000, 100) // The actual limit is 120
-
-    val memberChunkRequestQueue = ChunkedQueue<Long>(50) {
-        queue(Opcode.REQUEST_GUILD_MEMBERS, json {
-            "guild_id" to jsonArray { it.forEach { +JsonPrimitive(it) } }
-            "query" to ""
-            "limit" to 0
-        })
-
-        delay(500)
-    }
 
     private val handlers = listOf(
             ChannelCreateHandler(),
@@ -90,10 +81,8 @@ class GatewayClient(
 
     init {
         launch(newSingleThreadContext("Gateway Packet Dispatcher")) {
-            while (true) {
+            for (packet in sendChannel) {
                 try {
-                    val packet = sendChannel.receive()
-
                     // Dispose the packet if the websocket is not opened
                     if (websocket?.isOpen != true) {
                         continue
@@ -113,6 +102,19 @@ class GatewayClient(
                     LOGGER.error("WebSocket Error", ex)
                 }
             }
+        }
+
+        timer(interval = 1000, context = newSingleThreadContext("Gateway Server Member Requester")) {
+            val servers = memberRequestChannel.receiveAll()
+            if (servers.isEmpty()) {
+                return@timer
+            }
+
+            queue(Opcode.REQUEST_GUILD_MEMBERS, json {
+                "guild_id" to jsonArray { servers.forEach { +JsonPrimitive(it) } }
+                "query" to ""
+                "limit" to 0
+            })
         }
     }
 
@@ -141,7 +143,11 @@ class GatewayClient(
         }
     }
 
-    fun updateStatus(status: UserStatus, type: ActivityType, name: String) = start {
+    internal fun requestMembers(serverId: Long) {
+        memberRequestChannel.offer(serverId)
+    }
+
+    internal fun updateStatus(status: UserStatus, type: ActivityType, name: String) = start {
         activity = json {
             "since".toNull()
             "status" to status.id
@@ -182,7 +188,7 @@ class GatewayClient(
             sessionId = null
             lastSequence = null
 
-            memberChunkRequestQueue.clear()
+            memberRequestChannel.clear()
             client.users.clear()
             client.privateChannels.clear()
         }

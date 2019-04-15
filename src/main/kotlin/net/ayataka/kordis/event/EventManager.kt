@@ -1,15 +1,12 @@
 package net.ayataka.kordis.event
 
-import kotlinx.coroutines.CoroutineName
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.Channel
 import net.ayataka.kordis.Kordis.LOGGER
 import net.ayataka.kordis.event.events.message.MessageEvent
 import net.ayataka.kordis.event.events.server.ServerEvent
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
-import java.util.concurrent.LinkedBlockingQueue
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
 import kotlin.reflect.full.callSuspend
@@ -18,13 +15,13 @@ import kotlin.reflect.full.isSubclassOf
 
 class EventManager {
     private val dispatcher = CoroutineScope(Dispatchers.Default + CoroutineName("Event Dispatcher"))
-    private val queue = LinkedBlockingQueue<Event>()
+    private val channel = Channel<Event>(Channel.UNLIMITED)
     private val handlerMap = ConcurrentHashMap<KClass<out Event>, ConcurrentHashMap<Long, CopyOnWriteArrayList<Pair<Any?, Any>>>>()
 
     init {
-        Thread({
-            while (true) {
-                val event = queue.take()
+        @Suppress("EXPERIMENTAL_API_USAGE")
+        GlobalScope.launch(newSingleThreadContext("Event Dispatcher")) {
+            for (event in channel) {
                 val handlers = mutableListOf<Pair<Any?, Any>>()
 
                 handlerMap[event::class]?.get(-1)?.let { handlers.addAll(it) }
@@ -46,7 +43,8 @@ class EventManager {
                     }
                 }
             }
-        }, "Event Dispatcher").start()
+
+        }
     }
 
     private fun getAnnotatedFunctions(instance: Any): List<KFunction<*>> {
@@ -90,6 +88,6 @@ class EventManager {
      * Dispatch an event.
      */
     fun fire(event: Event) {
-        queue.add(event)
+        channel.offer(event)
     }
 }

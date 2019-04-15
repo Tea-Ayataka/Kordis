@@ -78,7 +78,7 @@ class JsonArrayBuilder {
     fun get() = jsonArray
 }
 
-fun main(args: Array<String>) {
+internal fun main() {
     println(json {
         "isKid" to true
         "Age" to 10
