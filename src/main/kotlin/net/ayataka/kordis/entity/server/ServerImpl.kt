@@ -196,10 +196,6 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
         }
     }
 
-    fun clearHandleLaters() {
-        eventsToProcessLater.clear()
-    }
-
     fun ready() {
         ready = true
 
