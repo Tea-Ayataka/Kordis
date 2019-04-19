@@ -30,37 +30,9 @@ class GuildCreateHandler : GatewayHandler {
             ServerImpl(client, data["id"].asLong).apply { update(data) }
         } as ServerImpl
 
-        // Request additional members
         if (isLarge) {
-            server.ready = false
-            server.members.clear()
-            client.gateway.requestMembers(server.id)
-
-            if (preparers[server.id]?.isActive == true) {
-                return
-            }
-
-            val time = System.currentTimeMillis()
-            preparers[server.id] = GlobalScope.timer(1000, context = CoroutineName("Server Preparer")) {
-                // Wait for 5 minutes maximum
-                val timedOut = time <= System.currentTimeMillis() - 1000 * 60 * 5
-
-                if (server.members.size >= server.memberCount.get() || timedOut) {
-                    server.ready()
-
-                    if (timedOut) {
-                        LOGGER.warn("Timed out waiting for the all members of ${server.name} (${server.id})")
-                    }
-
-                    if (!server.initialized.getAndSet(true)) {
-                        LOGGER.trace("Server ready: ${server.name} (${server.id})")
-                        client.eventManager.fire(ServerReadyEvent(server))
-                    }
-
-                    cancel()
-                    preparers.remove(server.id)
-                }
-            }
+            LOGGER.trace("Preparing a server: ${server.name} (${server.id})")
+            requestMembers(client, server)
             return
         }
 
@@ -69,5 +41,43 @@ class GuildCreateHandler : GatewayHandler {
             LOGGER.trace("Server ready: ${server.name} (${server.id})")
             client.eventManager.fire(ServerReadyEvent(server))
         }
+    }
+
+    private fun requestMembers(client: DiscordClientImpl, server: ServerImpl) {
+        server.ready = false
+        server.members.clear()
+        client.gateway.requestMembers(server.id)
+
+        if (preparers[server.id]?.isActive == true) {
+            return
+        }
+
+        val time = System.currentTimeMillis()
+        preparers[server.id] = GlobalScope.timer(1000, context = CoroutineName("Server Preparer")) {
+            if (server.members.size >= server.memberCount.get()) {
+                server.ready()
+
+                if (!server.initialized.getAndSet(true)) {
+                    LOGGER.trace("Server ready: ${server.name} (${server.id})")
+                    client.eventManager.fire(ServerReadyEvent(server))
+                }
+
+                cancel()
+                preparers.remove(server.id)
+                return@timer
+            }
+
+            // If timed out waiting for members (3 minutes)
+            if (time <= System.currentTimeMillis() - 1000 * 60 * 3) {
+                LOGGER.warn("Timed out waiting for the all members of ${server.name} (${server.id}) (Required: ${server.memberCount.get()}, Current: ${server.members.size})")
+
+                preparers.remove(server.id)
+                cancel()
+
+                // Retry
+                requestMembers(client, server)
+            }
+        }
+        return
     }
 }
