@@ -72,5 +72,5 @@ val NameableEntitySet<Member>.botUser
  * Get the '@everyone' role
  */
 val NameableEntitySet<Role>.everyone
-    get() = find { it.position == 0 && it.name == "@everyone" }
+    get() = find { it.position <= 0 && it.name == "@everyone" }
             ?: throw IllegalStateException("couldn't find @everyone role")
