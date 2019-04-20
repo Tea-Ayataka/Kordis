@@ -236,10 +236,11 @@ class GatewayClient(
                 val eventType = payloads["t"].asString
                 lastSequence = payloads["s"].asString.toInt()
 
-                when (eventType) {
-                    "READY" -> {
-                        ready = true
-                        sessionId = data!!["session_id"].asString
+                if (eventType == "READY" || eventType == "RESUMED") {
+                    ready = true
+
+                    data?.getOrNull("session_id")?.let {
+                        sessionId = it.asString
                     }
                 }
 
