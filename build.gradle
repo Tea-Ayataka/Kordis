@@ -1,5 +1,5 @@
 plugins {
-    id 'org.jetbrains.kotlin.jvm' version '1.3.30'
+    id 'org.jetbrains.kotlin.jvm' version '1.3.31'
 }
 
 group 'net.ayataka'
@@ -18,13 +18,13 @@ repositories {
 
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
-    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.2.0'
-    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.2.0'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.2.1'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.2.1'
 
     // Http client by Ktor
-    implementation 'io.ktor:ktor-client-core:1.1.4'
-    implementation 'io.ktor:ktor-client-core-jvm:1.1.4'
-    implementation 'io.ktor:ktor-client-okhttp:1.1.4'
+    implementation 'io.ktor:ktor-client-core:1.2.1'
+    implementation 'io.ktor:ktor-client-core-jvm:1.2.1'
+    implementation 'io.ktor:ktor-client-okhttp:1.2.1'
 
     implementation 'com.neovisionaries:nv-websocket-client:2.8'
     implementation 'com.google.code.gson:gson:2.8.5'

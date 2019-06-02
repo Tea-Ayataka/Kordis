@@ -50,10 +50,12 @@ class RestClient(private val discordClient: DiscordClientImpl) {
                     }
 
                     body = TextContent(data?.toString() ?: "{}", ContentType.Application.Json)
-                }.response.apply { close() }
+                }.response
 
                 val contentType = response.headers["Content-Type"]
                 val body = response.readText()
+
+                response.close()
 
                 val json = if (contentType?.equals("application/json", true) == true) {
                     gson.fromJson(body, JsonElement::class.java)

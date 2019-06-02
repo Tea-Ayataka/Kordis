@@ -18,6 +18,8 @@ object Kordis {
                 protocols(listOf(Protocol.HTTP_1_1))
             }
         }
+
+        expectSuccess = false
     }
 
     init {
