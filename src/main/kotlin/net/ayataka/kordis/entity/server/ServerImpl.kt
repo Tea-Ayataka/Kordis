@@ -15,8 +15,12 @@ import net.ayataka.kordis.entity.server.ban.BanImpl
 import net.ayataka.kordis.entity.server.channel.ServerChannel
 import net.ayataka.kordis.entity.server.channel.ServerChannelBuilder
 import net.ayataka.kordis.entity.server.channel.ServerChannelImpl
+import net.ayataka.kordis.entity.server.channel.announcement.AnnouncementChannel
+import net.ayataka.kordis.entity.server.channel.announcement.AnnouncementChannelImpl
+import net.ayataka.kordis.entity.server.channel.store.StoreChannelImpl
 import net.ayataka.kordis.entity.server.channel.category.ChannelCategory
 import net.ayataka.kordis.entity.server.channel.category.ChannelCategoryImpl
+import net.ayataka.kordis.entity.server.channel.store.StoreChannel
 import net.ayataka.kordis.entity.server.channel.text.ServerTextChannel
 import net.ayataka.kordis.entity.server.channel.text.ServerTextChannelBuilder
 import net.ayataka.kordis.entity.server.channel.text.ServerTextChannelImpl
@@ -60,6 +64,8 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
     override val textChannels = NameableEntitySetImpl<ServerTextChannel>()
     override val voiceChannels = NameableEntitySetImpl<ServerVoiceChannel>()
     override val channelCategories = NameableEntitySetImpl<ChannelCategory>()
+    override val announcementChannels = NameableEntitySetImpl<AnnouncementChannel>()
+    override val storeChannels = NameableEntitySetImpl<StoreChannel>()
     override val members = NameableEntitySetImpl<Member>()
 
     // For setup
@@ -145,20 +151,31 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
             channelCategories.removeIf { it.id !in ids }
             textChannels.removeIf { it.id !in ids }
             voiceChannels.removeIf { it.id !in ids }
+            announcementChannels.removeIf { it.id !in ids }
 
-            // Load channelCategories first
+            // Update channelCategories first
             objects.filter { it["type"].asInt == ChannelType.GUILD_CATEGORY.id }.forEach {
                 channelCategories.updateOrPut(it["id"].asLong, it) { ChannelCategoryImpl(this, client, it) }
             }
 
-            // Load text channels
+            // Update text channels
             objects.filter { it["type"].asInt == ChannelType.GUILD_TEXT.id }.forEach {
                 textChannels.updateOrPut(it["id"].asLong, it) { ServerTextChannelImpl(this, client, it) }
             }
 
-            // Load voice channels
+            // Update voice channels
             objects.filter { it["type"].asInt == ChannelType.GUILD_VOICE.id }.forEach {
                 voiceChannels.updateOrPut(it["id"].asLong, it) { ServerVoiceChannelImpl(this, client, it) }
+            }
+
+            // Update announcement channels
+            objects.filter { it["type"].asInt == ChannelType.GUILD_NEWS.id }.forEach {
+                announcementChannels.updateOrPut(it["id"].asLong, it) { AnnouncementChannelImpl(this, client, it) }
+            }
+
+            // Update store channels
+            objects.filter { it["type"].asInt == ChannelType.GUILD_STORE.id }.forEach {
+                storeChannels.updateOrPut(it["id"].asLong, it) { StoreChannelImpl(this, client, it) }
             }
         }
 

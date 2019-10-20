@@ -4,6 +4,8 @@ import com.google.gson.JsonObject
 import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.entity.channel.PrivateTextChannelImpl
 import net.ayataka.kordis.entity.server.ServerImpl
+import net.ayataka.kordis.entity.server.channel.announcement.AnnouncementChannelImpl
+import net.ayataka.kordis.entity.server.channel.store.StoreChannelImpl
 import net.ayataka.kordis.entity.server.channel.category.ChannelCategoryImpl
 import net.ayataka.kordis.entity.server.channel.text.ServerTextChannelImpl
 import net.ayataka.kordis.entity.server.channel.voice.ServerVoiceChannelImpl
@@ -33,6 +35,12 @@ class ChannelCreateHandler : GatewayHandler {
             }
             ChannelType.GUILD_CATEGORY.id -> {
                 server.channelCategories.updateOrPut(id, data) { ChannelCategoryImpl(server, client, data) }
+            }
+            ChannelType.GUILD_NEWS.id -> {
+                server.announcementChannels.updateOrPut(id, data) { AnnouncementChannelImpl(server, client, data) }
+            }
+            ChannelType.GUILD_STORE.id -> {
+                server.storeChannels.updateOrPut(id, data) { StoreChannelImpl(server, client, data) }
             }
             else -> {
                 throw IllegalStateException("unknown channel type received")

@@ -25,6 +25,12 @@ class ChannelUpdateHandler : GatewayHandler {
             ChannelType.GUILD_CATEGORY.id -> {
                 server?.channelCategories?.update(id, data)
             }
+            ChannelType.GUILD_NEWS.id -> {
+                server?.announcementChannels?.update(id, data)
+            }
+            ChannelType.GUILD_STORE.id -> {
+                server?.storeChannels?.update(id, data)
+            }
             else -> {
                 throw IllegalStateException("unknown channel type received")
             }

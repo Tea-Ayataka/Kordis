@@ -7,7 +7,9 @@ import net.ayataka.kordis.entity.image.Image
 import net.ayataka.kordis.entity.server.ban.Ban
 import net.ayataka.kordis.entity.server.channel.ServerChannel
 import net.ayataka.kordis.entity.server.channel.ServerChannelBuilder
+import net.ayataka.kordis.entity.server.channel.announcement.AnnouncementChannel
 import net.ayataka.kordis.entity.server.channel.category.ChannelCategory
+import net.ayataka.kordis.entity.server.channel.store.StoreChannel
 import net.ayataka.kordis.entity.server.channel.text.ServerTextChannel
 import net.ayataka.kordis.entity.server.channel.text.ServerTextChannelBuilder
 import net.ayataka.kordis.entity.server.channel.voice.ServerVoiceChannel
@@ -107,6 +109,16 @@ interface Server : Nameable, Entity {
      * The channel categories on the server
      */
     val channelCategories: NameableEntitySet<ChannelCategory>
+
+    /**
+     * The announcement channels on the server
+     */
+    val announcementChannels: NameableEntitySet<AnnouncementChannel>
+
+    /**
+     * The store channels on the server
+     */
+    val storeChannels: NameableEntitySet<StoreChannel>
 
     /**
      * The all channels on the server
