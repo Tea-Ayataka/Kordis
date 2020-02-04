@@ -3,10 +3,11 @@ package net.ayataka.kordis.rest
 import com.google.gson.Gson
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
-import io.ktor.client.call.call
 import io.ktor.client.request.header
+import io.ktor.client.request.request
 import io.ktor.client.request.url
-import io.ktor.client.response.readText
+import io.ktor.client.statement.HttpResponse
+import io.ktor.client.statement.readText
 import io.ktor.content.TextContent
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
@@ -35,7 +36,7 @@ class RestClient(private val discordClient: DiscordClientImpl) {
             try {
                 LOGGER.debug("Request: ${endPoint.url}, method: ${endPoint.method.value}, data: $data, retry: $it / $rateLimitRetries")
 
-                val response = HTTP_CLIENT.call {
+                val response = HTTP_CLIENT.request<HttpResponse> {
                     method = endPoint.method
                     url(endPoint.url)
                     header(HttpHeaders.Accept, "application/json")
@@ -46,16 +47,15 @@ class RestClient(private val discordClient: DiscordClientImpl) {
                         if (data != null) {
                             url(endPoint.url + "?" + data.entrySet().joinToString("&") { "${it.key}=${it.value}" })
                         }
-                        return@call
+                        @Suppress("LABEL_NAME_CLASH")
+                        return@request
                     }
 
                     body = TextContent(data?.toString() ?: "{}", ContentType.Application.Json)
-                }.response
+                }
 
                 val contentType = response.headers["Content-Type"]
                 val body = response.readText()
-
-                response.close()
 
                 val json = if (contentType?.equals("application/json", true) == true) {
                     gson.fromJson(body, JsonElement::class.java)

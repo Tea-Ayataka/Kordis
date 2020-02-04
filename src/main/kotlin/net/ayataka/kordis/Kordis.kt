@@ -7,7 +7,7 @@ import org.slf4j.LoggerFactory
 
 object Kordis {
     const val NAME = "Kordis"
-    const val VERSION = "0.1.3"
+    const val VERSION = "0.2.2"
     const val URL = "https://github.com/Tea-Ayataka/Kordis"
     const val API_VERSION = 6
 
