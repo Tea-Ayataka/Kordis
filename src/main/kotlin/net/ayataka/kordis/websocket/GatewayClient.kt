@@ -10,6 +10,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import net.ayataka.kordis.ConnectionStatus
 import net.ayataka.kordis.DiscordClientImpl
+import net.ayataka.kordis.GatewayIntent
 import net.ayataka.kordis.Kordis
 import net.ayataka.kordis.Kordis.LOGGER
 import net.ayataka.kordis.entity.server.enums.ActivityType
@@ -25,11 +26,14 @@ import net.ayataka.kordis.websocket.handlers.other.TypingStartHandler
 import net.ayataka.kordis.websocket.handlers.other.UserUpdateHandler
 import net.ayataka.kordis.websocket.handlers.voice.VoiceServerUpdateHandler
 import net.ayataka.kordis.websocket.handlers.voice.VoiceStateUpdateHandler
+import kotlin.coroutines.resume
+import kotlin.coroutines.suspendCoroutine
 
 @Suppress("EXPERIMENTAL_API_USAGE")
 class GatewayClient(
         private val client: DiscordClientImpl,
-        private val endpoint: String
+        private val endpoint: String,
+        private val intents: Set<GatewayIntent>
 ) : CoroutineScope, WebSocketAdapter() {
     override val coroutineContext = newSingleThreadContext("Gateway Packet Handler")
 
@@ -141,6 +145,10 @@ class GatewayClient(
                 delay(3000)
             }
         }
+
+        while (!ready) {
+            delay(100)
+        }
     }
 
     internal fun requestMembers(serverId: Long) {
@@ -182,6 +190,11 @@ class GatewayClient(
 
         ready = false
         heartbeatTask?.cancel()
+
+        if (code == 4014) {
+            LOGGER.error("Invalid privilege intent(s) are specified. you must first go to your application in the Developer Portal and enable the toggle for the Privileged Intents you wish to use.")
+            return@start
+        }
 
         // Invalidate cache
         if (code == 4007 || code == 4990 || code == 4003) {
@@ -269,6 +282,15 @@ class GatewayClient(
 
         send(Opcode.IDENTIFY, json {
             "token" to client.token
+
+            if (intents.isNotEmpty()) {
+                var value = 0
+                intents.forEach {
+                    value = value or it.flag
+                }
+                LOGGER.trace("Intent flag: $value")
+                "intents" to value
+            }
 
             "properties" to json {
                 "\$os" to "who knows"

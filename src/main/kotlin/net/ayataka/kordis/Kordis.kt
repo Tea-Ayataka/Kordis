@@ -7,7 +7,7 @@ import org.slf4j.LoggerFactory
 
 object Kordis {
     const val NAME = "Kordis"
-    const val VERSION = "0.2.2"
+    const val VERSION = "0.2.3"
     const val URL = "https://github.com/Tea-Ayataka/Kordis"
     const val API_VERSION = 6
 
@@ -32,7 +32,7 @@ object Kordis {
                 throw IllegalArgumentException("Bot token must be specified")
             }
 
-            val client = DiscordClientImpl(token, shard, maxShard)
+            val client = DiscordClientImpl(token, shard, maxShard, intents)
             listeners.forEach { client.addListener(it) }
             handlers.forEach { client.addListener(it) }
             client.connect()

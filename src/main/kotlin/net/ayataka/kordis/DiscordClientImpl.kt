@@ -18,7 +18,8 @@ import net.ayataka.kordis.websocket.GatewayClient
 class DiscordClientImpl(
         val token: String,
         val shard: Int,
-        val maxShards: Int
+        val maxShards: Int,
+        private val intents: Set<GatewayIntent>
 ) : DiscordClient {
     override var status = ConnectionStatus.DISCONNECTED
     override lateinit var botUser: User
@@ -42,7 +43,7 @@ class DiscordClientImpl(
 
         // Connect to the gateway
         val endpoint = rest.request(Endpoint.GET_GATEWAY_BOT.format()).asJsonObject["url"].asString
-        gateway = GatewayClient(this, endpoint)
+        gateway = GatewayClient(this, endpoint, intents)
         gateway.connect()
 
         status = ConnectionStatus.CONNECTED

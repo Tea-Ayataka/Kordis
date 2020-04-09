@@ -41,8 +41,3 @@ dependencies {
     testImplementation("junit:junit:4.12")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit")
 }
-
-tasks.test {
-    val tokenTest: String? by project
-    systemProperties("token" to (tokenTest ?: System.getenv("tokenTest")))
-}

@@ -4,6 +4,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import net.ayataka.kordis.DiscordClient
+import net.ayataka.kordis.GatewayIntent
 import net.ayataka.kordis.Kordis
 import net.ayataka.kordis.entity.botUser
 import net.ayataka.kordis.entity.server.Server
@@ -24,7 +25,14 @@ class Test {
         var userRoleUpdateEvent: UserRoleUpdateEvent? = null
 
         client = Kordis.create {
-            token = System.getProperty("token")
+            token = System.getenv("tokenTest")
+
+            registerIntents(
+                    GatewayIntent.GUILDS,
+                    GatewayIntent.GUILD_MEMBERS,
+                    GatewayIntent.GUILD_MESSAGES,
+                    GatewayIntent.DIRECT_MESSAGES
+            )
 
             addHandler<UserRoleUpdateEvent> {
                 userRoleUpdateEvent = it

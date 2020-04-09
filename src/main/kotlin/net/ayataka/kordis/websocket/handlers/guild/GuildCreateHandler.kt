@@ -4,6 +4,7 @@ import com.google.gson.JsonObject
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.Kordis.LOGGER
 import net.ayataka.kordis.entity.server.ServerImpl
@@ -24,23 +25,13 @@ class GuildCreateHandler : GatewayHandler {
         }
 
         val id = data["id"].asLong
-        val isLarge = data.getOrNull("large")?.asBoolean == true
 
         val server = client.servers.updateOrPut(id, data) {
             ServerImpl(client, data["id"].asLong).apply { update(data) }
         } as ServerImpl
 
-        if (isLarge) {
-            LOGGER.trace("Preparing a server: ${server.name} (${server.id})")
-            requestMembers(client, server)
-            return
-        }
-
-        server.ready = true
-        if (!server.initialized.getAndSet(true)) {
-            LOGGER.trace("Server ready: ${server.name} (${server.id})")
-            client.eventManager.fire(ServerReadyEvent(server))
-        }
+        LOGGER.trace("Preparing a server: ${server.name} (${server.id})")
+        requestMembers(client, server)
     }
 
     private fun requestMembers(client: DiscordClientImpl, server: ServerImpl) {
@@ -75,6 +66,7 @@ class GuildCreateHandler : GatewayHandler {
                 cancel()
 
                 // Retry
+                delay(1000)
                 requestMembers(client, server)
             }
         }
