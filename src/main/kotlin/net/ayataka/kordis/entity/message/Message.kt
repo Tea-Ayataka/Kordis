@@ -8,6 +8,7 @@ import net.ayataka.kordis.entity.message.embed.Embed
 import net.ayataka.kordis.entity.message.embed.EmbedBuilder
 import net.ayataka.kordis.entity.server.Server
 import net.ayataka.kordis.entity.server.channel.text.ServerTextChannel
+import net.ayataka.kordis.entity.server.emoji.PartialEmoji
 import net.ayataka.kordis.entity.server.member.Member
 import net.ayataka.kordis.entity.user.User
 import java.time.Instant
@@ -93,6 +94,11 @@ interface Message : Entity {
      * Edit the message
      */
     suspend fun edit(text: String = "", embed: (EmbedBuilder.() -> Unit)? = null): Message
+
+    /**
+     * Add a reaction to the message
+     */
+    suspend fun createReaction(emoji: PartialEmoji)
 
     /**
      * Delete the message

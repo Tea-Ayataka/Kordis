@@ -11,6 +11,7 @@ import net.ayataka.kordis.entity.message.embed.EmbedBuilder
 import net.ayataka.kordis.entity.message.embed.EmbedImpl
 import net.ayataka.kordis.entity.server.Server
 import net.ayataka.kordis.entity.server.ServerImpl
+import net.ayataka.kordis.entity.server.emoji.PartialEmoji
 import net.ayataka.kordis.entity.user.User
 import net.ayataka.kordis.entity.user.UserImpl
 import net.ayataka.kordis.rest.Endpoint
@@ -80,6 +81,12 @@ class MessageImpl(client: DiscordClientImpl, json: JsonObject, _server: Server? 
 
         return MessageImpl(client, response.asJsonObject, server)
     }
+
+    override suspend fun createReaction(emoji: PartialEmoji) {
+        client.rest.request(
+                Endpoint.CREATE_REACTION.format("message.id" to id, "channel.id" to channel.id, "emoji" to ":${emoji.name}:${emoji.id!!}"))
+    }
+
 
     override fun toString(): String {
         return "Message(" +
