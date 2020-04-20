@@ -43,6 +43,7 @@ class ReactionImpl(
                 (server as ServerImpl).members.update(author.id, it)
             }
         }
+
         json["emoji"].asJsonObject.also {
             emoji = PartialEmojiImpl(id = it["id"].asLongOrNull, name = it["name"].asString)
         }

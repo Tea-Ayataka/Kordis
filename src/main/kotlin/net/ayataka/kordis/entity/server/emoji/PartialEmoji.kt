@@ -10,6 +10,13 @@ package net.ayataka.kordis.entity.server.emoji
  * [Reaction Standard Emoji](https://discordapp.com/developers/docs/resources/emoji#emoji-object-gateway-reaction-standard-emoji-example)
  */
 interface PartialEmoji {
-    val id: Long?
+    /**
+     * The name of the emoji.
+     */
     val name: String
+
+    /**
+     * The id of the emoji. It will be null if it's not a custom one.
+     */
+    val id: Long?
 }

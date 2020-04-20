@@ -4,7 +4,6 @@ import net.ayataka.kordis.entity.Entity
 import net.ayataka.kordis.entity.Nameable
 import net.ayataka.kordis.entity.image.Image
 import net.ayataka.kordis.entity.server.Server
-import net.ayataka.kordis.entity.user.User
 
 interface Emoji : Nameable, Entity {
     /**

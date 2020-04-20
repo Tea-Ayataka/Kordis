@@ -11,10 +11,12 @@ import net.ayataka.kordis.entity.message.embed.EmbedBuilder
 import net.ayataka.kordis.entity.message.embed.EmbedImpl
 import net.ayataka.kordis.entity.server.Server
 import net.ayataka.kordis.entity.server.ServerImpl
+import net.ayataka.kordis.entity.server.emoji.PartialEmoji
 import net.ayataka.kordis.entity.user.User
 import net.ayataka.kordis.entity.user.UserImpl
 import net.ayataka.kordis.rest.Endpoint
 import net.ayataka.kordis.utils.*
+import java.net.URLEncoder
 import java.time.Instant
 import java.time.format.DateTimeFormatter
 
@@ -48,7 +50,7 @@ class MessageImpl(client: DiscordClientImpl, json: JsonObject, _server: Server? 
         server = _server ?: json.getOrNull("guild_id")?.let { client.servers.find(it.asLong) }
         channel = server?.textChannels?.find(json["channel_id"].asLong)
                 ?: client.privateChannels.find(json["channel_id"].asLong)
-                ?: throw IllegalStateException("unknown channel id received")
+                        ?: throw IllegalStateException("unknown channel id received")
 
         author = if (!json.has("webhook_id")) {
             val authorData = json["author"].asJsonObject
@@ -80,6 +82,38 @@ class MessageImpl(client: DiscordClientImpl, json: JsonObject, _server: Server? 
 
         return MessageImpl(client, response.asJsonObject, server)
     }
+
+    override suspend fun getReactors(emoji: PartialEmoji): List<User> {
+        val response = client.rest.request(Endpoint.GET_REACTIONS.format("channel.id" to channel.id,
+                "message.id" to id, "emoji" to encodeEmoji(emoji)))
+
+        return response.asJsonArray.map { UserImpl(client, it.asJsonObject) }
+    }
+
+    override suspend fun addReaction(emoji: PartialEmoji) {
+        client.rest.request(Endpoint.CREATE_REACTION.format("channel.id" to channel.id, "message.id" to id,
+                "emoji" to encodeEmoji(emoji)))
+    }
+
+    override suspend fun removeReaction(emoji: PartialEmoji, member: User) {
+        client.rest.request(Endpoint.DELETE_USER_REACTION.format("channel.id" to channel.id, "message.id" to id,
+                "emoji" to encodeEmoji(emoji), "user.id" to member.id))
+    }
+
+    override suspend fun removeReaction(emoji: PartialEmoji) {
+        client.rest.request(Endpoint.DELETE_OWN_REACTION.format("channel.id" to channel.id, "message.id" to id,
+                "emoji" to encodeEmoji(emoji)))
+    }
+
+    override suspend fun clearReactions() {
+        client.rest.request(Endpoint.DELETE_ALL_REACTIONS.format("channel.id" to channel.id, "message.id" to id))
+    }
+
+    private fun encodeEmoji(emoji: PartialEmoji) =
+            if (emoji.id == null)
+                URLEncoder.encode(emoji.name, Charsets.UTF_8)
+            else
+                "${URLEncoder.encode(emoji.name, Charsets.UTF_8)}:${emoji.id}"
 
     override fun toString(): String {
         return "Message(" +

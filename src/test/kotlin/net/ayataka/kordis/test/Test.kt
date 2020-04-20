@@ -12,11 +12,10 @@ import net.ayataka.kordis.entity.server.enums.Region
 import net.ayataka.kordis.entity.server.enums.VerificationLevel
 import net.ayataka.kordis.event.events.server.user.UserRoleUpdateEvent
 import net.ayataka.kordis.exception.MissingPermissionsException
+import kotlin.test.*
 import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFails
-import kotlin.test.assertNotNull
 
+@Suppress("ControlFlowWithEmptyBody")
 class Test {
     lateinit var client: DiscordClient
 
@@ -101,5 +100,44 @@ class Test {
         assert(mutedRole in server.members.botUser.roles)
 
         assertEquals("https://cdn.discordapp.com/embed/avatars/0.png", client.getUser(503844086512615425)?.avatar?.url)
+
+        // Test message
+        val text = "Hello World!"
+        var message = server.textChannels.first { server.members.botUser.canAccess(it) }.send(text)
+        assertEquals(text, message.content)
+
+        val editedText = "Hello Universe!"
+        message = message.edit(editedText)
+        assertEquals(editedText, message.content)
+
+        // Test reaction
+        val rocketEmoji = "\uD83D\uDE80"
+        val computerEmoji = "\uD83D\uDCBB"
+        val gemEmoji = "\uD83D\uDC8E"
+        message.addReaction(rocketEmoji)
+        message.addReaction(computerEmoji)
+        message.addReaction(gemEmoji)
+        server.emojis.forEach {
+            message.addReaction(it.name, it.id)
+        }
+
+        val reactedUsers = message.getReactors(rocketEmoji)
+        assertEquals(1, reactedUsers.size)
+        assertEquals(client.botUser.id, reactedUsers.first().id)
+
+        message.removeReaction(rocketEmoji)
+        assert(message.getReactors(rocketEmoji).isEmpty())
+
+        message.removeReaction(computerEmoji, null, server.members.botUser)
+        assert(message.getReactors(computerEmoji).isEmpty())
+
+        message.clearReactions()
+        assert(message.getReactors(gemEmoji).isEmpty())
+
+        // Delete the message
+        message.delete()
+
+        // Confirm that it's deleted
+        assertNull(message.channel.getMessage(message.id))
     }
 }

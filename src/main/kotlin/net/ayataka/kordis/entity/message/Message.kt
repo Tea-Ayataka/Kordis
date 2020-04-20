@@ -8,6 +8,8 @@ import net.ayataka.kordis.entity.message.embed.Embed
 import net.ayataka.kordis.entity.message.embed.EmbedBuilder
 import net.ayataka.kordis.entity.server.Server
 import net.ayataka.kordis.entity.server.channel.text.ServerTextChannel
+import net.ayataka.kordis.entity.server.emoji.PartialEmoji
+import net.ayataka.kordis.entity.server.emoji.PartialEmojiImpl
 import net.ayataka.kordis.entity.server.member.Member
 import net.ayataka.kordis.entity.user.User
 import java.time.Instant
@@ -98,4 +100,37 @@ interface Message : Entity {
      * Delete the message
      */
     suspend fun delete() = channel.deleteMessage(id)
+
+    /**
+     * Get a list of users that reacted with the emoji
+     */
+    suspend fun getReactors(emoji: PartialEmoji): List<User>
+    suspend fun getReactors(name: String, id: Long? = null) = getReactors(PartialEmojiImpl(id, name))
+
+    /**
+     * Add a reaction to the message
+     */
+    suspend fun addReaction(emoji: PartialEmoji)
+
+    /**
+     * Add a reaction to the message
+     */
+    suspend fun addReaction(name: String, id: Long? = null) = addReaction(PartialEmojiImpl(id, name))
+
+    /**
+     * Remove a reaction by the bot from the message
+     */
+    suspend fun removeReaction(emoji: PartialEmoji)
+    suspend fun removeReaction(name: String, id: Long? = null) = removeReaction(PartialEmojiImpl(id, name))
+
+    /**
+     * Remove a reaction by the member from the message
+     */
+    suspend fun removeReaction(emoji: PartialEmoji, member: User)
+    suspend fun removeReaction(name: String, id: Long? = null, member: User) = removeReaction(PartialEmojiImpl(id, name), member)
+
+    /**
+     * Remove all the reactions from the message
+     */
+    suspend fun clearReactions()
 }
