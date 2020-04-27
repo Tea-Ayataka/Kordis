@@ -1,9 +1,12 @@
+@file:Suppress("EXPERIMENTAL_API_USAGE")
+
 package net.ayataka.kordis.websocket
 
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import com.google.gson.JsonPrimitive
 import com.neovisionaries.ws.client.*
+import io.ktor.util.hex
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.sync.Mutex
@@ -26,10 +29,13 @@ import net.ayataka.kordis.websocket.handlers.other.TypingStartHandler
 import net.ayataka.kordis.websocket.handlers.other.UserUpdateHandler
 import net.ayataka.kordis.websocket.handlers.voice.VoiceServerUpdateHandler
 import net.ayataka.kordis.websocket.handlers.voice.VoiceStateUpdateHandler
-import kotlin.coroutines.resume
-import kotlin.coroutines.suspendCoroutine
+import java.io.ByteArrayOutputStream
+import java.io.IOException
+import java.util.zip.Inflater
+import java.util.zip.InflaterOutputStream
 
-@Suppress("EXPERIMENTAL_API_USAGE")
+private val ZLIB_SUFFIX = hex("0000ffff")
+
 class GatewayClient(
         private val client: DiscordClientImpl,
         private val endpoint: String,
@@ -45,6 +51,8 @@ class GatewayClient(
     @Volatile private var heartbeatTask: Job? = null
     @Volatile private var activity: JsonObject? = null
 
+    private val buffer = mutableListOf<ByteArray>()
+    private val inflater = Inflater()
     private val mutex = Mutex()
     private val gson = Gson()
     private val sendChannel = Channel<String>(Channel.UNLIMITED)
@@ -130,7 +138,7 @@ class GatewayClient(
 
         websocket = WebSocketFactory()
                 .setVerifyHostname(false)
-                .createSocket("$endpoint/?v=${Kordis.API_VERSION}&encoding=json", 10000)
+                .createSocket("$endpoint/?v=${Kordis.API_VERSION}&encoding=json&compress=zlib-stream", 10000)
 
         websocket!!.addListener(this)
 
@@ -210,7 +218,35 @@ class GatewayClient(
         connect()
     }
 
-    override fun onTextMessage(websocket: WebSocket, text: String) = start {
+    override fun onBinaryMessage(websocket: WebSocket, binary: ByteArray) {
+        // Add the received data to buffer
+        buffer.add(binary)
+
+        // Check for zlib suffix
+        if (binary.size < 4 || !binary.takeLastAsByteArray(4).contentEquals(ZLIB_SUFFIX)) {
+            return
+        }
+
+        // Decompress the buffered data
+        val text = ByteArrayOutputStream().use { output ->
+            try {
+                InflaterOutputStream(output, inflater).use {
+                    it.write(buffer.concat())
+                }
+                output.toString(Charsets.UTF_8)
+            } catch (e: IOException) {
+                LOGGER.error("Error while decompressing payload", e)
+                return
+            } finally {
+                buffer.clear()
+            }
+        }
+
+        // Handle the message
+        onJsonMessage(websocket, text)
+    }
+
+    private fun onJsonMessage(websocket: WebSocket, text: String) = start {
         val payloads = gson.fromJson(text, JsonObject::class.java)
         val opcode = Opcode.values().find { it.code == payloads["op"].asInt }
         val data = payloads.getObjectOrNull("d")
@@ -234,11 +270,11 @@ class GatewayClient(
                 }
             }
             Opcode.RECONNECT -> {
-                LOGGER.info("Received reconnect request")
+                LOGGER.info("Received RECONNECT opcode. Attempting to reconnect.")
                 websocket.sendClose(4001, "Received Reconnect Request")
             }
             Opcode.INVALID_SESSION -> {
-                LOGGER.info("The session id is invalid")
+                LOGGER.info("Received INVALID_SESSION opcode. Attempting to reconnect.")
                 websocket.sendClose(4990, "Invalid Session")
             }
             Opcode.HEARTBEAT_ACK -> {
@@ -255,6 +291,8 @@ class GatewayClient(
                     data?.getOrNull("session_id")?.let {
                         sessionId = it.asString
                     }
+
+                    LOGGER.info("Ready")
                 }
 
                 handleEvent(eventType, data!!)
@@ -333,6 +371,7 @@ class GatewayClient(
             "d" to data
         }.toString()
 
+        LOGGER.trace("Sent: $json")
         websocket!!.sendText(json)
         rateLimiter.increment()
     }
