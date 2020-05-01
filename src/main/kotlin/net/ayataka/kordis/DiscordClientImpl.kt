@@ -19,7 +19,7 @@ class DiscordClientImpl(
         val token: String,
         val shard: Int,
         val maxShards: Int,
-        private val intents: Set<GatewayIntent>
+        val intents: Set<GatewayIntent>
 ) : DiscordClient {
     override var status = ConnectionStatus.DISCONNECTED
     override lateinit var botUser: User
@@ -35,6 +35,10 @@ class DiscordClientImpl(
     override val privateChannels = EntitySetImpl<PrivateTextChannel>()
 
     suspend fun connect() {
+        if (intents.isNotEmpty() && GatewayIntent.GUILD_MEMBERS !in intents) {
+            throw IllegalArgumentException("You need to include GUILD_MEMBERS intent when the specified intents is not empty.")
+        }
+
         if (status != ConnectionStatus.DISCONNECTED) {
             throw IllegalStateException()
         }

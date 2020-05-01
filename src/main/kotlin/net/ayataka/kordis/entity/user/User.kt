@@ -49,7 +49,7 @@ interface User : Mentionable, Nameable, Permissionable, Entity {
     /**
      * Get a member object by the user
      */
-    fun toMember(server: Server) = server.members.find(id)
+    suspend fun asMember(server: Server) = server.findMember(id)
 
     /**
      * Get the private channel for the user

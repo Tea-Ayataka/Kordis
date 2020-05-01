@@ -9,7 +9,7 @@ import net.ayataka.kordis.websocket.handlers.GatewayHandler
 class GuildRoleUpdateHandler : GatewayHandler {
     override val eventType = "GUILD_ROLE_UPDATE"
     override fun handle(client: DiscordClientImpl, data: JsonObject) {
-        val server = client.servers.find(data["guild_id"].asLong) as? ServerImpl ?: return
+        val server = deserializeServer(client, data) ?: return
 
         // Update role
         val role = server.roles.update(data["role"].asJsonObject["id"].asLong, data["role"].asJsonObject)

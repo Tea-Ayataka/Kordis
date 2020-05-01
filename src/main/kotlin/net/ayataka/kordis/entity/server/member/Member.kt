@@ -38,7 +38,7 @@ interface Member : User {
      * Whether the member is the server owner
      */
     val isOwner: Boolean
-        get() = server.owner == this
+        get() = this.id == server.ownerId
 
     /**
      * Whether the member is the server owner

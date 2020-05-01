@@ -43,8 +43,6 @@ class RoleImpl(override val server: Server, client: DiscordClientImpl, json: Jso
 
     override suspend fun edit(block: RoleBuilder.() -> Unit) {
         checkExistence()
-        checkPermission(server, Permission.MANAGE_ROLES)
-        checkManageable(this)
 
         val updater = RoleBuilder(this).apply(block)
 
@@ -90,8 +88,6 @@ class RoleImpl(override val server: Server, client: DiscordClientImpl, json: Jso
 
     override suspend fun delete() {
         checkExistence()
-        checkPermission(server, Permission.MANAGE_ROLES)
-        checkManageable(this)
 
         client.rest.request(Endpoint.DELETE_GUILD_ROLE.format("guild.id" to server.id, "role.id" to id))
     }

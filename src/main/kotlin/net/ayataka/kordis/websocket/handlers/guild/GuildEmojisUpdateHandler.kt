@@ -10,9 +10,8 @@ class GuildEmojisUpdateHandler : GatewayHandler {
     override val eventType = "GUILD_EMOJIS_UPDATE"
 
     override fun handle(client: DiscordClientImpl, data: JsonObject) {
-        val server = client.servers.find(data["guild_id"].asLong) as? ServerImpl ?: return
+        val server = deserializeServer(client, data) ?: return
         server.updateEmojis(data)
-
         client.eventManager.fire(EmojiUpdateEvent(server))
     }
 }

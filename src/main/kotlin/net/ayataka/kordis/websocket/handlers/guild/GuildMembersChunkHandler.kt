@@ -11,20 +11,17 @@ class GuildMembersChunkHandler : GatewayHandler {
     override val eventType = "GUILD_MEMBERS_CHUNK"
 
     override fun handle(client: DiscordClientImpl, data: JsonObject) {
-        val server = client.servers.find(data["guild_id"].asLong) as? ServerImpl ?: return
-
-        data["members"].asJsonArray.map { it.asJsonObject }.forEach {
-            val userObject = it["user"].asJsonObject
-            val userId = userObject["id"].asLong
-
-            server.members.updateOrPut(userId, it) {
-                MemberImpl(
-                        client, it, server,
-                        client.users.getOrPut(userId) {
-                            UserImpl(client, userObject)
-                        }
-                )
-            }
+        val nonce = data["nonce"].asString
+        val server = deserializeServer(client, data, false)
+        if (server == null) {
+            client.gateway.onReceivedMemberChunk(nonce, emptyList())
+            return
         }
+
+        val chunk = data["members"].asJsonArray.mapNotNull {
+            deserializeMember(client, it.asJsonObject, server)
+        }
+
+        client.gateway.onReceivedMemberChunk(nonce, chunk)
     }
 }

@@ -4,10 +4,8 @@ import com.google.gson.JsonObject
 import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.entity.DiscordEntity
 import net.ayataka.kordis.entity.Updatable
-import net.ayataka.kordis.entity.botUser
 import net.ayataka.kordis.entity.collection.NameableEntitySet
 import net.ayataka.kordis.entity.collection.NameableEntitySetImpl
-import net.ayataka.kordis.entity.find
 import net.ayataka.kordis.entity.image.Image
 import net.ayataka.kordis.entity.image.ImageImpl
 import net.ayataka.kordis.entity.server.ban.Ban
@@ -17,10 +15,10 @@ import net.ayataka.kordis.entity.server.channel.ServerChannelBuilder
 import net.ayataka.kordis.entity.server.channel.ServerChannelImpl
 import net.ayataka.kordis.entity.server.channel.announcement.AnnouncementChannel
 import net.ayataka.kordis.entity.server.channel.announcement.AnnouncementChannelImpl
-import net.ayataka.kordis.entity.server.channel.store.StoreChannelImpl
 import net.ayataka.kordis.entity.server.channel.category.ChannelCategory
 import net.ayataka.kordis.entity.server.channel.category.ChannelCategoryImpl
 import net.ayataka.kordis.entity.server.channel.store.StoreChannel
+import net.ayataka.kordis.entity.server.channel.store.StoreChannelImpl
 import net.ayataka.kordis.entity.server.channel.text.ServerTextChannel
 import net.ayataka.kordis.entity.server.channel.text.ServerTextChannelBuilder
 import net.ayataka.kordis.entity.server.channel.text.ServerTextChannelImpl
@@ -32,7 +30,6 @@ import net.ayataka.kordis.entity.server.emoji.EmojiBuilder
 import net.ayataka.kordis.entity.server.emoji.EmojiImpl
 import net.ayataka.kordis.entity.server.enums.*
 import net.ayataka.kordis.entity.server.member.Member
-import net.ayataka.kordis.entity.server.member.MemberImpl
 import net.ayataka.kordis.entity.server.permission.Permission
 import net.ayataka.kordis.entity.server.role.Role
 import net.ayataka.kordis.entity.server.role.RoleBuilder
@@ -42,12 +39,12 @@ import net.ayataka.kordis.entity.user.UserImpl
 import net.ayataka.kordis.exception.NotFoundException
 import net.ayataka.kordis.rest.Endpoint
 import net.ayataka.kordis.utils.*
-import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 
 class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, DiscordEntity(client, id) {
     @Volatile override var ready = false
+    @Volatile override var ownerId = -1L
     @Volatile override var name = ""
     @Volatile override var icon: Image? = null
     @Volatile override var splash: Image? = null
@@ -59,6 +56,9 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
     @Volatile override var explicitContentFilterLevel = ExplicitContentFilterLevel.DISABLED
     @Volatile override var mfaLevel = MfaLevel.NONE
 
+    override val memberCount
+        get() = actualMemberCount.get()
+
     override val roles = NameableEntitySetImpl<Role>()
     override val emojis = NameableEntitySetImpl<Emoji>()
     override val textChannels = NameableEntitySetImpl<ServerTextChannel>()
@@ -66,14 +66,11 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
     override val channelCategories = NameableEntitySetImpl<ChannelCategory>()
     override val announcementChannels = NameableEntitySetImpl<AnnouncementChannel>()
     override val storeChannels = NameableEntitySetImpl<StoreChannel>()
-    override val members = NameableEntitySetImpl<Member>()
 
     // For setup
-    @Volatile var initialized = AtomicBoolean()
-    @Volatile var ownerId: Long = -1
-    @Volatile var memberCount = AtomicInteger()
+    val initialized = AtomicBoolean()
+    val actualMemberCount = AtomicInteger()
     private val eventsToProcessLater = mutableListOf<Pair<String, JsonObject>>()
-    private val temporallyUserPresences = ConcurrentHashMap<Long, JsonObject>()
 
     override val channels = object : NameableEntitySet<ServerChannel> {
         override val size: Int
@@ -123,23 +120,7 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
         }
 
         json.getOrNull("member_count")?.let {
-            memberCount.set(it.asInt)
-        }
-
-        // Update members
-        json.getOrNull("members")?.let {
-            it.asJsonArray.map { it.asJsonObject }.forEach {
-                val userObject = it["user"].asJsonObject
-                val userId = userObject["id"].asLong
-
-                members.updateOrPut(userId, it) {
-                    MemberImpl(
-                            client, it, this,
-                            client.users.getOrPut(userId) {
-                                UserImpl(client, userObject)
-                            })
-                }
-            }
+            actualMemberCount.set(it.asInt)
         }
 
         // Update channels
@@ -180,14 +161,6 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
         }
 
         // Update after loading other entities
-        // Update presences
-        json.getOrNull("presences")?.let { objects ->
-            objects.asJsonArray.map { it.asJsonObject }.forEach {
-                val userId = it["user"].asJsonObject["id"].asLong
-                (members.find(userId) as? MemberImpl)?.updatePresence(it) ?: temporallyUserPresences.put(userId, it)
-            }
-        }
-
         afkChannel = json["afk_channel_id"].asLongOrNull?.let { voiceChannels.find(it) }
         ownerId = json["owner_id"].asLong
     }
@@ -216,14 +189,6 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
     fun ready() {
         ready = true
 
-        // Apply presences
-        if (temporallyUserPresences.isNotEmpty()) {
-            temporallyUserPresences.forEach {
-                (members.find(it.key) as? MemberImpl)?.updatePresence(it.value)
-            }
-            temporallyUserPresences.clear()
-        }
-
         // Process fired events during setup
         synchronized(eventsToProcessLater) {
             if (eventsToProcessLater.isNotEmpty()) {
@@ -238,8 +203,6 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
 
     override suspend fun kick(member: Member) {
         checkExistence()
-        checkPermission(this, Permission.KICK_MEMBERS)
-        checkManageable(member)
 
         client.rest.request(
                 Endpoint.REMOVE_GUILD_MEMBER.format("guild.id" to id, "user.id" to member.id)
@@ -248,8 +211,6 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
 
     override suspend fun ban(user: User, deleteMessageDays: Int, reason: String?) {
         checkExistence()
-        checkPermission(this, Permission.BAN_MEMBERS)
-        members.find(user)?.let { checkManageable(it) }
 
         client.rest.request(
                 Endpoint.CREATE_GUILD_BAN.format("guild.id" to id, "user.id" to user.id),
@@ -264,7 +225,6 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
 
     override suspend fun unban(user: User) {
         checkExistence()
-        checkPermission(this, Permission.BAN_MEMBERS)
 
         client.rest.request(
                 Endpoint.REMOVE_GUILD_BAN.format("guild.id" to id, "user.id" to user.id)
@@ -273,7 +233,6 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
 
     override suspend fun edit(block: ServerBuilder.() -> Unit) {
         checkExistence()
-        checkPermission(this, Permission.MANAGE_GUILD)
 
         val updater = ServerBuilder(this).apply(block)
 
@@ -315,6 +274,18 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
         }
     }
 
+    override suspend fun findMember(userId: Long): Member? {
+        return client.gateway.getMembers(id, arrayOf(userId), null).firstOrNull()
+    }
+
+    override suspend fun findMembers(vararg userIds: Long): List<Member> {
+        return client.gateway.getMembers(id, userIds.toTypedArray(), null)
+    }
+
+    override suspend fun findMembers(query: String): List<Member> {
+        return client.gateway.getMembers(id, null, query)
+    }
+
     override suspend fun bans(): Collection<Ban> {
         checkExistence()
 
@@ -332,7 +303,6 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
 
     override suspend fun createTextChannel(block: ServerTextChannelBuilder.() -> Unit): ServerTextChannel {
         checkExistence()
-        checkPermission(this, Permission.MANAGE_CHANNELS)
 
         val builder = ServerTextChannelBuilder().apply(block)
         val json = json {
@@ -350,7 +320,6 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
             }
 
             if (builder.category != null) {
-                checkManageable(builder.category!!)
                 "parent_id" to builder.category!!.id
             }
 
@@ -369,7 +338,6 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
 
     override suspend fun createVoiceChannel(block: ServerVoiceChannelBuilder.() -> Unit): ServerVoiceChannel {
         checkExistence()
-        checkPermission(this, Permission.MANAGE_CHANNELS)
 
         val builder = ServerVoiceChannelBuilder().apply(block)
         val json = json {
@@ -386,7 +354,6 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
             }
 
             if (builder.category != null) {
-                checkManageable(builder.category!!)
                 "parent_id" to builder.category!!.id
             }
 
@@ -405,7 +372,6 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
 
     override suspend fun createChannelCategory(block: ServerChannelBuilder.() -> Unit): ChannelCategory {
         checkExistence()
-        checkPermission(this, Permission.MANAGE_CHANNELS)
 
         val builder = ServerChannelBuilder().apply(block)
         val json = json {
@@ -431,7 +397,6 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
 
     override suspend fun createRole(block: RoleBuilder.() -> Unit): Role {
         checkExistence()
-        checkPermission(this, Permission.MANAGE_ROLES)
 
         val builder = RoleBuilder().apply(block)
         val json = json {
@@ -450,9 +415,6 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
                 "permissions" to it.compile()
             }
             builder.position?.let {
-                if (it > members.botUser.roles.map { it.position }.max()!!) {
-                    throw IllegalArgumentException("The specified position is higher than the top role i have")
-                }
                 "position" to it
             }
         }
@@ -467,7 +429,6 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
 
     override suspend fun createEmoji(block: EmojiBuilder.() -> Unit): Emoji {
         checkExistence()
-        checkPermission(this, Permission.MANAGE_EMOJIS)
 
         val builder = EmojiBuilder().apply(block)
         val json = json {

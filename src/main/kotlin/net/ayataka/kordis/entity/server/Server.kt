@@ -29,6 +29,16 @@ interface Server : Nameable, Entity {
     val ready: Boolean
 
     /**
+     * The count of server members
+     */
+    val memberCount: Int
+
+    /**
+     * The id of server owner
+     */
+    val ownerId: Long
+
+    /**
      * The url of the server icon
      */
     val icon: Image?
@@ -37,13 +47,6 @@ interface Server : Nameable, Entity {
      * The url of the server splash
      */
     val splash: Image?
-
-    /**
-     * The owner of the server
-     * Possibly null if the user isn't cached during reconnect
-     */
-    val owner: User?
-        get() = client.users.find((this as ServerImpl).ownerId)
 
     /**
      * the voice region of the server
@@ -79,11 +82,6 @@ interface Server : Nameable, Entity {
      * The Multi-Factor-Authorization level of the server
      */
     val mfaLevel: MfaLevel
-
-    /**
-     * The members in the server
-     */
-    val members: NameableEntitySet<Member>
 
     /**
      * The roles on the server
@@ -124,6 +122,26 @@ interface Server : Nameable, Entity {
      * The all channels on the server
      */
     val channels: NameableEntitySet<ServerChannel>
+
+    /**
+     * Get the server owner
+     */
+    suspend fun owner() = findMember(ownerId)!!
+
+    /**
+     * Find a member of the server by id
+     */
+    suspend fun findMember(userId: Long) : Member?
+
+    /**
+     * Find members of the server by id
+     */
+    suspend fun findMembers(vararg userIds: Long) : List<Member>
+
+    /**
+     * Find members of the server by name
+     */
+    suspend fun findMembers(query: String) : List<Member>
 
     /**
      * Get server bans

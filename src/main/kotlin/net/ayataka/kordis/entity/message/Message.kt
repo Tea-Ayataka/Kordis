@@ -31,7 +31,6 @@ interface Message : Entity {
      * This will return null if the message was not sent in a server
      */
     val member: Member?
-        get() = author?.let { server?.members?.find(it.id) }
 
     /**
      * The server the message was sent in
@@ -124,10 +123,10 @@ interface Message : Entity {
     suspend fun removeReaction(name: String, id: Long? = null) = removeReaction(PartialEmojiImpl(id, name))
 
     /**
-     * Remove a reaction by the member from the message
+     * Remove a reaction by the user from the message
      */
-    suspend fun removeReaction(emoji: PartialEmoji, member: User)
-    suspend fun removeReaction(name: String, id: Long? = null, member: User) = removeReaction(PartialEmojiImpl(id, name), member)
+    suspend fun removeReaction(emoji: PartialEmoji, user: User)
+    suspend fun removeReaction(name: String, id: Long? = null, user: User) = removeReaction(PartialEmojiImpl(id, name), user)
 
     /**
      * Remove all the reactions from the message

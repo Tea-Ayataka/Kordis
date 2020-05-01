@@ -46,29 +46,6 @@ fun permissions(vararg permission: Permission) = PermissionSet().apply { addAll(
 fun Int.toPermissions() = PermissionSet(this)
 
 /**
- * Get the member by a user
- */
-fun NameableEntitySet<Member>.find(user: User) = find(user.id)
-
-/**
- * Get a member by its tag
- */
-fun NameableEntitySet<Member>.findByTag(tag: String, ignoreCase: Boolean = false): Member? =
-        find { it.tag.equals(tag, ignoreCase) }
-
-/**
- * Get a user by its tag
- */
-fun NameableEntitySet<User>.findByTag(tag: String, ignoreCase: Boolean = false): User? =
-        find { it.tag.equals(tag, ignoreCase) }
-
-/**
- * Get the current bot user as member
- */
-val NameableEntitySet<Member>.botUser
-    get() = find { it.id == it.client.botUser.id }!!
-
-/**
  * Get the '@everyone' role
  */
 val NameableEntitySet<Role>.everyone

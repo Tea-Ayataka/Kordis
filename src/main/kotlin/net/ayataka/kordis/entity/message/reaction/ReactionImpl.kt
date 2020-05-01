@@ -7,6 +7,7 @@ import net.ayataka.kordis.entity.server.ServerImpl
 import net.ayataka.kordis.entity.server.emoji.PartialEmoji
 import net.ayataka.kordis.entity.server.emoji.PartialEmojiImpl
 import net.ayataka.kordis.entity.server.member.Member
+import net.ayataka.kordis.entity.server.member.MemberImpl
 import net.ayataka.kordis.entity.user.User
 import net.ayataka.kordis.entity.user.UserImpl
 import net.ayataka.kordis.utils.asLongOrNull
@@ -25,7 +26,6 @@ class ReactionImpl(
     override val messageId: Long = json["message_id"].asLong
     override val author: User?
     override val member: Member?
-        get() = author?.let { server?.members?.find(it.id) }
     override val emoji: PartialEmoji
 
     init {
@@ -37,12 +37,9 @@ class ReactionImpl(
             }
         } else null
 
-        // Update member
-        if (server != null && author != null) {
-            json.getObjectOrNull("member")?.let {
-                (server as ServerImpl).members.update(author.id, it)
-            }
-        }
+        member = if (server != null && author != null && json.has("member")) {
+            MemberImpl(client, json["member"].asJsonObject, server, author)
+        } else null
 
         json["emoji"].asJsonObject.also {
             emoji = PartialEmojiImpl(id = it["id"].asLongOrNull, name = it["name"].asString)

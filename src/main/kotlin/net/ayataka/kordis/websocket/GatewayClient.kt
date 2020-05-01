@@ -7,6 +7,7 @@ import com.google.gson.JsonObject
 import com.google.gson.JsonPrimitive
 import com.neovisionaries.ws.client.*
 import io.ktor.util.hex
+import kotlinx.atomicfu.locks.synchronized
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.sync.Mutex
@@ -16,8 +17,10 @@ import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.GatewayIntent
 import net.ayataka.kordis.Kordis
 import net.ayataka.kordis.Kordis.LOGGER
+import net.ayataka.kordis.entity.server.ServerImpl
 import net.ayataka.kordis.entity.server.enums.ActivityType
 import net.ayataka.kordis.entity.server.enums.UserStatus
+import net.ayataka.kordis.entity.server.member.MemberImpl
 import net.ayataka.kordis.utils.*
 import net.ayataka.kordis.websocket.handlers.channel.ChannelCreateHandler
 import net.ayataka.kordis.websocket.handlers.channel.ChannelDeleteHandler
@@ -31,8 +34,14 @@ import net.ayataka.kordis.websocket.handlers.voice.VoiceServerUpdateHandler
 import net.ayataka.kordis.websocket.handlers.voice.VoiceStateUpdateHandler
 import java.io.ByteArrayOutputStream
 import java.io.IOException
+import java.util.*
+import java.util.concurrent.atomic.AtomicLong
 import java.util.zip.Inflater
 import java.util.zip.InflaterOutputStream
+import kotlin.collections.HashMap
+import kotlin.coroutines.Continuation
+import kotlin.coroutines.resume
+import kotlin.coroutines.suspendCoroutine
 
 private val ZLIB_SUFFIX = hex("0000ffff")
 
@@ -40,24 +49,42 @@ class GatewayClient(
         private val client: DiscordClientImpl,
         private val endpoint: String,
         private val intents: Set<GatewayIntent>
-) : CoroutineScope, WebSocketAdapter() {
-    override val coroutineContext = newSingleThreadContext("Gateway Packet Handler")
+) : WebSocketAdapter() {
+    @Volatile
+    private var ready: Boolean = false
 
-    @Volatile private var ready: Boolean = false
-    @Volatile private var websocket: WebSocket? = null
-    @Volatile private var sessionId: String? = null
-    @Volatile private var lastSequence: Int? = null
-    @Volatile private var heartbeatAckReceived: Boolean = false
-    @Volatile private var heartbeatTask: Job? = null
-    @Volatile private var activity: JsonObject? = null
+    @Volatile
+    private var websocket: WebSocket? = null
 
+    @Volatile
+    private var sessionId: String? = null
+
+    @Volatile
+    private var lastSequence: Int? = null
+
+    @Volatile
+    private var heartbeatAckReceived: Boolean = false
+
+    @Volatile
+    private var heartbeatTask: Job? = null
+
+    @Volatile
+    private var activity: JsonObject? = null
+
+    private val scope = CoroutineScope(Dispatchers.Default + CoroutineName("Gateway Client"))
     private val buffer = mutableListOf<ByteArray>()
     private val inflater = Inflater()
     private val mutex = Mutex()
     private val gson = Gson()
     private val sendChannel = Channel<String>(Channel.UNLIMITED)
-    private val memberRequestChannel = Channel<Long>(Channel.UNLIMITED)
     private val rateLimiter = RateLimiter(60 * 1000, 100) // The actual limit is 120
+    private val nonceSeed = AtomicLong()
+
+    data class MemberChunkRequest(val nonce: String, val handler: Continuation<List<MemberImpl>>)
+    private val memberChunkRequests = LinkedList<MemberChunkRequest>()
+
+    data class PostponedServerEvent(val eventType: String, val data: JsonObject)
+    private val postponedServerEvents = HashMap<Long, ArrayDeque<PostponedServerEvent>>()
 
     private val handlers = listOf(
             ChannelCreateHandler(),
@@ -83,7 +110,7 @@ class GatewayClient(
             MessageReactionRemoveHandler(),
             MessageReactionRemoveAllHandler(),
             MessageUpdateHandler(),
-            PresenseUpdateHandler(),
+            PresenceUpdateHandler(),
             ReadyHandler(),
             TypingStartHandler(),
             UserUpdateHandler(),
@@ -92,7 +119,7 @@ class GatewayClient(
     )
 
     init {
-        launch(newSingleThreadContext("Gateway Packet Dispatcher")) {
+        scope.launch(newSingleThreadContext("Gateway Packet Dispatcher")) {
             for (packet in sendChannel) {
                 try {
                     // Dispose the packet if the websocket is not opened
@@ -114,19 +141,6 @@ class GatewayClient(
                     LOGGER.error("WebSocket Error", ex)
                 }
             }
-        }
-
-        timer(interval = 1000, context = newSingleThreadContext("Gateway Server Member Requester")) {
-            val servers = memberRequestChannel.receiveAll()
-            if (servers.isEmpty()) {
-                return@timer
-            }
-
-            queue(Opcode.REQUEST_GUILD_MEMBERS, json {
-                "guild_id" to jsonArray { servers.forEach { +JsonPrimitive(it) } }
-                "query" to ""
-                "limit" to 0
-            })
         }
     }
 
@@ -159,11 +173,7 @@ class GatewayClient(
         }
     }
 
-    internal fun requestMembers(serverId: Long) {
-        memberRequestChannel.offer(serverId)
-    }
-
-    internal fun updateStatus(status: UserStatus, type: ActivityType, name: String) = start {
+    internal fun updateStatus(status: UserStatus, type: ActivityType, name: String) {
         activity = json {
             "since".toNull()
             "status" to status.id
@@ -177,7 +187,75 @@ class GatewayClient(
         activity?.let { queue(Opcode.STATUS_UPDATE, it) }
     }
 
-    override fun onConnected(websocket: WebSocket?, headers: MutableMap<String, MutableList<String>>?) = start {
+    internal fun onReceivedMemberChunk(nonce: String, members: List<MemberImpl>) {
+        synchronized(memberChunkRequests) {
+            memberChunkRequests.firstOrNull { it.nonce == nonce }?.also {
+                memberChunkRequests.remove(it)
+            }
+        }.also {
+            it?.handler?.resume(members)
+        }
+    }
+
+    internal suspend fun getMembers(serverId: Long, userIds: Array<Long>?, query: String?): List<MemberImpl> {
+        if (userIds != null && userIds.size > 100) {
+            throw IllegalArgumentException("the amount of 'userIds' cannot be greater than 100")
+        }
+
+        return suspendCoroutine {
+            val nonce = "${serverId}-${nonceSeed.incrementAndGet()}"
+            synchronized(memberChunkRequests) {
+                memberChunkRequests.add(MemberChunkRequest(nonce, it))
+            }
+
+            queue(Opcode.REQUEST_GUILD_MEMBERS, json {
+                "guild_id" to serverId
+                "limit" to 0
+                "nonce" to nonce
+
+                if (userIds != null) {
+                    "user_ids" to jsonArray { userIds.forEach { +JsonPrimitive(it) } }
+                }
+
+                if (!query.isNullOrEmpty()) {
+                    "query" to query
+                }
+            })
+        }
+    }
+
+    internal fun postponeServerEvent(eventType: String, data: JsonObject, _serverId: Long? = null) {
+        if (eventType == GuildCreateHandler().eventType) {
+            error("Cannot postpone GUILD_CREATE event")
+        }
+
+        synchronized(postponedServerEvents) {
+            val serverId = _serverId ?: data["guild_id"].asLong
+            if (client.servers.find(serverId) != null) {
+                handleEvent(eventType, data)
+                return
+            }
+
+            postponedServerEvents
+                    .getOrPut(serverId) { ArrayDeque() }
+                    .offer(PostponedServerEvent(eventType, data))
+        }
+    }
+
+    internal fun handlePostponedServerEvents(server: ServerImpl) {
+        synchronized(postponedServerEvents) {
+            postponedServerEvents[server.id]?.also {
+                while (it.isNotEmpty()) {
+                    val event = it.poll()
+                    handleEvent(event.eventType, event.data)
+                }
+
+                postponedServerEvents.remove(server.id)
+            }
+        }
+    }
+
+    override fun onConnected(websocket: WebSocket?, headers: MutableMap<String, MutableList<String>>?) {
         LOGGER.info("Connected to the gateway")
         client.status = ConnectionStatus.CONNECTED
 
@@ -190,7 +268,7 @@ class GatewayClient(
         }
     }
 
-    override fun onDisconnected(websocket: WebSocket?, serverCloseFrame: WebSocketFrame?, clientCloseFrame: WebSocketFrame?, closedByServer: Boolean) = start {
+    override fun onDisconnected(websocket: WebSocket?, serverCloseFrame: WebSocketFrame?, clientCloseFrame: WebSocketFrame?, closedByServer: Boolean) {
         val code = serverCloseFrame?.closeCode ?: clientCloseFrame?.closeCode ?: -1
         val reason = serverCloseFrame?.closeReason ?: clientCloseFrame?.closeReason
 
@@ -201,7 +279,7 @@ class GatewayClient(
 
         if (code == 4014) {
             LOGGER.error("Invalid privilege intent(s) are specified. you must first go to your application in the Developer Portal and enable the toggle for the Privileged Intents you wish to use.")
-            return@start
+            return
         }
 
         // Invalidate cache
@@ -209,13 +287,14 @@ class GatewayClient(
             sessionId = null
             lastSequence = null
 
-            memberRequestChannel.clear()
+            postponedServerEvents.clear()
             client.users.clear()
             client.privateChannels.clear()
         }
 
-        delay(1000)
-        connect()
+        scope.launch {
+            connect()
+        }
     }
 
     override fun onBinaryMessage(websocket: WebSocket, binary: ByteArray) {
@@ -243,10 +322,10 @@ class GatewayClient(
         }
 
         // Handle the message
-        onJsonMessage(websocket, text)
+        handleMessage(websocket, text)
     }
 
-    private fun onJsonMessage(websocket: WebSocket, text: String) = start {
+    private fun handleMessage(websocket: WebSocket, text: String) {
         val payloads = gson.fromJson(text, JsonObject::class.java)
         val opcode = Opcode.values().find { it.code == payloads["op"].asInt }
         val data = payloads.getObjectOrNull("d")
@@ -260,7 +339,7 @@ class GatewayClient(
                 heartbeatAckReceived = true
 
                 heartbeatTask?.cancel()
-                heartbeatTask = timer(period) {
+                heartbeatTask = scope.timer(period) {
                     if (heartbeatAckReceived) {
                         heartbeatAckReceived = false
                         send(Opcode.HEARTBEAT, json { lastSequence?.let { "d" to it } })
@@ -347,13 +426,13 @@ class GatewayClient(
         })
     }
 
-    private suspend fun queue(opcode: Opcode, data: JsonObject = JsonObject()) {
+    private fun queue(opcode: Opcode, data: JsonObject = JsonObject()) {
         val json = json {
             "op" to opcode.code
             "d" to data
         }.toString()
 
-        sendChannel.send(json)
+        sendChannel.offer(json)
     }
 
     private fun resume() {

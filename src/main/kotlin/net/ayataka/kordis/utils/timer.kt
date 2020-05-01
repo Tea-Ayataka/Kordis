@@ -50,7 +50,3 @@ class TimerScope {
         isCanceled = true
     }
 }
-
-fun CoroutineScope.start(context: CoroutineContext = EmptyCoroutineContext, block: suspend CoroutineScope.() -> Unit) {
-    launch(context = context, block = block)
-}

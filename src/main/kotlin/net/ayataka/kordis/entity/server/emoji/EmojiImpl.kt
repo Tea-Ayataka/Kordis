@@ -29,7 +29,6 @@ class EmojiImpl(
 
     override suspend fun delete() {
         checkExistence()
-        checkPermission(server, Permission.MANAGE_EMOJIS)
 
         client.rest.request(
                 Endpoint.DELETE_GUILD_EMOJI.format("guild.id" to server.id, "emoji.id" to id)
@@ -38,7 +37,6 @@ class EmojiImpl(
 
     override suspend fun edit(name: String) {
         checkExistence()
-        checkPermission(server, Permission.MANAGE_EMOJIS)
 
         client.rest.request(
                 Endpoint.MODIFY_GUILD_EMOJI.format("guild.id" to server.id, "emoji.id" to id),

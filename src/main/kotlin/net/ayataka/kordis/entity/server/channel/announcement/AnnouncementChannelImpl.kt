@@ -75,8 +75,6 @@ class AnnouncementChannelImpl(
 
     override suspend fun getMessages(limit: Int): Collection<Message> {
         checkExistence()
-        checkPermission(server, Permission.READ_MESSAGE_HISTORY)
-        checkAccess(this)
 
         if (limit !in 1..100) {
             throw IllegalArgumentException("limit must be between 1 and 100")
@@ -92,7 +90,6 @@ class AnnouncementChannelImpl(
 
     override suspend fun deleteMessage(messageId: Long) {
         checkExistence()
-        checkAccess(this)
 
         client.rest.request(
                 Endpoint.DELETE_MESSAGE.format("channel.id" to id, "message.id" to messageId)
@@ -101,7 +98,6 @@ class AnnouncementChannelImpl(
 
     override suspend fun deleteMessages(messageIds: Collection<Long>) {
         checkExistence()
-        checkAccess(this)
 
         if (messageIds.isEmpty()) {
             return

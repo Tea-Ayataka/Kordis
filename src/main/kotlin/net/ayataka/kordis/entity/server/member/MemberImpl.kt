@@ -39,12 +39,11 @@ class MemberImpl(
 
     override fun update(json: JsonObject) {
         json.getOrNull("nick")?.let { nickname = it.asStringOrNull }
-        json.getOrNull("joined_at")?.let { joinedAt = Instant.from(DateTimeFormatter.ISO_DATE_TIME.parse(it.asString)) }
-        roles = json["roles"].asJsonArray.mapNotNull { server.roles.find(it.asLong) }.plus(server.roles.everyone).toMutableSet()
-
-        // Update the user
-        json.getObjectOrNull("user")?.let {
-            client.users.update(it["id"].asLong, it)
+        json.getOrNull("joined_at")?.let {
+            joinedAt = Instant.from(DateTimeFormatter.ISO_DATE_TIME.parse(it.asString))
+        }
+        json.getOrNull("roles")?.let {
+            roles = it.asJsonArray.mapNotNull { server.roles.find(it.asLong) }.plus(server.roles.everyone).toMutableSet()
         }
     }
 
@@ -57,10 +56,6 @@ class MemberImpl(
     }
 
     override suspend fun addRole(role: Role) {
-        checkExistence()
-        checkPermission(server, Permission.MANAGE_ROLES)
-        checkManageable(role)
-
         client.rest.request(
                 Endpoint.ADD_GUILD_MEMBER_ROLE.format(
                         "guild.id" to server.id,
@@ -71,10 +66,6 @@ class MemberImpl(
     }
 
     override suspend fun removeRole(role: Role) {
-        checkExistence()
-        checkPermission(server, Permission.MANAGE_ROLES)
-        checkManageable(role)
-
         client.rest.request(
                 Endpoint.REMOVE_GUILD_MEMBER_ROLE.format(
                         "guild.id" to server.id,
@@ -85,11 +76,7 @@ class MemberImpl(
     }
 
     override suspend fun setNickname(name: String?) {
-        checkExistence()
-
-        if (this == server.members.botUser) {
-            checkPermission(server, Permission.CHANGE_NICKNAME)
-
+        if (this.id == client.botUser.id) {
             client.rest.request(
                     Endpoint.MODIFY_CURRENT_USER_NICK.format("guild.id" to server.id),
                     json { "nick" to (name ?: "") }
@@ -97,9 +84,6 @@ class MemberImpl(
 
             return
         }
-
-        checkPermission(server, Permission.MANAGE_NICKNAMES)
-        checkManageable(this)
 
         client.rest.request(
                 Endpoint.MODIFY_GUILD_MEMBER.format("guild.id" to server.id, "user.id" to id),
@@ -130,11 +114,5 @@ class MemberImpl(
         result = 31 * result + server.hashCode()
         result = 31 * result + user.hashCode()
         return result
-    }
-
-    private fun checkExistence() {
-        if (server.members.find(id) == null) {
-            throw NotFoundException()
-        }
     }
 }

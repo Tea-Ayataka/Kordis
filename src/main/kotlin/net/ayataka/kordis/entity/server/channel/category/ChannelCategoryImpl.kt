@@ -28,8 +28,6 @@ class ChannelCategoryImpl(
 
     override suspend fun edit(block: ServerChannelBuilder.() -> Unit) {
         checkExistence()
-        checkPermission(server, Permission.MANAGE_CHANNELS)
-        checkManageable(this)
 
         val builder = ServerChannelBuilder(this).apply(block)
 

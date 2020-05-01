@@ -45,10 +45,8 @@ class ServerVoiceChannelImpl(
 
     override suspend fun edit(block: ServerVoiceChannelBuilder.() -> Unit) {
         checkExistence()
-        checkPermission(server, Permission.MANAGE_CHANNELS)
-        checkManageable(this)
-        val updater = ServerVoiceChannelBuilder(this).apply(block)
 
+        val updater = ServerVoiceChannelBuilder(this).apply(block)
         val json = json {
             if (updater.name != name) {
                 "name" to updater.name

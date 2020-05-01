@@ -9,19 +9,10 @@ import net.ayataka.kordis.websocket.handlers.GatewayHandler
 class GuildMemberRemoveHandler : GatewayHandler {
     override val eventType = "GUILD_MEMBER_REMOVE"
     override fun handle(client: DiscordClientImpl, data: JsonObject) {
-        val server = client.servers.find(data["guild_id"].asLong) as? ServerImpl ?: return
-        val userId = data["user"].asJsonObject["id"].asLong
-        val member = server.members.remove(userId)
+        val member = deserializeMember(client, data) ?: return
+        val server = member.server as ServerImpl
 
-        server.memberCount.decrementAndGet()
-
-        if (member == null) {
-            if (!server.ready) {
-                server.handleLater(eventType, data)
-            }
-            return
-        }
-
+        server.actualMemberCount.decrementAndGet()
         client.eventManager.fire(UserLeaveEvent(member))
     }
 }

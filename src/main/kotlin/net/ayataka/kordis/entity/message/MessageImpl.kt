@@ -12,6 +12,8 @@ import net.ayataka.kordis.entity.message.embed.EmbedImpl
 import net.ayataka.kordis.entity.server.Server
 import net.ayataka.kordis.entity.server.ServerImpl
 import net.ayataka.kordis.entity.server.emoji.PartialEmoji
+import net.ayataka.kordis.entity.server.member.Member
+import net.ayataka.kordis.entity.server.member.MemberImpl
 import net.ayataka.kordis.entity.user.User
 import net.ayataka.kordis.entity.user.UserImpl
 import net.ayataka.kordis.rest.Endpoint
@@ -27,6 +29,7 @@ class MessageImpl(client: DiscordClientImpl, json: JsonObject, _server: Server? 
     override val mentionsEveryone: Boolean
     override val pinned: Boolean
     override val author: User?
+    override val member: Member?
     override val channel: TextChannel
     override val content: String
     override val embeds: List<Embed>
@@ -59,12 +62,9 @@ class MessageImpl(client: DiscordClientImpl, json: JsonObject, _server: Server? 
             client.users.updateOrPut(authorId, authorData) { UserImpl(client, authorData) }
         } else null
 
-        // Update member
-        if (server != null && author != null) {
-            json.getObjectOrNull("member")?.let {
-                (server as ServerImpl).members.update(author.id, it)
-            }
-        }
+        member = if (server != null && author != null && json.has("member")) {
+            MemberImpl(client, json["member"].asJsonObject, server, author)
+        } else null
     }
 
     override suspend fun edit(text: String, embed: (EmbedBuilder.() -> Unit)?): Message {
@@ -95,9 +95,9 @@ class MessageImpl(client: DiscordClientImpl, json: JsonObject, _server: Server? 
                 "emoji" to encodeEmoji(emoji)))
     }
 
-    override suspend fun removeReaction(emoji: PartialEmoji, member: User) {
+    override suspend fun removeReaction(emoji: PartialEmoji, user: User) {
         client.rest.request(Endpoint.DELETE_USER_REACTION.format("channel.id" to channel.id, "message.id" to id,
-                "emoji" to encodeEmoji(emoji), "user.id" to member.id))
+                "emoji" to encodeEmoji(emoji), "user.id" to user.id))
     }
 
     override suspend fun removeReaction(emoji: PartialEmoji) {

@@ -6,11 +6,10 @@ import kotlinx.coroutines.withTimeout
 import net.ayataka.kordis.DiscordClient
 import net.ayataka.kordis.GatewayIntent
 import net.ayataka.kordis.Kordis
-import net.ayataka.kordis.entity.botUser
 import net.ayataka.kordis.entity.server.Server
 import net.ayataka.kordis.entity.server.enums.Region
 import net.ayataka.kordis.entity.server.enums.VerificationLevel
-import net.ayataka.kordis.event.events.server.user.UserRoleUpdateEvent
+import net.ayataka.kordis.event.events.server.user.UserUpdateEvent
 import net.ayataka.kordis.exception.MissingPermissionsException
 import kotlin.test.*
 import kotlin.test.Test
@@ -21,7 +20,7 @@ class Test {
 
     @Test
     fun start() = runBlocking {
-        var userRoleUpdateEvent: UserRoleUpdateEvent? = null
+        var userUpdateEvent: UserUpdateEvent? = null
 
         client = Kordis.create {
             token = System.getenv("tokenTest")
@@ -33,9 +32,11 @@ class Test {
                     GatewayIntent.DIRECT_MESSAGES
             )
 
-            addHandler<UserRoleUpdateEvent> {
-                userRoleUpdateEvent = it
-                println("Role Update: ${it.member.tag}, before: '${it.before.joinToString { it.name }}', after: '${it.member.roles.joinToString { it.name }}'")
+            addHandler<UserUpdateEvent> {
+                if (it.member.id == client.botUser.id) {
+                    userUpdateEvent = it
+                    println("Member Update: ${it.member.tag}, roles: '${it.member.roles.joinToString { it.name }}'")
+                }
             }
         }
 
@@ -54,7 +55,7 @@ class Test {
         assertEquals(515274879679987742, server.afkChannel?.id)
         assertEquals(300, server.afkTimeout)
         assertEquals(VerificationLevel.MEDIUM, server.verificationLevel)
-        assertEquals(371868794043236364, server.owner?.id)
+        assertEquals(371868794043236364, server.ownerId)
 
         assertEquals(1, server.emojis.size)
         assertEquals(6, server.roles.size)
@@ -83,27 +84,30 @@ class Test {
         val mutedRole = server.roles.findByName("Muted")
         assertNotNull(mutedRole)
 
-        if (server.members.botUser.roles.contains(mutedRole)) {
-            server.members.botUser.removeRole(mutedRole)
+        val myself = server.findMember(client.botUser.id)
+        assertNotNull(myself)
 
-            while (mutedRole in server.members.botUser.roles) {
+        if (myself.roles.contains(mutedRole)) {
+            myself.removeRole(mutedRole)
+
+            while (mutedRole in server.findMember(client.botUser.id)!!.roles) {
+                delay(300)
             }
+            userUpdateEvent = null
         }
 
-        val rolesBefore = server.members.botUser.roles.map { it.id }
-        server.members.botUser.addRole(mutedRole)
-
-        while (userRoleUpdateEvent == null || mutedRole in userRoleUpdateEvent!!.before) {
+        myself.addRole(mutedRole)
+        delay(300)
+        while (userUpdateEvent == null) {
         }
 
-        assert(userRoleUpdateEvent!!.before.map { it.id }.containsAll(rolesBefore))
-        assert(mutedRole in server.members.botUser.roles)
+        assert(mutedRole in userUpdateEvent!!.member.roles)
 
         assertEquals("https://cdn.discordapp.com/embed/avatars/0.png", client.getUser(503844086512615425)?.avatar?.url)
 
         // Test message
         val text = "Hello World!"
-        var message = server.textChannels.first { server.members.botUser.canAccess(it) }.send(text)
+        var message = server.textChannels.findByName("general")!!.send(text)
         assertEquals(text, message.content)
 
         val editedText = "Hello Universe!"
@@ -128,7 +132,7 @@ class Test {
         message.removeReaction(rocketEmoji)
         assert(message.getReactors(rocketEmoji).isEmpty())
 
-        message.removeReaction(computerEmoji, null, server.members.botUser)
+        message.removeReaction(computerEmoji, null, client.botUser)
         assert(message.getReactors(computerEmoji).isEmpty())
 
         message.clearReactions()

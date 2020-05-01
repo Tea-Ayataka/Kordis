@@ -56,8 +56,6 @@ abstract class ServerChannelImpl(
     }
 
     override suspend fun delete() {
-        checkPermission(server, Permission.MANAGE_CHANNELS)
-
         client.rest.request(Endpoint.DELETE_CHANNEL.format("channel.id" to id))
     }
 

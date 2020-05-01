@@ -11,7 +11,7 @@ class GuildDeleteHandler : GatewayHandler {
     override val eventType = "GUILD_DELETE"
 
     override fun handle(client: DiscordClientImpl, data: JsonObject) {
-        val server = client.servers.find(data["id"].asLong) as? ServerImpl ?: return
+        val server = deserializeServer(client, data, false) ?: return
         val unavailable = data.getOrNull("unavailable")?.asBoolean ?: false
 
         if (unavailable) {

@@ -63,8 +63,6 @@ class ServerTextChannelImpl(
 
     override suspend fun edit(block: ServerTextChannelBuilder.() -> Unit) {
         checkExistence()
-        checkPermission(server, Permission.MANAGE_CHANNELS)
-        checkManageable(this)
 
         val updater = ServerTextChannelBuilder(this).apply(block)
 
@@ -123,8 +121,6 @@ class ServerTextChannelImpl(
 
     override suspend fun getMessages(limit: Int): Collection<Message> {
         checkExistence()
-        checkPermission(server, Permission.READ_MESSAGE_HISTORY)
-        checkAccess(this)
 
         if (limit !in 1..100) {
             throw IllegalArgumentException("limit must be between 1 and 100")
@@ -140,7 +136,6 @@ class ServerTextChannelImpl(
 
     override suspend fun deleteMessage(messageId: Long) {
         checkExistence()
-        checkAccess(this)
 
         client.rest.request(
                 Endpoint.DELETE_MESSAGE.format("channel.id" to id, "message.id" to messageId)
@@ -149,7 +144,6 @@ class ServerTextChannelImpl(
 
     override suspend fun deleteMessages(messageIds: Collection<Long>) {
         checkExistence()
-        checkAccess(this)
 
         if (messageIds.isEmpty()) {
             return
