@@ -1,10 +1,10 @@
 buildscript {
-    ext.ktor_version = "1.3.0"
-    ext.coroutine_version = "1.3.3"
+    ext.ktor_version = "1.3.2"
+    ext.kotlin_version = "1.3.70"
 }
 
 plugins {
-    id "org.jetbrains.kotlin.jvm" version "1.3.61"
+    id "org.jetbrains.kotlin.jvm" version "1.3.70"
 }
 
 group "net.ayataka"
@@ -23,9 +23,7 @@ repositories {
 
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
-    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutine_version"
-    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:$coroutine_version"
-    implementation "org.jetbrains.kotlin:kotlin-reflect:1.3.61"
+    implementation "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
 
     // Http client by Ktor
     implementation "io.ktor:ktor-client-core:$ktor_version"
