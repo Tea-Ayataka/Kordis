@@ -16,36 +16,36 @@ class InternalRateLimiter {
     private val rateLimitEnds = ConcurrentHashMap<Int, Long>()
     private val rateLimitRemaining = ConcurrentHashMap<Int, Int>()
 
-    internal suspend fun getMutex(endPoint: FormattedEndPoint) = mutex.withLock { mutexes.getOrPut(endPoint.majorHash()) { Mutex() } }
+    internal suspend fun getMutex(endPoint: Endpoint) = mutex.withLock { mutexes.getOrPut(endPoint.hashCode()) { Mutex() } }
 
     suspend fun setGlobalRateLimitEnds(delay: Long) = mutex.withLock {
         globalRateLimitEnds = System.currentTimeMillis() + delay
         LOGGER.info("Hit global rate limit ($delay ms)")
     }
 
-    suspend fun setRateLimitEnds(endPoint: FormattedEndPoint, time: Long) = mutex.withLock {
-        rateLimitEnds[endPoint.majorHash()] = Math.max(rateLimitEnds[endPoint.majorHash()]
+    suspend fun setRateLimitEnds(endPoint: Endpoint, time: Long) = mutex.withLock {
+        rateLimitEnds[endPoint.hashCode()] = Math.max(rateLimitEnds[endPoint.hashCode()]
                 ?: 0, time)
     }
 
-    suspend fun setRateLimit(endPoint: FormattedEndPoint, value: Int) = mutex.withLock {
+    suspend fun setRateLimit(endPoint: Endpoint, value: Int) = mutex.withLock {
         // First time
-        if (rateLimits[endPoint.majorHash()] == null) {
-            rateLimitRemaining[endPoint.majorHash()] = value - 1
+        if (rateLimits[endPoint.hashCode()] == null) {
+            rateLimitRemaining[endPoint.hashCode()] = value - 1
         }
 
-        rateLimits[endPoint.majorHash()] = value
+        rateLimits[endPoint.hashCode()] = value
     }
 
-    suspend fun incrementRateLimitRemaining(endPoint: FormattedEndPoint) = mutex.withLock {
-        rateLimitRemaining[endPoint.majorHash()] = (rateLimitRemaining[endPoint.majorHash()] ?: return) + 1
+    suspend fun incrementRateLimitRemaining(endPoint: Endpoint) = mutex.withLock {
+        rateLimitRemaining[endPoint.hashCode()] = (rateLimitRemaining[endPoint.hashCode()] ?: return) + 1
     }
 
-    suspend fun setRateLimitRemaining(endPoint: FormattedEndPoint, value: Int) = mutex.withLock {
-        rateLimitRemaining[endPoint.majorHash()] = value
+    suspend fun setRateLimitRemaining(endPoint: Endpoint, value: Int) = mutex.withLock {
+        rateLimitRemaining[endPoint.hashCode()] = value
     }
 
-    suspend fun wait(endPoint: FormattedEndPoint) {
+    suspend fun wait(endPoint: Endpoint) {
         // Wait for global rate limit
         mutex.withLock {
             if (globalRateLimitEnds > System.currentTimeMillis()) {
@@ -54,18 +54,18 @@ class InternalRateLimiter {
         }
 
         // Wait for per route rate limit
-        rateLimitRemaining[endPoint.majorHash()]?.let {
+        rateLimitRemaining[endPoint.hashCode()]?.let {
             // If the remaining count is 0
             if (it <= 0) {
                 // Wait until it's reset
-                while (Math.max(globalRateLimitEnds, rateLimitEnds[endPoint.majorHash()]!!) > System.currentTimeMillis()) {
-                    val delay = Math.max(globalRateLimitEnds, rateLimitEnds[endPoint.majorHash()]!!) - System.currentTimeMillis()
+                while (Math.max(globalRateLimitEnds, rateLimitEnds[endPoint.hashCode()]!!) > System.currentTimeMillis()) {
+                    val delay = Math.max(globalRateLimitEnds, rateLimitEnds[endPoint.hashCode()]!!) - System.currentTimeMillis()
                     LOGGER.debug("Hit a rate limit internally. Wait ${delay}ms")
                     delay(delay)
                 }
 
                 // Reset
-                rateLimitRemaining[endPoint.majorHash()] = rateLimits[endPoint.majorHash()]!!
+                rateLimitRemaining[endPoint.hashCode()] = rateLimits[endPoint.hashCode()]!!
             }
         }
     }

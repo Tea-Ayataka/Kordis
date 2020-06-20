@@ -38,7 +38,7 @@ class UserImpl(client: DiscordClientImpl, json: JsonObject) : User, Updatable, D
 
         try {
             val response = client.rest.request(
-                    Endpoint.CREATE_DM.format(),
+                    Endpoint.CREATE_DM,
                     json { "recipient_id" to id }
             ).asJsonObject
 

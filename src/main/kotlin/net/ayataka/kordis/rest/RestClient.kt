@@ -29,7 +29,7 @@ class RestClient(private val discordClient: DiscordClientImpl) {
     /**
      * Sends a REST request to the Discord API.
      */
-    suspend fun request(endPoint: FormattedEndPoint, data: JsonObject? = null, rateLimitRetries: Int = 50): JsonElement = rateLimiter.getMutex(endPoint).withLock {
+    suspend fun request(endPoint: Endpoint, data: JsonObject? = null, rateLimitRetries: Int = 50): JsonElement = rateLimiter.getMutex(endPoint).withLock {
         repeat(rateLimitRetries) {
             rateLimiter.wait(endPoint)
 

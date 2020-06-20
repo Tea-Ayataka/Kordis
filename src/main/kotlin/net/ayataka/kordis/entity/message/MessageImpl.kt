@@ -69,7 +69,7 @@ class MessageImpl(client: DiscordClientImpl, json: JsonObject, _server: Server? 
 
     override suspend fun edit(text: String, embed: (EmbedBuilder.() -> Unit)?): Message {
         val response = client.rest.request(
-                Endpoint.EDIT_MESSAGE.format("message.id" to id, "channel.id" to channel.id),
+                Endpoint.EDIT_MESSAGE(channel.id, id),
                 json {
                     if (content.isNotEmpty()) {
                         "content" to text
@@ -84,36 +84,32 @@ class MessageImpl(client: DiscordClientImpl, json: JsonObject, _server: Server? 
     }
 
     override suspend fun getReactors(emoji: PartialEmoji): List<User> {
-        val response = client.rest.request(Endpoint.GET_REACTIONS.format("channel.id" to channel.id,
-                "message.id" to id, "emoji" to encodeEmoji(emoji)))
+        val response = client.rest.request(Endpoint.GET_REACTIONS(channel.id, id, encodeEmoji(emoji)))
 
         return response.asJsonArray.map { UserImpl(client, it.asJsonObject) }
     }
 
     override suspend fun addReaction(emoji: PartialEmoji) {
-        client.rest.request(Endpoint.CREATE_REACTION.format("channel.id" to channel.id, "message.id" to id,
-                "emoji" to encodeEmoji(emoji)))
+        client.rest.request(Endpoint.CREATE_REACTION(channel.id, id, encodeEmoji(emoji)))
     }
 
     override suspend fun removeReaction(emoji: PartialEmoji, user: User) {
-        client.rest.request(Endpoint.DELETE_USER_REACTION.format("channel.id" to channel.id, "message.id" to id,
-                "emoji" to encodeEmoji(emoji), "user.id" to user.id))
+        client.rest.request(Endpoint.DELETE_USER_REACTION(channel.id, id, encodeEmoji(emoji), user.id))
     }
 
     override suspend fun removeReaction(emoji: PartialEmoji) {
-        client.rest.request(Endpoint.DELETE_OWN_REACTION.format("channel.id" to channel.id, "message.id" to id,
-                "emoji" to encodeEmoji(emoji)))
+        client.rest.request(Endpoint.DELETE_OWN_REACTION(channel.id, id, encodeEmoji(emoji)))
     }
 
     override suspend fun clearReactions() {
-        client.rest.request(Endpoint.DELETE_ALL_REACTIONS.format("channel.id" to channel.id, "message.id" to id))
+        client.rest.request(Endpoint.DELETE_ALL_REACTIONS(channel.id, id))
     }
 
     private fun encodeEmoji(emoji: PartialEmoji) =
             if (emoji.id == null)
-                URLEncoder.encode(emoji.name, Charsets.UTF_8)
+                URLEncoder.encode(emoji.name, Charsets.UTF_8.toString())
             else
-                "${URLEncoder.encode(emoji.name, Charsets.UTF_8)}:${emoji.id}"
+                "${URLEncoder.encode(emoji.name, Charsets.UTF_8.toString())}:${emoji.id}"
 
     override fun toString(): String {
         return "Message(" +

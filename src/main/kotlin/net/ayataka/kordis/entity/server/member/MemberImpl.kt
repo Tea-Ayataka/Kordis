@@ -57,28 +57,20 @@ class MemberImpl(
 
     override suspend fun addRole(role: Role) {
         client.rest.request(
-                Endpoint.ADD_GUILD_MEMBER_ROLE.format(
-                        "guild.id" to server.id,
-                        "user.id" to id,
-                        "role.id" to role.id
-                )
+                Endpoint.ADD_GUILD_MEMBER_ROLE(server.id, id, role.id)
         )
     }
 
     override suspend fun removeRole(role: Role) {
         client.rest.request(
-                Endpoint.REMOVE_GUILD_MEMBER_ROLE.format(
-                        "guild.id" to server.id,
-                        "user.id" to id,
-                        "role.id" to role.id
-                )
+                Endpoint.REMOVE_GUILD_MEMBER_ROLE(server.id, id, role.id)
         )
     }
 
     override suspend fun setNickname(name: String?) {
         if (this.id == client.botUser.id) {
             client.rest.request(
-                    Endpoint.MODIFY_CURRENT_USER_NICK.format("guild.id" to server.id),
+                    Endpoint.MODIFY_CURRENT_USER_NICK(server.id),
                     json { "nick" to (name ?: "") }
             )
 
@@ -86,7 +78,7 @@ class MemberImpl(
         }
 
         client.rest.request(
-                Endpoint.MODIFY_GUILD_MEMBER.format("guild.id" to server.id, "user.id" to id),
+                Endpoint.MODIFY_GUILD_MEMBER(server.id, id),
                 json { "nick" to (name ?: "") }
         )
     }

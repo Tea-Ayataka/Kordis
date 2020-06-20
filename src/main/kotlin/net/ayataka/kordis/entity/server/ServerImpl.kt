@@ -205,7 +205,7 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
         checkExistence()
 
         client.rest.request(
-                Endpoint.REMOVE_GUILD_MEMBER.format("guild.id" to id, "user.id" to member.id)
+                Endpoint.REMOVE_GUILD_MEMBER(id, member.id)
         )
     }
 
@@ -213,7 +213,7 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
         checkExistence()
 
         client.rest.request(
-                Endpoint.CREATE_GUILD_BAN.format("guild.id" to id, "user.id" to user.id),
+                Endpoint.CREATE_GUILD_BAN(id, user.id),
                 json {
                     "delete-message-days" to deleteMessageDays
                     if (reason != null && reason.isNotEmpty()) {
@@ -227,7 +227,7 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
         checkExistence()
 
         client.rest.request(
-                Endpoint.REMOVE_GUILD_BAN.format("guild.id" to id, "user.id" to user.id)
+                Endpoint.REMOVE_GUILD_BAN(id, user.id)
         )
     }
 
@@ -268,7 +268,7 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
 
         if (json.isNotEmpty()) {
             client.rest.request(
-                    Endpoint.MODIFY_GUILD.format("guild.id" to id),
+                    Endpoint.MODIFY_GUILD(id),
                     json
             )
         }
@@ -289,7 +289,7 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
     override suspend fun bans(): Collection<Ban> {
         checkExistence()
 
-        val response = client.rest.request(Endpoint.GET_GUILD_BANS.format("guild.id" to id)).asJsonArray
+        val response = client.rest.request(Endpoint.GET_GUILD_BANS(id)).asJsonArray
 
         return response.map {
             val reason = it.asJsonObject["reason"].asStringOrNull
@@ -329,7 +329,7 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
         }
 
         val response = client.rest.request(
-                Endpoint.CREATE_GUILD_CHANNEL.format("guild.id" to id),
+                Endpoint.CREATE_GUILD_CHANNEL(id),
                 json
         ).asJsonObject
 
@@ -363,7 +363,7 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
         }
 
         val response = client.rest.request(
-                Endpoint.CREATE_GUILD_CHANNEL.format("guild.id" to id),
+                Endpoint.CREATE_GUILD_CHANNEL(id),
                 json
         ).asJsonObject
 
@@ -388,7 +388,7 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
         }
 
         val response = client.rest.request(
-                Endpoint.CREATE_GUILD_CHANNEL.format("guild.id" to id),
+                Endpoint.CREATE_GUILD_CHANNEL(id),
                 json
         ).asJsonObject
 
@@ -420,7 +420,7 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
         }
 
         val response = client.rest.request(
-                Endpoint.CREATE_GUILD_ROLE.format("guild.id" to id),
+                Endpoint.CREATE_GUILD_ROLE(id),
                 json
         ).asJsonObject
 
@@ -437,7 +437,7 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
         }
 
         val response = client.rest.request(
-                Endpoint.CREATE_GUILD_EMOJI.format("guild.id" to id),
+                Endpoint.CREATE_GUILD_EMOJI(id),
                 json
         ).asJsonObject
 

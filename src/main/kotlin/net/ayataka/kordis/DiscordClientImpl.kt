@@ -46,7 +46,7 @@ class DiscordClientImpl(
         status = ConnectionStatus.CONNECTING
 
         // Connect to the gateway
-        val endpoint = rest.request(Endpoint.GET_GATEWAY_BOT.format()).asJsonObject["url"].asString
+        val endpoint = rest.request(Endpoint.GET_GATEWAY_BOT).asJsonObject["url"].asString
         gateway = GatewayClient(this, endpoint, intents)
         gateway.connect()
 
@@ -69,7 +69,7 @@ class DiscordClientImpl(
         users.find(id)?.let { return it }
 
         return try {
-            rest.request(Endpoint.GET_USER.format("user.id" to id))
+            rest.request(Endpoint.GET_USER(id))
                     .let { users.updateOrPut(id, it.asJsonObject) { UserImpl(this, it.asJsonObject) } }
         } catch (ex: NotFoundException) {
             return null

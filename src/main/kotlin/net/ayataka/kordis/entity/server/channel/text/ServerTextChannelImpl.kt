@@ -54,7 +54,7 @@ class ServerTextChannelImpl(
         checkExistence()
 
         val response = client.rest.request(
-                Endpoint.CREATE_MESSAGE.format("channel.id" to id),
+                Endpoint.CREATE_MESSAGE(id),
                 MessageBuilder().apply(block).build()
         )
 
@@ -99,7 +99,7 @@ class ServerTextChannelImpl(
 
         if (json.isNotEmpty()) {
             client.rest.request(
-                    Endpoint.MODIFY_CHANNEL_PATCH.format("channel.id" to id),
+                    Endpoint.MODIFY_CHANNEL_PATCH(id),
                     json
             )
         }
@@ -110,7 +110,7 @@ class ServerTextChannelImpl(
 
         return try {
             val response = client.rest.request(
-                    Endpoint.GET_CHANNEL_MESSAGE.format("channel.id" to id, "message.id" to messageId)
+                    Endpoint.GET_CHANNEL_MESSAGE(id, messageId)
             )
 
             MessageImpl(client, response.asJsonObject, server)
@@ -127,7 +127,7 @@ class ServerTextChannelImpl(
         }
 
         val response = client.rest.request(
-                Endpoint.GET_CHANNEL_MESSAGES.format("channel.id" to id),
+                Endpoint.GET_CHANNEL_MESSAGES(id),
                 json { "limit" to limit }
         )
 
@@ -138,7 +138,7 @@ class ServerTextChannelImpl(
         checkExistence()
 
         client.rest.request(
-                Endpoint.DELETE_MESSAGE.format("channel.id" to id, "message.id" to messageId)
+                Endpoint.DELETE_MESSAGE(id, messageId)
         )
     }
 
@@ -156,7 +156,7 @@ class ServerTextChannelImpl(
 
         messageIds.chunked(100).forEach {
             client.rest.request(
-                    Endpoint.BULK_DELETE_MESSAGES.format("channel.id" to id),
+                    Endpoint.BULK_DELETE_MESSAGES(id),
                     json {
                         "messages" to jsonArray { it.forEach { +JsonPrimitive(it) } }
                     }

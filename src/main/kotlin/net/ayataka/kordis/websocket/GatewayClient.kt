@@ -209,7 +209,7 @@ class GatewayClient(
             }
 
             queue(Opcode.REQUEST_GUILD_MEMBERS, json {
-                "guild_id" to serverId
+                serverId
                 "limit" to 0
                 "nonce" to nonce
 
@@ -312,7 +312,7 @@ class GatewayClient(
                 InflaterOutputStream(output, inflater).use {
                     it.write(buffer.concat())
                 }
-                output.toString(Charsets.UTF_8)
+                output.toString(Charsets.UTF_8.toString())
             } catch (e: IOException) {
                 LOGGER.error("Error while decompressing payload", e)
                 return
