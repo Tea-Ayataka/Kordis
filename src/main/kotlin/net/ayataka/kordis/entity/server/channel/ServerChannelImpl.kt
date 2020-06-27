@@ -56,7 +56,7 @@ abstract class ServerChannelImpl(
     }
 
     override suspend fun delete() {
-        client.rest.request(Endpoint.DELETE_CHANNEL(id))
+        client.rest.request(Endpoint.DELETE_CHANNEL(channel_id = id))
     }
 
     companion object {

@@ -31,7 +31,7 @@ class EmojiImpl(
         checkExistence()
 
         client.rest.request(
-                Endpoint.DELETE_GUILD_EMOJI(server.id, id)
+                Endpoint.DELETE_GUILD_EMOJI(guild_id = server.id, emoji_id = id)
         )
     }
 
@@ -39,7 +39,7 @@ class EmojiImpl(
         checkExistence()
 
         client.rest.request(
-                Endpoint.MODIFY_GUILD_EMOJI(server.id, id),
+                Endpoint.MODIFY_GUILD_EMOJI(guild_id = server.id, emoji_id = id),
                 json { "name" to name }
         )
     }

@@ -52,7 +52,7 @@ class AnnouncementChannelImpl(
         checkExistence()
 
         val response = client.rest.request(
-                Endpoint.CREATE_MESSAGE(id),
+                Endpoint.CREATE_MESSAGE(channel_id = id),
                 MessageBuilder().apply(block).build()
         )
 
@@ -64,7 +64,7 @@ class AnnouncementChannelImpl(
 
         return try {
             val response = client.rest.request(
-                    Endpoint.GET_CHANNEL_MESSAGE(id, messageId)
+                    Endpoint.GET_CHANNEL_MESSAGE(channel_id = id, message_id = messageId)
             )
 
             MessageImpl(client, response.asJsonObject, server)
@@ -81,7 +81,7 @@ class AnnouncementChannelImpl(
         }
 
         val response = client.rest.request(
-                Endpoint.GET_CHANNEL_MESSAGES(id),
+                Endpoint.GET_CHANNEL_MESSAGES(channel_id = id),
                 json { "limit" to limit }
         )
 
@@ -92,7 +92,7 @@ class AnnouncementChannelImpl(
         checkExistence()
 
         client.rest.request(
-                Endpoint.DELETE_MESSAGE(id, messageId)
+                Endpoint.DELETE_MESSAGE(channel_id = id, message_id = messageId)
         )
     }
 
@@ -110,7 +110,7 @@ class AnnouncementChannelImpl(
 
         messageIds.chunked(100).forEach {
             client.rest.request(
-                    Endpoint.BULK_DELETE_MESSAGES(id),
+                    Endpoint.BULK_DELETE_MESSAGES(channel_id = id),
                     json {
                         "messages" to jsonArray { it.forEach { +JsonPrimitive(it) } }
                     }

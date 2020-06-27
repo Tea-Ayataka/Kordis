@@ -69,7 +69,7 @@ class DiscordClientImpl(
         users.find(id)?.let { return it }
 
         return try {
-            rest.request(Endpoint.GET_USER(id))
+            rest.request(Endpoint.GET_USER(user_id = id))
                     .let { users.updateOrPut(id, it.asJsonObject) { UserImpl(this, it.asJsonObject) } }
         } catch (ex: NotFoundException) {
             return null

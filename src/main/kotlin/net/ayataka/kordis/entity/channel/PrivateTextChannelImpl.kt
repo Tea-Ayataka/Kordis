@@ -45,7 +45,7 @@ class PrivateTextChannelImpl(
     override suspend fun send(block: MessageBuilder.() -> Unit): Message {
         try {
             val response = client.rest.request(
-                    Endpoint.CREATE_MESSAGE(id),
+                    Endpoint.CREATE_MESSAGE(channel_id = id),
                     MessageBuilder().apply(block).build()
             )
 
@@ -63,7 +63,7 @@ class PrivateTextChannelImpl(
     override suspend fun getMessage(messageId: Long): Message? {
         return try {
             val response = client.rest.request(
-                    Endpoint.GET_CHANNEL_MESSAGE(id, messageId)
+                    Endpoint.GET_CHANNEL_MESSAGE(channel_id = id, message_id = messageId)
             )
 
             MessageImpl(client, response.asJsonObject)
@@ -78,7 +78,7 @@ class PrivateTextChannelImpl(
         }
 
         val response = client.rest.request(
-                Endpoint.GET_CHANNEL_MESSAGES(id),
+                Endpoint.GET_CHANNEL_MESSAGES(channel_id = id),
                 json { "limit" to limit }
         )
 
@@ -87,7 +87,7 @@ class PrivateTextChannelImpl(
 
     override suspend fun deleteMessage(messageId: Long) {
         client.rest.request(
-                Endpoint.DELETE_MESSAGE(id, messageId)
+                Endpoint.DELETE_MESSAGE(channel_id = id, message_id = messageId)
         )
     }
 

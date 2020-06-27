@@ -70,14 +70,14 @@ class RoleImpl(override val server: Server, client: DiscordClientImpl, json: Jso
 
         if (json.isNotEmpty()) {
             client.rest.request(
-                    Endpoint.MODIFY_GUILD_ROLE(server.id, id),
+                    Endpoint.MODIFY_GUILD_ROLE(guild_id = server.id, role_id = id),
                     json
             )
         }
 
         if (updater.position != position) {
             client.rest.request(
-                    Endpoint.MODIFY_GUILD_ROLE_POSITIONS(server.id),
+                    Endpoint.MODIFY_GUILD_ROLE_POSITIONS(guild_id = server.id),
                     json {
                         "id" to id
                         "position" to updater.position
@@ -89,7 +89,7 @@ class RoleImpl(override val server: Server, client: DiscordClientImpl, json: Jso
     override suspend fun delete() {
         checkExistence()
 
-        client.rest.request(Endpoint.DELETE_GUILD_ROLE(server.id, id))
+        client.rest.request(Endpoint.DELETE_GUILD_ROLE(guild_id = server.id, role_id = id))
     }
 
     private fun checkExistence() {

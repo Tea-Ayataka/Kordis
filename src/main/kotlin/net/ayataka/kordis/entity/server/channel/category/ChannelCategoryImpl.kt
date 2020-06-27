@@ -48,7 +48,7 @@ class ChannelCategoryImpl(
 
         if (json.isNotEmpty()) {
             client.rest.request(
-                    Endpoint.MODIFY_CHANNEL_PATCH(id),
+                    Endpoint.MODIFY_CHANNEL_PATCH(channel_id = id),
                     json
             )
         }
