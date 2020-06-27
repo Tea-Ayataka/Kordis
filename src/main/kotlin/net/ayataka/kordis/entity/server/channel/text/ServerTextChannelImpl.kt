@@ -9,7 +9,6 @@ import net.ayataka.kordis.entity.message.MessageImpl
 import net.ayataka.kordis.entity.server.Server
 import net.ayataka.kordis.entity.server.channel.ServerChannelImpl
 import net.ayataka.kordis.entity.server.channel.category.ChannelCategory
-import net.ayataka.kordis.entity.server.permission.Permission
 import net.ayataka.kordis.exception.NotFoundException
 import net.ayataka.kordis.rest.Endpoint
 import net.ayataka.kordis.utils.*

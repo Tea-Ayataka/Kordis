@@ -30,7 +30,6 @@ import net.ayataka.kordis.entity.server.emoji.EmojiBuilder
 import net.ayataka.kordis.entity.server.emoji.EmojiImpl
 import net.ayataka.kordis.entity.server.enums.*
 import net.ayataka.kordis.entity.server.member.Member
-import net.ayataka.kordis.entity.server.permission.Permission
 import net.ayataka.kordis.entity.server.role.Role
 import net.ayataka.kordis.entity.server.role.RoleBuilder
 import net.ayataka.kordis.entity.server.role.RoleImpl

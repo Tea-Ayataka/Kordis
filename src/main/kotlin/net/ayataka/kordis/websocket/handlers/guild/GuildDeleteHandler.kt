@@ -2,7 +2,6 @@ package net.ayataka.kordis.websocket.handlers.guild
 
 import com.google.gson.JsonObject
 import net.ayataka.kordis.DiscordClientImpl
-import net.ayataka.kordis.entity.server.ServerImpl
 import net.ayataka.kordis.event.events.server.ServerShutdownEvent
 import net.ayataka.kordis.utils.getOrNull
 import net.ayataka.kordis.websocket.handlers.GatewayHandler

@@ -5,8 +5,8 @@ import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.entity.channel.PrivateTextChannelImpl
 import net.ayataka.kordis.entity.server.ServerImpl
 import net.ayataka.kordis.entity.server.channel.announcement.AnnouncementChannelImpl
-import net.ayataka.kordis.entity.server.channel.store.StoreChannelImpl
 import net.ayataka.kordis.entity.server.channel.category.ChannelCategoryImpl
+import net.ayataka.kordis.entity.server.channel.store.StoreChannelImpl
 import net.ayataka.kordis.entity.server.channel.text.ServerTextChannelImpl
 import net.ayataka.kordis.entity.server.channel.voice.ServerVoiceChannelImpl
 import net.ayataka.kordis.entity.server.enums.ChannelType

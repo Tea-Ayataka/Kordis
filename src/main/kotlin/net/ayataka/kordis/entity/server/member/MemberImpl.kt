@@ -2,16 +2,16 @@ package net.ayataka.kordis.entity.server.member
 
 import com.google.gson.JsonObject
 import net.ayataka.kordis.DiscordClientImpl
-import net.ayataka.kordis.entity.*
+import net.ayataka.kordis.entity.DiscordEntity
+import net.ayataka.kordis.entity.Entity
+import net.ayataka.kordis.entity.Updatable
+import net.ayataka.kordis.entity.everyone
 import net.ayataka.kordis.entity.server.Server
 import net.ayataka.kordis.entity.server.enums.UserStatus
-import net.ayataka.kordis.entity.server.permission.Permission
 import net.ayataka.kordis.entity.server.role.Role
 import net.ayataka.kordis.entity.user.User
-import net.ayataka.kordis.exception.NotFoundException
 import net.ayataka.kordis.rest.Endpoint
 import net.ayataka.kordis.utils.asStringOrNull
-import net.ayataka.kordis.utils.getObjectOrNull
 import net.ayataka.kordis.utils.getOrNull
 import net.ayataka.kordis.utils.json
 import java.time.Instant

@@ -2,7 +2,6 @@ package net.ayataka.kordis.entity.server.channel.text
 
 import net.ayataka.kordis.entity.Mentionable
 import net.ayataka.kordis.entity.channel.TextChannel
-import net.ayataka.kordis.entity.message.Message
 import net.ayataka.kordis.entity.server.channel.ServerChannel
 import net.ayataka.kordis.entity.server.channel.category.ChannelCategory
 
