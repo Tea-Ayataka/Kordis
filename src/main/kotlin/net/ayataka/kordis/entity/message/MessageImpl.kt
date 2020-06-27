@@ -111,9 +111,9 @@ class MessageImpl(client: DiscordClientImpl, json: JsonObject, _server: Server? 
 
     private fun encodeEmoji(emoji: PartialEmoji) =
             if (emoji.id == null)
-                URLEncoder.encode(emoji.name, Charsets.UTF_8)
+                URLEncoder.encode(emoji.name, Charsets.UTF_8.toString())
             else
-                "${URLEncoder.encode(emoji.name, Charsets.UTF_8)}:${emoji.id}"
+                "${URLEncoder.encode(emoji.name, Charsets.UTF_8.toString())}:${emoji.id}"
 
     override fun toString(): String {
         return "Message(" +
