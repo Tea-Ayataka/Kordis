@@ -86,25 +86,46 @@ class MessageImpl(client: DiscordClientImpl, json: JsonObject, _server: Server? 
     }
 
     override suspend fun getReactors(emoji: PartialEmoji): List<User> {
-        val response = client.rest.request(Endpoint.GET_REACTIONS(channel_id = channel.id,
-                message_id = id, emoji = encodeEmoji(emoji)))
+        val response = client.rest.request(
+                Endpoint.GET_REACTIONS(
+                        channel_id = channel.id,
+                        message_id = id,
+                        emoji = encodeEmoji(emoji)
+                )
+        )
 
         return response.asJsonArray.map { UserImpl(client, it.asJsonObject) }
     }
 
     override suspend fun addReaction(emoji: PartialEmoji) {
-        client.rest.request(Endpoint.CREATE_REACTION(channel_id = channel.id, message_id = id,
-                emoji = encodeEmoji(emoji)))
+        client.rest.request(
+                Endpoint.CREATE_REACTION(
+                        channel_id = channel.id,
+                        message_id = id,
+                        emoji = encodeEmoji(emoji)
+                )
+        )
     }
 
     override suspend fun removeReaction(emoji: PartialEmoji, user: User) {
-        client.rest.request(Endpoint.DELETE_USER_REACTION(channel_id = channel.id, message_id = id,
-                emoji = encodeEmoji(emoji), user_id = user.id))
+        client.rest.request(
+                Endpoint.DELETE_USER_REACTION(
+                        channel_id = channel.id,
+                        message_id = id,
+                        emoji = encodeEmoji(emoji),
+                        user_id = user.id
+                )
+        )
     }
 
     override suspend fun removeReaction(emoji: PartialEmoji) {
-        client.rest.request(Endpoint.DELETE_OWN_REACTION(channel_id = channel.id, message_id = id,
-                emoji = encodeEmoji(emoji)))
+        client.rest.request(
+                Endpoint.DELETE_OWN_REACTION(
+                        channel_id = channel.id,
+                        message_id = id,
+                        emoji = encodeEmoji(emoji)
+                )
+        )
     }
 
     override suspend fun clearReactions() {
