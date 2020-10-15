@@ -217,7 +217,7 @@ class GatewayClient(
                     "user_ids" to jsonArray { userIds.forEach { +JsonPrimitive(it) } }
                 }
 
-                if (!query.isNullOrEmpty()) {
+                if (query != null) {
                     "query" to query
                 }
             })
