@@ -6,8 +6,7 @@ import com.google.gson.Gson
 import com.google.gson.JsonObject
 import com.google.gson.JsonPrimitive
 import com.neovisionaries.ws.client.*
-import io.ktor.util.hex
-import kotlinx.atomicfu.locks.synchronized
+import io.ktor.util.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.sync.Mutex
@@ -314,7 +313,7 @@ class GatewayClient(
                 InflaterOutputStream(output, inflater).use {
                     it.write(buffer.concat())
                 }
-                output.toString(Charsets.UTF_8)
+                output.toString(Charsets.UTF_8.toString())
             } catch (e: IOException) {
                 LOGGER.error("Error while decompressing payload", e)
                 return

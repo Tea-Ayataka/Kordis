@@ -61,8 +61,9 @@ class DiscordClientImpl(
         eventManager.unregister(listener, serverId)
     }
 
+    @Suppress("UNNECESSARY_SAFE_CALL")
     override fun updateStatus(status: UserStatus, type: ActivityType, name: String) {
-        gateway.updateStatus(status, type, name)
+        gateway?.updateStatus(status, type, name)
     }
 
     override suspend fun getUser(id: Long): User? {
