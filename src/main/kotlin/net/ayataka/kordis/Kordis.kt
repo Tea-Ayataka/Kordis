@@ -9,7 +9,7 @@ object Kordis {
     const val NAME = "Kordis"
     const val VERSION = "0.2.3"
     const val URL = "https://github.com/Tea-Ayataka/Kordis"
-    const val API_VERSION = 6
+    const val API_VERSION = 8
 
     val LOGGER = LoggerFactory.getLogger(NAME)!!
     val HTTP_CLIENT = HttpClient(OkHttp) {
