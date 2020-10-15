@@ -26,7 +26,7 @@ object Kordis {
         LOGGER.info("$NAME v$VERSION ($URL)")
     }
 
-    suspend fun create(block: DiscordClientBuilder.() -> Unit): DiscordClient {
+    fun build(block: DiscordClientBuilder.() -> Unit): DiscordClient {
         DiscordClientBuilder().apply(block).run {
             if (token.isEmpty()) {
                 throw IllegalArgumentException("Bot token must be specified")
@@ -35,7 +35,6 @@ object Kordis {
             val client = DiscordClientImpl(token, shard, maxShard, intents)
             listeners.forEach { client.addListener(it) }
             handlers.forEach { client.addListener(it) }
-            client.connect()
             return client
         }
     }

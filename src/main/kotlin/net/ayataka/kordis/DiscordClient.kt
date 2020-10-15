@@ -38,6 +38,11 @@ interface DiscordClient {
     fun removeListener(listener: Any, serverId: Long? = null)
 
     /**
+     * Connect to the gateway
+     */
+    suspend fun connect()
+
+    /**
      * Update the bot's activity
      */
     fun updateStatus(status: UserStatus, type: ActivityType, name: String)

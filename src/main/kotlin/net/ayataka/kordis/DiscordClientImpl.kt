@@ -34,7 +34,7 @@ class DiscordClientImpl(
     override val users = NameableEntitySetImpl<User>()
     override val privateChannels = EntitySetImpl<PrivateTextChannel>()
 
-    suspend fun connect() {
+    override suspend fun connect() {
         if (intents.isNotEmpty() && GatewayIntent.GUILD_MEMBERS !in intents) {
             throw IllegalArgumentException("You need to include GUILD_MEMBERS intent when the specified intents is not empty.")
         }

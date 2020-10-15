@@ -22,7 +22,7 @@ class Test {
     fun start() = runBlocking {
         var userUpdateEvent: UserUpdateEvent? = null
 
-        client = Kordis.create {
+        client = Kordis.build {
             token = System.getenv("tokenTest")
 
             registerIntents(
@@ -39,6 +39,8 @@ class Test {
                 }
             }
         }
+
+        client.connect()
 
         val server = withTimeout(10 * 1000) {
             while (true) {
