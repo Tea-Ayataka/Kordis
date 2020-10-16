@@ -28,9 +28,9 @@ abstract class ServerChannelImpl(
         rolePermissionOverwrites.clear()
 
         json["permission_overwrites"].asJsonArray.map { it.asJsonObject }.forEach {
-            val type = it["type"].asInt
+            val type = it["type"].asString
 
-            if (type == 0) {
+            if (type == "0" || type == "role") {
                 server.roles.find(it["id"].asLong)?.let { role ->
                     rolePermissionOverwrites.add(RolePermissionOverwrite(
                             role,
@@ -42,7 +42,7 @@ abstract class ServerChannelImpl(
                 return@forEach
             }
 
-            if (type == 1) {
+            if (type == "1" || type == "member") {
                 userPermissionOverwrites.add(UserPermissionOverwrite(
                         PartialUserImpl(client, it["id"].asLong),
                         PermissionSet(it["allow"].asInt),
