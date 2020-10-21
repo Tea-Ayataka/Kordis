@@ -276,7 +276,12 @@ class GatewayClient(
         ready = false
         heartbeatTask?.cancel()
         buffer.clear()
-        inflater.reset()
+
+        try {
+            inflater.reset()
+        } catch (ex: Exception) {
+            ex.printStackTrace()
+        }
 
         if (code == 4014) {
             LOGGER.error("Invalid privilege intent(s) are specified. you must first go to your application in the Developer Portal and enable the toggle for the Privileged Intents you wish to use.")
@@ -372,7 +377,7 @@ class GatewayClient(
                         sessionId = it.asString
                     }
 
-                    LOGGER.info("Ready")
+                     LOGGER.info("Ready")
                 }
 
                 handleEvent(eventType, data!!)
