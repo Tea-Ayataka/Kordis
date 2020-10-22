@@ -143,27 +143,29 @@ class GatewayClient(
         }
     }
 
-    suspend fun connect(): Unit = mutex.withLock {
-        val state = websocket?.state
-        if (state == WebSocketState.CONNECTING || state == WebSocketState.OPEN) {
-            websocket?.disconnect()
-        }
+    suspend fun connect() {
+        mutex.withLock {
+            val state = websocket?.state
+            if (state == WebSocketState.CONNECTING || state == WebSocketState.OPEN) {
+                websocket?.disconnect()
+            }
 
-        websocket = WebSocketFactory()
-                .setVerifyHostname(false)
-                .createSocket("$endpoint/?v=${Kordis.API_VERSION}&encoding=json&compress=zlib-stream", 10000)
+            websocket = WebSocketFactory()
+                    .setVerifyHostname(false)
+                    .createSocket("$endpoint/?v=${Kordis.API_VERSION}&encoding=json&compress=zlib-stream", 10000)
 
-        websocket!!.addListener(this)
+            websocket!!.addListener(this)
 
-        while (true) {
-            try {
-                websocket!!.connect()
-                break
-            } catch (ex: Exception) {
-                LOGGER.warn("Couldn't connect to the the gateway. Retrying in 3 seconds.", ex)
-                websocket!!.disconnect()
-                websocket = websocket!!.recreate()
-                delay(3000)
+            while (true) {
+                try {
+                    websocket!!.connect()
+                    break
+                } catch (ex: Exception) {
+                    LOGGER.warn("Couldn't connect to the the gateway. Retrying in 3 seconds.", ex)
+                    websocket!!.disconnect()
+                    websocket = websocket!!.recreate()
+                    delay(3000)
+                }
             }
         }
 
