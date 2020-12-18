@@ -10,7 +10,6 @@ import net.ayataka.kordis.entity.message.embed.Embed
 import net.ayataka.kordis.entity.message.embed.EmbedBuilder
 import net.ayataka.kordis.entity.message.embed.EmbedImpl
 import net.ayataka.kordis.entity.server.Server
-import net.ayataka.kordis.entity.server.ServerImpl
 import net.ayataka.kordis.entity.server.emoji.PartialEmoji
 import net.ayataka.kordis.entity.server.member.Member
 import net.ayataka.kordis.entity.server.member.MemberImpl
@@ -52,7 +51,8 @@ class MessageImpl(client: DiscordClientImpl, json: JsonObject, _server: Server? 
 
         server = _server ?: json.getOrNull("guild_id")?.let { client.servers.find(it.asLong) }
         channel = server?.textChannels?.find(json["channel_id"].asLong)
-                ?: client.privateChannels.find(json["channel_id"].asLong)
+                ?: server?.announcementChannels?.find(json["channel_id"].asLong)
+                        ?: client.privateChannels.find(json["channel_id"].asLong)
                         ?: throw IllegalStateException("unknown channel id received")
 
         author = if (!json.has("webhook_id")) {
