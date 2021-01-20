@@ -31,7 +31,7 @@ dependencies {
     implementation "io.ktor:ktor-client-okhttp:$ktor_version"
 
     implementation "com.neovisionaries:nv-websocket-client:2.8"
-    implementation "com.google.code.gson:gson:2.8.5"
+    implementation "com.google.code.gson:gson:2.8.6"
 
     api "org.slf4j:slf4j-api:1.7.25"
 
