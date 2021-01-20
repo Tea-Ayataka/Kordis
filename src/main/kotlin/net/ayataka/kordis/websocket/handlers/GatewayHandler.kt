@@ -11,7 +11,8 @@ interface GatewayHandler {
     fun handle(client: DiscordClientImpl, data: JsonObject)
 
     fun deserializeServer(client: DiscordClientImpl, data: JsonObject, postponeIfNotExist: Boolean = true): ServerImpl? {
-        val server = client.servers.find(data["guild_id"].asLong) as? ServerImpl
+        val serverId = if (data.has("guild_id")) data["guild_id"].asLong else data["id"].asLong
+        val server = client.servers.find(serverId) as? ServerImpl
         if (server == null && postponeIfNotExist) {
             client.gateway.postponeServerEvent(eventType, data)
         }
