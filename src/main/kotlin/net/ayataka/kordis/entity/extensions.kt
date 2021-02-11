@@ -43,7 +43,8 @@ fun permissions(vararg permission: Permission) = PermissionSet().apply { addAll(
 /**
  * Create a permission set from bitmask
  */
-fun Int.toPermissions() = PermissionSet(this)
+fun Int.toPermissions() = PermissionSet(this.toLong())
+fun Long.toPermissions() = PermissionSet(this)
 
 /**
  * Get the '@everyone' role

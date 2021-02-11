@@ -1,6 +1,6 @@
 package net.ayataka.kordis.entity.server.permission
 
-enum class Permission(val bitmask: Int, val desciption: String) {
+enum class Permission(val bitmask: Long, val desciption: String) {
     // General Permissions
     ADMINISTRATOR(0x00000008, "Administrator"),
     VIEW_AUDIT_LOG(0x00000080, "View Audit Log"),

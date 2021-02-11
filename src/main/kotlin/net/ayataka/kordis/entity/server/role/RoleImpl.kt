@@ -29,7 +29,7 @@ class RoleImpl(override val server: Server, client: DiscordClientImpl, json: Jso
 
     override fun update(json: JsonObject) {
         name = json["name"].asString
-        permissions = PermissionSet(json["permissions"].asInt)
+        permissions = PermissionSet(json["permissions"].asLong)
         color = Color(json["color"].asInt)
         position = json["position"].asInt
         hoist = json["hoist"].asBoolean

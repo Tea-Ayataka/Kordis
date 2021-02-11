@@ -1,8 +1,8 @@
 package net.ayataka.kordis.entity.server.permission
 
 // TODO: Make this immutable object
-class PermissionSet(compiled: Int = 0) : MutableCollection<Permission> {
-    private val perms = HashSet<Permission>(Permission.values().filter { (compiled and it.bitmask) != 0 })
+class PermissionSet(compiled: Long = 0) : MutableCollection<Permission> {
+    private val perms = HashSet<Permission>(Permission.values().filter { (compiled and it.bitmask) != 0L })
 
     override val size = perms.size
     override fun contains(element: Permission) = perms.contains(element)
@@ -16,8 +16,8 @@ class PermissionSet(compiled: Int = 0) : MutableCollection<Permission> {
     override fun removeAll(elements: Collection<Permission>) = perms.removeAll(elements)
     override fun retainAll(elements: Collection<Permission>) = perms.retainAll(elements)
 
-    fun compile(): Int {
-        var result = 0
+    fun compile(): Long {
+        var result = 0L
         perms.forEach {
             result = result or it.bitmask
         }

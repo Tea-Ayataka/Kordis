@@ -34,8 +34,8 @@ abstract class ServerChannelImpl(
                 server.roles.find(it["id"].asLong)?.let { role ->
                     rolePermissionOverwrites.add(RolePermissionOverwrite(
                             role,
-                            PermissionSet(it["allow"].asInt),
-                            PermissionSet(it["deny"].asInt)
+                            PermissionSet(it["allow"].asLong),
+                            PermissionSet(it["deny"].asLong)
                     ))
                 }
 
@@ -45,8 +45,8 @@ abstract class ServerChannelImpl(
             if (type == "1" || type == "member") {
                 userPermissionOverwrites.add(UserPermissionOverwrite(
                         PartialUserImpl(client, it["id"].asLong),
-                        PermissionSet(it["allow"].asInt),
-                        PermissionSet(it["deny"].asInt)
+                        PermissionSet(it["allow"].asLong),
+                        PermissionSet(it["deny"].asLong)
                 ))
                 return@forEach
             }
