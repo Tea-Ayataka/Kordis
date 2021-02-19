@@ -144,6 +144,11 @@ interface Server : Nameable, Entity {
     suspend fun findMembers(query: String) : List<Member>
 
     /**
+     * Download entire server members
+     */
+    suspend fun getMembers() : List<Member>
+
+    /**
      * Get server bans
      */
     suspend fun bans(): Collection<Ban>
@@ -197,4 +202,9 @@ interface Server : Nameable, Entity {
      * Get the audit logs
      */
     // TODO: Not implemented
+
+    /**
+     * Leave from the server
+     */
+    suspend fun leave()
 }

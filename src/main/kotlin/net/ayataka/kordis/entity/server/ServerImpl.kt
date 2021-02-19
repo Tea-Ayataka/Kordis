@@ -286,6 +286,10 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
         return client.gateway.getMembers(id, null, query)
     }
 
+    override suspend fun getMembers(): List<Member> {
+        return client.gateway.getMembers(id, null, "")
+    }
+
     override suspend fun bans(): Collection<Ban> {
         checkExistence()
 
@@ -442,6 +446,10 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
         ).asJsonObject
 
         return emojis.getOrPut(response["id"].asLong) { EmojiImpl(this, client, response) }
+    }
+
+    override suspend fun leave() {
+        client.rest.request(Endpoint.LEAVE_GUILD.format("guild.id" to id))
     }
 
     private fun checkExistence() {
