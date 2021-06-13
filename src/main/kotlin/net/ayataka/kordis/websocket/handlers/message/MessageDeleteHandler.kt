@@ -18,10 +18,12 @@ class MessageDeleteHandler : GatewayHandler {
         }
 
         val server = client.servers.find(data["guild_id"].asLong)
-                ?: throw IllegalStateException("unknown server id received")
+            ?: throw IllegalStateException("unknown server id received")
 
-        val channel = server.textChannels.find(data["channel_id"].asLong)
-                ?: throw IllegalStateException("unknown channel id received")
+        val channelId = data["channel_id"].asLong
+        val channel = server.textChannels.find(channelId)
+            ?: server.announcementChannels.find(channelId)
+            ?: throw IllegalStateException("unknown channel id received")
 
         client.eventManager.fire(MessageDeleteEvent(listOf(messageId), channel, server))
     }

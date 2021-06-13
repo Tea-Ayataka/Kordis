@@ -74,30 +74,64 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
 
     override val channels = object : NameableEntitySet<ServerChannel> {
         override val size: Int
-            get() = textChannels.size + voiceChannels.size + channelCategories.size
+            get() = channelCategories.size +
+                    textChannels.size +
+                    voiceChannels.size +
+                    announcementChannels.size +
+                    storeChannels.size
 
         override fun findByName(text: String, ignoreCase: Boolean) =
-                textChannels.findByName(text, ignoreCase) ?: voiceChannels.findByName(text, ignoreCase)
-                ?: channelCategories.findByName(text, ignoreCase)
+            channelCategories.findByName(text, ignoreCase)
+                ?: textChannels.findByName(text, ignoreCase)
+                ?: voiceChannels.findByName(text, ignoreCase)
+                ?: announcementChannels.findByName(text, ignoreCase)
+                ?: storeChannels.findByName(text, ignoreCase)
 
         override fun find(id: Long) =
-                textChannels.find(id) ?: voiceChannels.find(id) ?: channelCategories.find(id)
+            channelCategories.find(id)
+                ?: textChannels.find(id)
+                ?: voiceChannels.find(id)
+                ?: announcementChannels.find(id)
+                ?: storeChannels.find(id)
 
         override fun contains(element: ServerChannel) =
-                textChannels.contains(element) || voiceChannels.contains(element) || channelCategories.contains(element)
+            channelCategories.contains(element) ||
+                    textChannels.contains(element) ||
+                    voiceChannels.contains(element) ||
+                    announcementChannels.contains(element) ||
+                    storeChannels.contains(element)
 
         override fun containsAll(elements: Collection<ServerChannel>) =
-                textChannels.plus(voiceChannels).plus(channelCategories).containsAll(elements)
+            channelCategories
+                .asSequence()
+                .plus(textChannels)
+                .plus(voiceChannels)
+                .plus(channelCategories)
+                .plus(announcementChannels)
+                .plus(storeChannels)
+                .toList()
+                .containsAll(elements)
 
         override fun isEmpty() =
-                textChannels.isEmpty() && voiceChannels.isEmpty() && channelCategories.isEmpty()
+            channelCategories.isEmpty() &&
+                    textChannels.isEmpty() &&
+                    voiceChannels.isEmpty() &&
+                    announcementChannels.isEmpty() &&
+                    storeChannels.isEmpty()
 
         override fun iterator() =
-                textChannels.plus(voiceChannels).plus(channelCategories).iterator()
+            channelCategories
+                .asSequence()
+                .plus(textChannels)
+                .plus(voiceChannels)
+                .plus(channelCategories)
+                .plus(announcementChannels)
+                .plus(storeChannels)
+                .iterator()
     }
 
     override fun update(json: JsonObject) {
-        name = json["name"].asString
+        name = json["name"].asStringOrNull ?: "null"
         icon = json["icon"].asStringOrNull?.let { ImageImpl.server(id, it) }
         splash = json["splash"].asStringOrNull?.let { ImageImpl.splash(id, it) }
         region = Region[json["region"].asString]

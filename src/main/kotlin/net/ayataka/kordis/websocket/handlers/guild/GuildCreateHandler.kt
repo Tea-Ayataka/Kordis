@@ -24,7 +24,7 @@ class GuildCreateHandler : GatewayHandler {
 
         client.gateway.handlePostponedServerEvents(server)
 
-        server.ready = true
+        server.ready()
         if (!server.initialized.getAndSet(true)) {
             LOGGER.trace("Server ready: ${server.name} (${server.id})")
             client.eventManager.fire(ServerReadyEvent(server))

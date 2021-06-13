@@ -2,7 +2,7 @@ package net.ayataka.kordis.utils
 
 import com.google.gson.*
 
-fun JsonObject.getOrNull(memberName: String): JsonElement? = if (has(memberName)) get(memberName) else null
+fun JsonObject.getOrNull(memberName: String): JsonElement? = if (has(memberName) && !get(memberName).isJsonNull) get(memberName) else null
 
 fun JsonObject.getObjectOrNull(memberName: String): JsonObject? {
     if (!has(memberName)) {
