@@ -12,7 +12,7 @@ repositories {
 }
     
 dependencies {
-    implementation 'com.github.Tea-Ayataka:Kordis:0.2.3'
+    implementation 'com.github.Tea-Ayataka:Kordis:0.2.4'
 }
 ```
 with Maven
@@ -27,7 +27,7 @@ with Maven
 <dependency>
     <groupId>com.github.Tea-Ayataka</groupId>
     <artifactId>Kordis</artifactId>
-    <version>0.2.3</version>
+    <version>0.2.4</version>
 </dependency>
 ```
 
@@ -90,8 +90,7 @@ class TestBot {
 ```
 
 # Dependencies
-* Kotlin 1.3.20 (JVM 11)
-* Kotlin Coroutines 1.1.1
+* Kotlin 1.4.0
 * Gson 2.8.5
-* Ktor Client 1.1.2 (OkHttp)
+* Ktor Client 1.4.0 (OkHttp)
 * nv-websocket-client 2.8
