@@ -196,7 +196,7 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
 
         // Update after loading other entities
         afkChannel = json["afk_channel_id"].asLongOrNull?.let { voiceChannels.find(it) }
-        ownerId = json["owner_id"].asLong
+        ownerId = json["owner_id"].asLongOrNull ?: -1
     }
 
     fun updateEmojis(json: JsonObject) {
