@@ -1,6 +1,6 @@
 package net.ayataka.kordis.rest
 
-import io.ktor.http.HttpMethod
+import io.ktor.http.*
 
 
 const val BASE = "https://discordapp.com/api/v6"

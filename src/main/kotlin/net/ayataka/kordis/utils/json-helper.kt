@@ -1,6 +1,10 @@
 package net.ayataka.kordis.utils
 
-import com.google.gson.*
+import com.google.gson.JsonArray
+import com.google.gson.JsonElement
+import com.google.gson.JsonNull
+import com.google.gson.JsonObject
+import com.google.gson.JsonPrimitive
 
 fun JsonObject.getOrNull(memberName: String): JsonElement? = if (has(memberName) && !get(memberName).isJsonNull) get(memberName) else null
 

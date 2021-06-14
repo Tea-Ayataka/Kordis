@@ -3,7 +3,6 @@ package net.ayataka.kordis.entity.message.reaction
 import com.google.gson.JsonObject
 import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.entity.server.Server
-import net.ayataka.kordis.entity.server.ServerImpl
 import net.ayataka.kordis.entity.server.emoji.PartialEmoji
 import net.ayataka.kordis.entity.server.emoji.PartialEmojiImpl
 import net.ayataka.kordis.entity.server.member.Member
@@ -11,7 +10,6 @@ import net.ayataka.kordis.entity.server.member.MemberImpl
 import net.ayataka.kordis.entity.user.User
 import net.ayataka.kordis.entity.user.UserImpl
 import net.ayataka.kordis.utils.asLongOrNull
-import net.ayataka.kordis.utils.getObjectOrNull
 import net.ayataka.kordis.utils.getOrNull
 
 /**

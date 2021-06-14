@@ -1,7 +1,7 @@
 package net.ayataka.kordis
 
-import io.ktor.client.HttpClient
-import io.ktor.client.engine.okhttp.OkHttp
+import io.ktor.client.*
+import io.ktor.client.engine.okhttp.*
 import okhttp3.Protocol
 import org.slf4j.LoggerFactory
 

@@ -1,7 +1,11 @@
 package net.ayataka.kordis.entity.message.embed
 
 import com.google.gson.JsonObject
-import net.ayataka.kordis.utils.*
+import net.ayataka.kordis.utils.getArrayOrNull
+import net.ayataka.kordis.utils.getOrNull
+import net.ayataka.kordis.utils.json
+import net.ayataka.kordis.utils.jsonArray
+import net.ayataka.kordis.utils.uRgb
 import java.awt.Color
 import java.time.Instant
 import java.time.ZoneOffset

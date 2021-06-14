@@ -3,7 +3,6 @@ package net.ayataka.kordis.entity.channel
 import net.ayataka.kordis.entity.Entity
 import net.ayataka.kordis.entity.message.Message
 import net.ayataka.kordis.entity.message.MessageBuilder
-import net.ayataka.kordis.entity.message.embed.EmbedBuilder
 
 interface TextChannel : Entity {
     /**

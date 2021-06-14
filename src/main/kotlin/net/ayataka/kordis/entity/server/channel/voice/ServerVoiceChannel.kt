@@ -1,7 +1,7 @@
 package net.ayataka.kordis.entity.server.channel.voice
 
-import net.ayataka.kordis.entity.server.channel.category.ChannelCategory
 import net.ayataka.kordis.entity.server.channel.ServerChannel
+import net.ayataka.kordis.entity.server.channel.category.ChannelCategory
 
 interface ServerVoiceChannel : ServerChannel {
     /**

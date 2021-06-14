@@ -2,7 +2,6 @@ package net.ayataka.kordis.websocket.handlers.guild
 
 import com.google.gson.JsonObject
 import net.ayataka.kordis.DiscordClientImpl
-import net.ayataka.kordis.entity.server.ServerImpl
 import net.ayataka.kordis.entity.server.role.RoleImpl
 import net.ayataka.kordis.event.events.server.role.RoleCreateEvent
 import net.ayataka.kordis.websocket.handlers.GatewayHandler

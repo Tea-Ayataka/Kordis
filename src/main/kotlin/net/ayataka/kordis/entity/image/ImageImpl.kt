@@ -1,6 +1,6 @@
 package net.ayataka.kordis.entity.image
 
-import io.ktor.client.request.get
+import io.ktor.client.request.*
 import net.ayataka.kordis.Kordis.HTTP_CLIENT
 
 class ImageImpl(override val url: String) : Image {

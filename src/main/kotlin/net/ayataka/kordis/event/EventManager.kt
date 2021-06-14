@@ -1,7 +1,12 @@
 package net.ayataka.kordis.event
 
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.newSingleThreadContext
 import net.ayataka.kordis.Kordis.LOGGER
 import net.ayataka.kordis.event.events.message.MessageEvent
 import net.ayataka.kordis.event.events.server.ServerEvent

@@ -7,11 +7,9 @@ import net.ayataka.kordis.entity.server.channel.ServerChannelBuilder
 import net.ayataka.kordis.entity.server.channel.category.ChannelCategory
 import net.ayataka.kordis.entity.server.channel.text.ServerTextChannel
 import net.ayataka.kordis.entity.server.channel.voice.ServerVoiceChannel
-import net.ayataka.kordis.entity.server.member.Member
 import net.ayataka.kordis.entity.server.permission.Permission
 import net.ayataka.kordis.entity.server.permission.PermissionSet
 import net.ayataka.kordis.entity.server.role.Role
-import net.ayataka.kordis.entity.user.User
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 
