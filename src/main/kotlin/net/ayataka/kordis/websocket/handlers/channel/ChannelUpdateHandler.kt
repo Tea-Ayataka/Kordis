@@ -2,34 +2,40 @@ package net.ayataka.kordis.websocket.handlers.channel
 
 import com.google.gson.JsonObject
 import net.ayataka.kordis.DiscordClientImpl
-import net.ayataka.kordis.entity.server.ServerImpl
+import net.ayataka.kordis.entity.server.channel.announcement.AnnouncementChannelImpl
+import net.ayataka.kordis.entity.server.channel.category.ChannelCategoryImpl
+import net.ayataka.kordis.entity.server.channel.store.StoreChannelImpl
+import net.ayataka.kordis.entity.server.channel.text.ServerTextChannelImpl
+import net.ayataka.kordis.entity.server.channel.voice.ServerVoiceChannelImpl
 import net.ayataka.kordis.entity.server.enums.ChannelType
 import net.ayataka.kordis.event.events.server.channel.ChannelUpdateEvent
-import net.ayataka.kordis.utils.getOrNull
 import net.ayataka.kordis.websocket.handlers.GatewayHandler
 
 class ChannelUpdateHandler : GatewayHandler {
     override val eventType = "CHANNEL_UPDATE"
 
     override fun handle(client: DiscordClientImpl, data: JsonObject) {
-        val server = data.getOrNull("guild_id")?.let { client.servers.find(it.asLong) } as? ServerImpl
+        val server = deserializeServer(client, data)
         val id = data["id"].asLong
 
         val channel = when (data["type"].asInt) {
             ChannelType.GUILD_TEXT.id -> {
-                server?.textChannels?.update(id, data)
+                server?.textChannels?.updateOrPut(id, data) { ServerTextChannelImpl(server, client, data) }
             }
             ChannelType.GUILD_VOICE.id -> {
-                server?.voiceChannels?.update(id, data)
+                server?.voiceChannels?.updateOrPut(id, data) { ServerVoiceChannelImpl(server, client, data) }
             }
             ChannelType.GUILD_CATEGORY.id -> {
-                server?.channelCategories?.update(id, data)
+                server?.channelCategories?.updateOrPut(id, data) { ChannelCategoryImpl(server, client, data) }
             }
             ChannelType.GUILD_NEWS.id -> {
-                server?.announcementChannels?.update(id, data)
+                server?.announcementChannels?.updateOrPut(id, data) { AnnouncementChannelImpl(server, client, data) }
             }
             ChannelType.GUILD_STORE.id -> {
-                server?.storeChannels?.update(id, data)
+                server?.storeChannels?.updateOrPut(id, data) { StoreChannelImpl(server, client, data) }
+            }
+            ChannelType.GUILD_STAGE_VOICE.id -> {
+                server?.voiceChannels?.updateOrPut(id, data) { ServerVoiceChannelImpl(server, client, data) }
             }
             else -> {
                 throw IllegalStateException("unknown channel type received")

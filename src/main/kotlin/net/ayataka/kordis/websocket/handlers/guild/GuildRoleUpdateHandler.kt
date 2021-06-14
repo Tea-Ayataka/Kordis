@@ -2,7 +2,7 @@ package net.ayataka.kordis.websocket.handlers.guild
 
 import com.google.gson.JsonObject
 import net.ayataka.kordis.DiscordClientImpl
-import net.ayataka.kordis.entity.server.ServerImpl
+import net.ayataka.kordis.entity.server.role.RoleImpl
 import net.ayataka.kordis.event.events.server.role.RoleUpdateEvent
 import net.ayataka.kordis.websocket.handlers.GatewayHandler
 
@@ -12,12 +12,20 @@ class GuildRoleUpdateHandler : GatewayHandler {
         val server = deserializeServer(client, data) ?: return
 
         // Update role
-        val role = server.roles.update(data["role"].asJsonObject["id"].asLong, data["role"].asJsonObject)
+        val roleObject = data["role"].asJsonObject
+        val role = server.roles.update(roleObject["id"].asLong, roleObject)
 
+        // When failed to update
         if (role == null) {
             if (!server.ready) {
                 server.handleLater(eventType, data)
+            } else {
+                val createdRole = server.roles.updateOrPut(roleObject["id"].asLong, roleObject) {
+                    RoleImpl(server, client, roleObject)
+                }
+                client.eventManager.fire(RoleUpdateEvent(createdRole))
             }
+
             return
         }
 

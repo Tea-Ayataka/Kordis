@@ -3,10 +3,9 @@ package net.ayataka.kordis.websocket.handlers.channel
 import com.google.gson.JsonObject
 import net.ayataka.kordis.DiscordClientImpl
 import net.ayataka.kordis.entity.channel.PrivateTextChannelImpl
-import net.ayataka.kordis.entity.server.ServerImpl
 import net.ayataka.kordis.entity.server.channel.announcement.AnnouncementChannelImpl
-import net.ayataka.kordis.entity.server.channel.store.StoreChannelImpl
 import net.ayataka.kordis.entity.server.channel.category.ChannelCategoryImpl
+import net.ayataka.kordis.entity.server.channel.store.StoreChannelImpl
 import net.ayataka.kordis.entity.server.channel.text.ServerTextChannelImpl
 import net.ayataka.kordis.entity.server.channel.voice.ServerVoiceChannelImpl
 import net.ayataka.kordis.entity.server.enums.ChannelType
@@ -23,8 +22,7 @@ class ChannelCreateHandler : GatewayHandler {
             return
         }
 
-        val server = client.servers.find(data["guild_id"].asLong) as? ServerImpl
-                ?: throw IllegalStateException("unknown server id received")
+        val server = deserializeServer(client, data) ?: return
 
         val channel = when (data["type"].asInt) {
             ChannelType.GUILD_TEXT.id -> {
@@ -41,6 +39,9 @@ class ChannelCreateHandler : GatewayHandler {
             }
             ChannelType.GUILD_STORE.id -> {
                 server.storeChannels.updateOrPut(id, data) { StoreChannelImpl(server, client, data) }
+            }
+            ChannelType.GUILD_STAGE_VOICE.id -> {
+                server.voiceChannels.updateOrPut(id, data) { ServerVoiceChannelImpl(server, client, data) }
             }
             else -> {
                 throw IllegalStateException("unknown channel type received")
