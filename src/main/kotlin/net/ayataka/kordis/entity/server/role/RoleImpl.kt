@@ -96,4 +96,11 @@ class RoleImpl(override val server: Server, client: DiscordClientImpl, json: Jso
             throw NotFoundException()
         }
     }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is RoleImpl) return false
+
+        return id == other.id
+    }
 }

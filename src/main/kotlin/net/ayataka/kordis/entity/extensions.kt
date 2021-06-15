@@ -48,5 +48,5 @@ fun Long.toPermissions() = PermissionSet(this)
  * Get the '@everyone' role
  */
 val NameableEntitySet<Role>.everyone
-    get() = find { it.position <= 0 && it.name == "@everyone" }
+    get() = find { it.id == it.server.id }
             ?: throw IllegalStateException("couldn't find @everyone role")

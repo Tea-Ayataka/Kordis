@@ -501,4 +501,11 @@ class ServerImpl(client: DiscordClientImpl, id: Long) : Server, Updatable, Disco
             throw NotFoundException()
         }
     }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is ServerImpl) return false
+
+        return id == other.id
+    }
 }
