@@ -12,7 +12,7 @@ repositories {
 }
     
 dependencies {
-    implementation 'com.github.Tea-Ayataka:Kordis:0.2.4'
+    implementation 'com.github.Tea-Ayataka:Kordis:0.2.5'
 }
 ```
 with Maven
@@ -27,7 +27,7 @@ with Maven
 <dependency>
     <groupId>com.github.Tea-Ayataka</groupId>
     <artifactId>Kordis</artifactId>
-    <version>0.2.4</version>
+    <version>0.2.5</version>
 </dependency>
 ```
 
